@@ -2605,15 +2605,23 @@ const Chain = Chainf;
             let indexs = [];
             let indexI = 0;
             for (let exportName of affectedExports) {
-                indexs.push(Class[exportName].index)
+                if (!Class[exportName]) {
+                    global.addNewClass(exportName, {})
+                } else {
+                    indexs.push(Class[exportName].index)
+                }
             }
 
 
             global.initExportCode(code) // run through defs (replaces their defExport)
 
             for (let exportName of affectedExports) {
-                Class[exportName].index = indexs[indexI++]
-                global.updateClass(exportName, defExports[exportName])
+                if (!Class[exportName]) {
+                    global.addNewClass(exportName, defExports[exportName])
+                } else {
+                    Class[exportName].index = indexs[indexI++]
+                    global.updateClass(exportName, defExports[exportName])
+                }
             }
         }
 
