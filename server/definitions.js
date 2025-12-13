@@ -11528,7 +11528,8 @@ defExports.swarm = {
     DIE_AT_RANGE: true,
     BUFF_VS_FOOD: true,
     AI: {
-        BLIND: true
+        BLIND: true,
+        SKYNET: true
     }
 };
 defExports.swarmLayer6 = {
@@ -11564,7 +11565,10 @@ defExports.bee = {
     LABEL: 'Bee',
     PERSISTS_AFTER_DEATH: true,
     SHAPE: 4,
-    HITS_OWN_TYPE: 'hardWithBuffer'
+    HITS_OWN_TYPE: 'hardWithBuffer',
+    AI: {
+        SKYNET: true
+    }
 };
 defExports.eggbutitsanasshole = {
     PARENT: [defExports.swarm],
@@ -11574,6 +11578,7 @@ defExports.eggbutitsanasshole = {
 defExports.beeAI = {
     PARENT: [defExports.bee],
     AI: {
+        SKYNET: true
     },
     INDEPENDENT: true
 };
@@ -11581,6 +11586,7 @@ defExports.autoSwarm = {
     PARENT: [defExports.swarm],
     LABEL: 'AI Swarm Drone',
     AI: {
+        SKYNET: true
      },
     INDEPENDENT: true
 };
