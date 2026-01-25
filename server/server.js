@@ -4409,7 +4409,7 @@ const Chain = Chainf;
 
 				const tracking = this.body.topSpeed;
 				this.lead = timeOfImpact({ x: diffX, y: diffY }, target.velocity, tracking);
-				if(this.lead === Infinity) this.lead = 0;
+				if (this.lead === Infinity || this.body.aiSettings.NO_LEAD) this.lead = 0;
 
 				// Mutate and return the pre-allocated output object.
 				this.output.target.x = diffX + this.lead * target.velocity.x;
@@ -4765,7 +4765,7 @@ const Chain = Chainf;
                 this.a = 0;
             }
             think(input) {
-                this.a += Math.PI / 5.5;
+                this.a += Math.PI / 10;
                 let offset = 0;
                 if (this.body.bond != null) offset = this.body.bound.angle;
                 return {
@@ -4819,7 +4819,7 @@ const Chain = Chainf;
                 this.a = 0;
             }
             think(input) {
-                this.a -= Math.PI / 5.5;
+                this.a -= Math.PI / 10;
                 let offset = 0;
                 if (this.body.bond != null) offset = this.body.bound.angle;
                 return {
@@ -5267,6 +5267,7 @@ const Chain = Chainf;
                 this.color = 16;
                 this.colorOverride = null;
                 this.shootOnDeath = false;
+				this.weaponSize = 1;
                 let PROPERTIES = info.PROPERTIES;
                 if (PROPERTIES != null && PROPERTIES.TYPE != null) {
                     this.canShoot = true;
@@ -5307,6 +5308,7 @@ const Chain = Chainf;
                     if (PROPERTIES.COLOR_OVERRIDE != null) this.colorOverride = PROPERTIES.COLOR_OVERRIDE;
                     if (PROPERTIES.CAN_SHOOT != null) this.canShoot = PROPERTIES.CAN_SHOOT;
                     this.alpha = PROPERTIES.ALPHA;
+					this.skipLabelChange = PROPERTIES.SKIP_LABEL_CHANGE == null ? false : PROPERTIES.SKIP_LABEL_CHANGE;
                 }
                 if (PROPERTIES != null && PROPERTIES.COLOR != null) this.color = PROPERTIES.COLOR;
                 if (PROPERTIES != null && PROPERTIES.COLOR_UNMIX != null) this.color_unmix = PROPERTIES.COLOR_UNMIX;
@@ -5341,6 +5343,7 @@ const Chain = Chainf;
 				}
 			}
             newRecoil() {
+                if (this.body.settings.hasNoRecoil) return;
                 let recoilForce = this.settings.recoil * 2 / room.speed;
                 this.body.accel.x -= recoilForce * Math.cos(this.recoilDir || 0);
                 this.body.accel.y -= recoilForce * Math.sin(this.recoilDir || 0);
@@ -5407,10 +5410,10 @@ const Chain = Chainf;
                                     if (this.body.childrenMap && this.body.childrenMap.size) this.body.childrenMap.forEach((k) => k.destroy())
                                 } else {
                                     if (!this.body.variables.emp || this.body.variables.emp == undefined || !this.body.master.variables.emp || this.body.master.variables.emp == undefined) {
-                                        if (this.onFire) {
-                                            this.onFire(this, sk);
-                                        } else {
-                                            for (let i = 0; i < this.timesToFire; i++) {
+                                        for (let i = 0; i < this.timesToFire; i++) {
+                                            if (this.onFire) {
+                                                this.onFire(this, sk);
+                                            } else {
                                                 this.fire(sk);
                                             }
                                         }
@@ -5449,7 +5452,7 @@ const Chain = Chainf;
                     this.canShoot = false;
                 }
                 this.lastShot.time = util.time();
-                this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + this.settings.recoil + 1) + 1;
+                this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + (this.body.settings.hasNoRecoil ? 0 : this.settings.recoil) + 1) + 1;
                 this.motion += this.lastShot.power;
                 this.recoilDir = this.body.facing + this.angle;
                 this.newRecoil();
@@ -5506,9 +5509,10 @@ const Chain = Chainf;
                 // Define skills
                 o.skill.set(this.getSkillRaw());
                 // Define size
-                o.SIZE = (this.body.size * this.width * this.settings.size * 0.5) * o.squiggle
+				this.weaponSize = (this.body.size * this.width * this.settings.size * 0.5) * o.squiggle;
+                o.SIZE = this.weaponSize;
                 // Define label
-                o.label = this.master.label +  "'s " + (this.label ?  + this.label : "") + o.label
+                if (!this.skipLabelChange) o.label = this.master.label +  "'s " + (this.label ?  + this.label : "") + o.label;
 
                 if (o.type === "food") {
                     o.ACCELERATION = .015 / (o.size * 0.2);
@@ -6209,6 +6213,7 @@ const Chain = Chainf;
                 this.stealthMode = false;
                 this.miscIdentifier = "None";
                 this.switcherooID = -1;
+				this.necromizable = true;
                 this.gunIndex = undefined;
                 //entities.push(this);
                 entities.set(this.id, this);
@@ -6524,8 +6529,8 @@ const Chain = Chainf;
                     if (set.DANGER != null) this.dangerValue = set.DANGER;
                     if (set.VARIES_IN_SIZE != null) {
                         this.settings.variesInSize = set.VARIES_IN_SIZE;
-                        this.squiggle = this.settings.variesInSize ? ran.randomRange(.8, 1.2) : 1;
-                    }
+						this.squiggle = ran.randomRange(.8, 1.2);
+                    } else this.squiggle = 1;
                     if (set.RESET_UPGRADES) this.upgrades = [];
                     if (set.DIES_TO_TEAM_BASE != null) this.diesToTeamBase = set.DIES_TO_TEAM_BASE;
                     if (set.GOD_MODE != null) this.godmode = set.GOD_MODE;
@@ -6628,11 +6633,11 @@ const Chain = Chainf;
                     if (set.LABEL_OVERRIDE != null) this.labelOverride = set.LABEL_OVERRIDE
                     if (set.SCOPED != null) {
                         this.scoped = set.SCOPED;
-                        this.scopedMult = 1
+                        this.scopedMult = 1;
                     }
                     if (set.CAMERA_TO_MOUSE != null) {
-                        this.scoped = true,
-                        this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1
+                        this.scoped = set.CAMERA_TO_MOUSE[0];
+                        this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
                     }
                     this.altCameraSource = null
                     if (set.GUNS != null) {
@@ -6810,7 +6815,7 @@ const Chain = Chainf;
             }
             camera(tur = false) {
                 let out = {
-                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((this.type === "tank" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + this.invuln * 0x08,
+                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((this.type === "tank" || this.type === "miniboss" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + (this.invuln || (this.type === "food" || this.type === "crasher") && !this.necromizable) * 0x08,
                     id: this.id,
 					masterId: this.master.id,
                     index: this.index,
@@ -7219,10 +7224,14 @@ const Chain = Chainf;
                         if (this.SIZE < 2) this.SIZE = 2;
                         break;
                     case "decentralize":
-                        if (this.master.control.alt) this.SIZE += 1;
-                        else {
-                            if (this.SIZE > 25.2) this.SIZE -= 1;
-                            else this.SIZE = 25.2;
+                        this.damp = .05;
+                        if (this.master.control.alt) {
+                            this.maxSpeed = 0;
+                            this.SIZE++;
+                        } else {
+                            this.maxSpeed = this.topSpeed;
+                            if (this.SIZE > 30) this.SIZE--;
+                            else this.SIZE = 30;
                         }
                         break;
                     case "plasma":
@@ -8168,7 +8177,7 @@ const Chain = Chainf;
                 player.body.kill();
             }
             runAnimations(gun) {
-                switch (onShoot) {
+                switch (gun.onShoot) {
                     case "log":
                         console.log("LOG");
                         break;
@@ -10414,7 +10423,7 @@ function flatten(data, out, playerContext = null) {
                                     let entry = output.leaderboard.find(r => r.team === my.team);
                                     if (entry) entry.skill.score++;
                                 }
-                            } else if (!c.DISABLE_LEADERBOARD && my.settings != null && my.settings.leaderboardable && my.settings.drawShape && (my.type === 'tank' || my.killCount.solo || my.killCount.assists)) {
+                            } else if (!c.DISABLE_LEADERBOARD && my.settings != null && my.settings.leaderboardable && my.settings.drawShape && (my.type === 'tank' || my.type === 'miniboss' || my.killCount.solo || my.killCount.assists)) {
                                 output.leaderboard.push(my);
                             }
                         }
@@ -10939,16 +10948,8 @@ function flatten(data, out, playerContext = null) {
                                     my: damage._n * deathFactor._n * 2,//multiplier
                                     n: damage._me * deathFactor._me * 2
                                 };
-                                if (n.hitsOwnTeam) {
-                                    finalDmg.my *= -1;
-                                }
-                                if (my.hitsOwnTeam) {
-                                    finalDmg.n *= -1;
-                                }
-                                my.damageReceived += finalDmg.my;
-                                n.damageReceived += finalDmg.n;
 
-                                if (my.onDamaged) {
+								if (my.onDamaged) {
                                     my.onDamaged(my, n, finalDmg.my);
                                 }
                                 if (my.onDealtDamage) {
@@ -10972,6 +10973,19 @@ function flatten(data, out, playerContext = null) {
                                 if (n.master && n.master.onDealtDamageUniv) {
                                     n.master.onDealtDamageUniv(n.master, my, finalDmg.my);
                                 }
+								
+                                if (n.hitsOwnTeam) {
+                                    finalDmg.my *= -1;
+                                }
+                                if (my.hitsOwnTeam) {
+                                    finalDmg.n *= -1;
+                                }
+								if (my.bail || n.bail) {
+									finalDmg.my = 0;
+									finalDmg.n = 0;
+								}
+                                my.damageReceived += finalDmg.my;
+                                n.damageReceived += finalDmg.n;
                             }
                             if (nIsFirmCollide < 0) {
                                 nIsFirmCollide *= -.5;

@@ -4695,7 +4695,7 @@ const stats = {
         size: 4,
         health: 387420489,
         damage: 0,
-        pen: .9,
+        pen: 0,
         speed: .7,
         maxSpeed: 1,
         range: .02,
@@ -6410,12 +6410,20 @@ const emp = (them, time) => {
     }
 };
 const necro = (source, them, necroThis, initThis, options = {}) => {
-    if (!them || !initThis) return false
+    if (!them || !initThis) return false;
     let theirType = options.type || 'food';
+    let sizeMult = options.sizeMult || 1;
     let shootPermission = initThis.countsOwnKids ? initThis.countsOwnKids > initThis.childrenMap.size * initThis.body.skill.rld : initThis.body.maxChildren ? initThis.body.maxChildren > initThis.body.childrenMap.size * initThis.body.skill.rld : true;
-    if (them.type == theirType && necroThis.includes(them.label) && shootPermission) {
+    if (them.necromizable && them.type == theirType && necroThis.includes(them.label) && shootPermission) {
         const theirFacing = them.facing;
-        const theirSize = them.size;
+        const theirSize = (them.size > initThis.weaponSize * them.squiggle) ? initThis.weaponSize * them.squiggle : them.size * sizeMult;
+        // If they belonged to something else, make them forget it.
+        if (them.source != them) {
+            them.source.childrenMap.delete(them.id);
+            them.parent = null;
+            them.source = them;
+        }
+        // Start the process.
         them.define(Class.genericEntity);
         initThis.bulletInit(them);
         them.team = source.team;
@@ -6423,18 +6431,24 @@ const necro = (source, them, necroThis, initThis, options = {}) => {
         them.color = source.color;
         them.facing = theirFacing;
         them.SIZE = theirSize;
-        them.health.amount = them.health.max;
-        them.onDamageDealt = (me2, them2) => {
-            necro(me2.source, them2, necroThis, initThis);
+        // And ensure they have the same strength of their new peers.
+        them.skill.reset();
+        them.refreshBodyAttributes();
+        them.onDealtDamage = (me2, them2) => {
+            let bail = necro(me2.source, them2, necroThis, initThis, options);
+            me2.bail = bail;
         }
+        return true;
     }
-    return true
+    return false;
 };
 const necroDrone = (me, them, necroThis, options = {}) => {
-    return necro(me.source, them, necroThis, me.source.guns[me.gunIndex], options);
+    let bail = necro(me.source, them, necroThis, me.source.guns[me.gunIndex], options);
+    me.bail = bail;
 };
 const necroRam = (me, them, necroThis, gunIndex, options = {}) => {
-    return necro(me, them, necroThis, me.guns[gunIndex], options);
+    let bail = necro(me, them, necroThis, me.guns[gunIndex], options);
+    me.bail = bail;
 };
 const spore = (me, them, gunIndex, amount) => {
     if (them.team === me.team || (them.type !== "food" && them.type !== "tank" && them.type !== "crasher" && them.type !== "minion")) return;
@@ -6792,10 +6806,11 @@ const makeInvisible = (type, name, options = {}) => {
     output.LABEL = name ?? `Stealth ${type.LABEL}`;
     output.INVISIBLE = [.08, .03, .02];
 
-    output.TURRETS = output.TURRETS ?? [];
-    output.TURRETS.push({
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    output.PROPS = output.PROPS ?? [];
+    output.PROPS.push({
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     });
 
     return output;
@@ -6977,70 +6992,197 @@ const makeAnimTank = (exportName, name, frame1, frame31, options = {}) => {
         animate(me, exportName, 31, duration, false, 0, entities);
     }
 }
-const makeHybrid = (type, name, options = {
-    isYoukron: false,
-    drone: 'drone',
-    isDrive: false
-}) => {
+const makeHybrid = (type, form = 'drone', options = {}) => {
     let output = deepCopy(type);
 
-    options.isYoukron = options.isYoukron ?? false;
-    options.drone = options.drone ?? 'drone';
-    options.isDrive = options.isDrive ?? false;
-
-    output.GUNS = output.GUNS || [];
-    output.GUNS.push({
-        POSITION: [7, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone/*, g.weak*/, g.less_reload]),
-            TYPE: [defExports[options.drone], {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: options.isYoukron ? 5 : 3
-        }
-    });
-
-    output.LABEL = name ?? (options.isYoukron ? 'Youkron ' : 'Hybrid ') + type.LABEL;
     if (output.DANGER < 7) output.DANGER++;
-    output.STAT_NAMES = statNames.generic;
-
-    if (options.isYoukron) output.SHAPE = 9;
-
-    if (options.isDrive) {
-        output.TURRETS = output.TURRETS ?? [];
-        output.TURRETS.push({
-            POSITION: [9, 0, 0, 0, 360, 1],
-            TYPE: defExports.squareProp
-        });
-    }
-
-    return output;
-};
-const makeHybridSwarm = (type, name) => {
-    let output = deepCopy(type);
-    output.LABEL = name || 'Swarming ' + type.LABEL;
-    if (output.DANGER < 7) output.DANGER++;
-    output.STAT_NAMES = statNames.generic;
+    output.BODY = options.body ?? type.BODY;
     output.GUNS = output.GUNS || [];
-    output.GUNS.push({
-        POSITION: [7, 7.5, .6, 7, 4, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 7, -4, 180, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    });
+    switch (form) {
+        default:
+        case 'drone':
+            output.LABEL = options.name ?? 'Hybrid ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [7, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta]),
+                    TYPE: [defExports.drone, { INDEPENDENT: true }],
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    MAX_CHILDREN: 3
+                }
+            });
+            break;
+        case 'youkron':
+            output.LABEL = options.name ?? 'Youkron ' + type.LABEL;
+            output.SHAPE = 9;
+            output.GUNS.push({
+                POSITION: [7, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta]),
+                    TYPE: [defExports.drone, { INDEPENDENT: true }],
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    MAX_CHILDREN: 5
+                }
+            });
+            break;
+        case 'over':
+            output.LABEL = options.name ?? 'Over' + type.LABEL.toLowerCase();
+            output.STATS_NAMES = statNames.generic;
+            output.GUNS.push({
+                POSITION: [6, 11, 1.2, 8, 0, 125, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
+                    TYPE: defExports.drone,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    MAX_CHILDREN: 3
+                }
+            }, {
+                POSITION: [6, 11, 1.2, 8, 0, 235, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
+                    TYPE: defExports.drone,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    MAX_CHILDREN: 3
+                }
+            });
+            break;
+        case 'swarm':
+            output.LABEL = options.name ?? 'Swarming ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [7, 7.5, .6, 7, 4, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
+                    TYPE: defExports.autoSwarm,
+                    STAT_CALCULATOR: gunCalcNames.swarm
+                }
+            }, {
+                POSITION: [7, 7.5, .6, 7, -4, 180, .5],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
+                    TYPE: defExports.autoSwarm,
+                    STAT_CALCULATOR: gunCalcNames.swarm
+                }
+            });
+            break;
+        case 'under':
+            output.LABEL = options.name ?? 'Under' + type.LABEL.toLowerCase();
+            output.SHAPE = 4;
+            output.STATS_NAMES = statNames.generic;
+            output.GUNS.unshift({
+                POSITION: [6, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
+                    TYPE: defExports.sunchip,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.necro,
+                    MAX_CHILDREN: 8
+                }
+            });
+            output.ON_DEALT_DAMAGE = (me, them) => {
+                necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
+            };
+            break;
+        case 'minion':
+            output.LABEL = options.name ?? 'Enacted ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [15, 10, 1, 0, 0, 180, 0]
+            }, {
+                POSITION: [1, 12, 1, 15, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory, g.meta]),
+                    TYPE: [defExports.minion, { INDEPENDENT: true }],
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    MAX_CHILDREN: 3,
+                    INDEPENDENT: true
+                }
+            }, {
+                POSITION: [11.5, 12, 1, 0, 0, 180, 0]
+            });
+            break;
+        case 'heavy':
+            output.LABEL = options.name ?? 'Crossbred ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [8, 14.5, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta, g.pound]),
+                    TYPE: defExports.drone,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    MAX_CHILDREN: 2
+                }
+            });
+            break;
+        case 'navy':
+            output.LABEL = options.name ?? 'Navy ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [7, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta, g.bit_less_damage]),
+                    TYPE: defExports.fastDrone,
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true
+                }
+            }, {
+                POSITION: [8, 15, -1.2, 5, 0, 180, 0]
+            });
+            break;
+        case 'drive':
+            output.LABEL = options.name ?? 'Drivebred ' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [7, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta]),
+                    TYPE: [defExports.autoDrone, { INDEPENDENT: true }],
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    MAX_CHILDREN: 2
+                }
+            });
+            output.PROPS = output.PROPS || [];
+            output.PROPS.push({
+                POSITION: [.55, 0, 0, 0, 1],
+                SHAPE: 4,
+                COLOR: 16
+            });
+            break;
+        case 'hoinfoda':
+            output.LABEL = options.name ?? 'Hoinfoda-' + type.LABEL;
+            output.GUNS.push({
+                POSITION: [7, 12, 1.2, 8, 0, 180, 0],
+                PROPERTIES: {
+                    SHOOT_SETTINGS: combineStats([g.drone, g.meta]),
+                    TYPE: [defExports.explodingDrone, { INDEPENDENT: true }],
+                    AUTOFIRE: true,
+                    SYNCS_SKILLS: true,
+                    STAT_CALCULATOR: gunCalcNames.drone,
+                    WAIT_TO_CYCLE: true,
+                    SKIN: 2,
+                    MAX_CHILDREN: 3
+                }
+            });
+            break;
+    };
+
     return output;
 };
 const makeGunnerFlank = (type, name, statSet = [g.blank]) => {
@@ -7555,7 +7697,8 @@ const makeMinesweep = (type, name = undefined, options = {}) => {
         radarColor = options.radarColor || 11,
         ringColor = options.ringColor || 9,
         aspect = options.aspect || 1,
-        ringLayer = options.ringLayer ?? 1;
+        ringLayer = options.ringLayer ?? 1,
+        radarLayer = options.radarLayer ?? 1;
     output.LABEL = name || `Naval ${output.LABEL}`;
     if (output.DANGER < 7) output.DANGER++;
     output.SEE_INVISIBLE = true;
@@ -7565,25 +7708,29 @@ const makeMinesweep = (type, name = undefined, options = {}) => {
     output.PROPS.push({
         POSITION: [1, 0, 0, 0, 0],
         SHAPE: 0,
+        TANK_ORIGIN: false,
         COLOR: ringColor
     }, {
         POSITION: [radarLength, 0, 0, 0, ringLayer],
         SHAPE: 0,
+        TANK_ORIGIN: false,
         COLOR: ringColor,
         RING: (radarLength - 0.1) / radarLength
     }, {
-        POSITION: [1, 0, 0, 0, 1],
+        POSITION: [1, 0, 0, 0, radarLayer],
         SHAPE: [
             [radarWidth, 0],
             [-radarWidth, 0],
             [-radarWidth * aspect, radarLength],
             [radarWidth * aspect, radarLength]
         ],
+        TANK_ORIGIN: false,
         RPM: -2.25,
         COLOR: radarColor
     }, {
-        POSITION: [radarWidth + 0.175, 0, 0, 0, 1],
+        POSITION: [radarWidth + 0.175, 0, 0, 0, radarLayer],
         SHAPE: 0,
+        TANK_ORIGIN: false,
         COLOR: radarColor
     });
     return output;
@@ -9210,10 +9357,11 @@ defExports.pentagon = {
     EVOLUTIONS: [
         ["pentagon", 80],
         ["greenPentagon", 5],
-        ["splitterPentagon", 8],
+        ["splitterPentagon", 7],
         ["boompentagon", 1],
         ["protpentagon", 1],
-        ["betaPentagon", 4.9979999],
+        ["cagepentagon", 1],
+        ["betaPentagon", 4.996],
         ["pentagonColony", 0.003],
         ["ascendedPentagonAI", .001]
     ]
@@ -10237,7 +10385,12 @@ defExports.fakeegg = {
 };*/
 defExports.singularEgg = {
     PARENT: [defExports.egg],
-    EVOLUTIONS: []
+    LABEL: 'Sanctuary Egg',
+    EVOLUTIONS: [],
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
 defExports.obsidianEgg = {
     PARENT: [defExports.egg],
@@ -10380,7 +10533,8 @@ defExports.eggSanctuary = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.no_recoil, g.smaller]),
             TYPE: defExports.singularEgg,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     HAS_NO_RECOIL: true,
@@ -10446,15 +10600,14 @@ defExports.snowballSanctuary = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.no_recoil, g.smaller]),
             TYPE: defExports.singularEgg,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     HAS_NO_RECOIL: true,
     GIVE_KILL_MESSAGE: true,
 	ON_DEAD: function ({ sockets, ran, Entity }) {
 		sockets.broadcast("The Snowball Sanctuary seems to have left something in its demise...");
-		let x = this.x,
-			y = this.y;
 		//smoke(6000, x, y);
 		setTimeout(() => {
 			let boss = new Entity({
@@ -10473,7 +10626,12 @@ defExports.snowballSanctuary = {
 };
 defExports.singularTriangle = {
     PARENT: [defExports.triangle],
+    LABEL: 'Sanctuary Triangle',
     EVOLUTIONS: [],
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
 defExports.carbonFiberTriangle = {
     PARENT: [defExports.singularTriangle],
@@ -10605,28 +10763,25 @@ defExports.triSanctuary = {
         POSITION: [4, 11, 1.2, 8, 0, 60, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularTriangle, {
-                LABEL: 'Sanctuary Triangle'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 180, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularTriangle, {
-                LABEL: 'Sanctuary Triangle'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 300, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularTriangle, {
-                LABEL: 'Sanctuary Triangle'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     HAS_NO_RECOIL: true,
@@ -10652,7 +10807,12 @@ defExports.triSanctuary = {
 };
 defExports.singularSquare = {
     PARENT: [defExports.square],
-    EVOLUTIONS: []
+    LABEL: 'Sanctuary Square',
+    EVOLUTIONS: [],
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
 defExports.scutiSquare = {
     PARENT: [defExports.singularSquare],
@@ -10775,37 +10935,33 @@ defExports.squareSanctuary = {
         POSITION: [4, 11, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularSquare, {
-                LABEL: 'Sanctuary Square'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularSquare,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 90, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularSquare, {
-                LABEL: 'Sanctuary Square'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularSquare,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 180, .50],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularSquare, {
-                LABEL: 'Sanctuary Square'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularSquare,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 270, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularSquare, {
-                LABEL: 'Sanctuary Square'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularSquare,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     HAS_NO_RECOIL: true,
@@ -10831,7 +10987,12 @@ defExports.squareSanctuary = {
 };
 defExports.singularPentagon = {
     PARENT: [defExports.pentagon],
-    EVOLUTIONS: []
+    LABEL: 'Sanctuary Pentagon',
+    EVOLUTIONS: [],
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
 defExports.pentaNest = {
     PARENT: [defExports.food],
@@ -10941,46 +11102,41 @@ defExports.pentaSanctuary = {
         POSITION: [4, 11, 1.2, 8, 0, 36, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularPentagon, {
-                LABEL: 'Sanctuary Pentagon'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularPentagon,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 108, .2],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularPentagon, {
-                LABEL: 'Sanctuary Pentagon'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularPentagon,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 180, .4],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularPentagon, {
-                LABEL: 'Sanctuary Pentagon'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularPentagon,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 252, .6],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularPentagon, {
-                LABEL: 'Sanctuary Pentagon'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularPentagon,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 324, .8],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller, g.sanctuaryPoly]),
-            TYPE: [defExports.singularPentagon, {
-                LABEL: 'Sanctuary Pentagon'
-            }],
-            AUTOFIRE: true
+            TYPE: defExports.singularPentagon,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     HAS_NO_RECOIL: true,
@@ -11028,7 +11184,8 @@ defExports.sunKing = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.no_recoil, g.smaller]),
             TYPE: defExports.singularEgg,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     GIVE_KILL_MESSAGE: true,
@@ -11567,7 +11724,7 @@ defExports.sunchip = {
      },
     HITS_OWN_TYPE: 'hardWithBuffer',
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.dorito = {
@@ -11575,7 +11732,7 @@ defExports.dorito = {
     LABEL: 'Dorito',
     SHAPE: 3,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Triangle']);
+        necroDrone(me, them, ['Triangle', 'Sanctuary Triangle']);
     }
 };
 defExports.pentaSunchip = {
@@ -11583,7 +11740,7 @@ defExports.pentaSunchip = {
     LABEL: 'Tortilla',
     SHAPE: 5,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Pentagon']);
+        necroDrone(me, them, ['Pentagon', 'Sanctuary Pentagon']);
     }
 };
 defExports.eggSunchip = {
@@ -11591,7 +11748,7 @@ defExports.eggSunchip = {
     LABEL: 'Cheeseball',
     SHAPE: 0,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Egg']);
+        necroDrone(me, them, ['Egg', 'Sanctuary Egg']);
     }
 };
 defExports.missile = {
@@ -11989,7 +12146,7 @@ defExports.machineAutoTurret2 = {
     GUNS: [{
         POSITION: [14, 11, 1.3, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.auto_turret, g.less_reload, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.auto_turret, g.bn4d, g.bit_slow]),
             TYPE: [defExports.bulletLayer6, {
                 PERSISTS_AFTER_DEATH: true
             }]
@@ -13041,34 +13198,11 @@ defExports.clicker3gun = {
     COLOR: 16,
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.auto, g.little_bit_bigger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.auto, g.little_bit_bigger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.auto, g.little_bit_bigger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.auto, g.little_bit_bigger]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.auto, g.little_bit_bigger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -14780,7 +14914,7 @@ defExports.penta = {
         }
     }]
 };
-defExports.bentHybrid = makeHybrid(defExports.bent, 'Bent Hybrid');
+defExports.bentHybrid = makeHybrid(defExports.bent, 'drone', { name: 'Bent Hybrid' });
 defExports.triplet = {
     PARENT: [defExports.genericTank],
     LABEL: 'Triplet',
@@ -15109,7 +15243,7 @@ defExports.predator = {
         }
     }]
 };
-defExports.poach = makeHybrid(defExports.hunter, 'Poacher');
+defExports.poach = makeHybrid(defExports.hunter, 'drone', { name: 'Poacher' });
 defExports.rocketeer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Rocketeer',
@@ -15537,49 +15671,25 @@ defExports.commanderArras = {
         }
     }]
 };
-defExports.overtrap = {
+defExports.overtrap = makeHybrid({
     PARENT: [defExports.genericTank],
-    LABEL: 'Overtrapper',
-    DANGER: 7,
+    DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
         FOV: 1.15
     },
-    STAT_NAMES: statNames.generic,
     GUNS: [{
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
         POSITION: [13, 8, 1, 0, 0, 0, 0]
     }, {
         POSITION: [4, 8, 1.7, 13, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap]),
+            SHOOT_SETTINGS: combineStats([g.trap, g.more_range, g.less_spread]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }]
-};
+}, 'over', { name: 'Overtrapper' });
 defExports.banshee = {
     PARENT: [defExports.genericTank],
     LABEL: 'Banshee',
@@ -15636,39 +15746,15 @@ defExports.banshee = {
     }]
 };
 defExports.autoOverseer = makeAuto(defExports.overseer); //Autoseer
-defExports.overgunner = {
+defExports.overgunner = makeHybrid({
     PARENT: [defExports.genericTank],
-    LABEL: 'Overgunner',
     DANGER: 7,
-    STAT_NAMES: statNames.generic,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
         FOV: 1.1
     },
     GUNS: [{
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil]),
@@ -15683,7 +15769,7 @@ defExports.overgunner = {
     }, {
         POSITION: [12, 11, 1, 0, 0, 0, 0]
     }]
-};
+}, 'over', { name: 'Overgunner' });
 defExports.cruiser = {
     PARENT: [defExports.genericTank],
     LABEL: 'Cruiser',
@@ -15953,7 +16039,7 @@ defExports.underseer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Underseer',
     DANGER: 6,
-    STAT_NAMES: statNames.drone,
+    STAT_NAMES: statNames.necro,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
@@ -15981,7 +16067,7 @@ defExports.underseer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.autoUnderseer = makeAuto(defExports.underseer);
@@ -16038,7 +16124,7 @@ defExports.necromancer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 const miniSummonerSunchip = {
@@ -16052,7 +16138,7 @@ defExports.minisummoner = {
     PARENT: [defExports.genericTank],
     LABEL: 'Mini Summoner',
     DANGER: 7,
-    STAT_NAMES: statNames.drone,
+    STAT_NAMES: statNames.necro,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
@@ -16304,7 +16390,7 @@ defExports.overfire = {
         }
     }
 };
-defExports.hybridMini = makeHybrid(defExports.mini, 'Cropduster');
+defExports.hybridMini = makeHybrid(defExports.mini, 'drone', { name: 'Cropduster' });
 defExports.minitrap = {
     PARENT: [defExports.genericTank],
     //LABEL: 'Minigun Trapper',
@@ -16474,7 +16560,7 @@ defExports.gigahiveShooter = {
         POSITION: [10, 10, -1.1, 5, 0, 0, 0],
     },]
 };
-defExports.hybrid = makeHybrid(defExports.destroyer, 'Hybrid');
+defExports.hybrid = makeHybrid(defExports.destroyer, 'drone', { name: 'Hybrid' });
 defExports.shotgun = {
     PARENT: [defExports.genericTank],
     LABEL: 'Shotgun',
@@ -17503,10 +17589,7 @@ defExports.copenhagen = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }]
+    PROPS: [makeShell()]
 };
 defExports.guntrap = {
     PARENT: [defExports.genericTank],
@@ -18291,9 +18374,11 @@ defExports.developer_parent = {
     TURRETS: [{
         POSITION: [11, 0, 0, 0, 361, 1],
         TYPE: defExports.devAnniAutoGun
-    }, {
-        POSITION: [23, 0, 0, 0, 0, 0],
-        TYPE: defExports.developerBody
+    }],
+    PROPS: [{
+        POSITION: [1.1, 0, 0, 20, 0],
+        SHAPE: 9,
+        COLOR: 16
     }]
 };
 defExports.testbed_parent = {
@@ -18322,8 +18407,9 @@ function branch(exportName, name, tanks, parent = "developer_parent", tier = "UP
             console.log("Branch", name, "found undefined at index", i);
             continue;
         }
+        let n = i < 16 ? 15 : 14;
         splits[splits.length - 1].push(tanks[i]);
-        if (splits[splits.length - 1].length >= 14 && splits.flat().length < tanks.length) {
+        if (splits[splits.length - 1].length >= n && splits.flat().length < tanks.length) {
             splits.push([]);
         }
     }
@@ -18342,6 +18428,7 @@ function branch(exportName, name, tanks, parent = "developer_parent", tier = "UP
         if (defExports[`${exportName}${i + 1}`] != null) {
             defExports[`${exportName}${i === 0 ? "" : i}`][tier].push(defExports[`${exportName}${i + 1}`]);
         }
+        if (i > 0) defExports[`${exportName}${i}`][tier].unshift(defExports[`${exportName}${i === 1 ? "" : i - 1}`]);
     }
 }
 defExports.testbed = {
@@ -18362,7 +18449,7 @@ defExports.event_bed = {
 for (let i = 1; i < 11; i++) defExports[`testbed_boss_${i + 1}`] = {
     PARENT: [defExports.developer_parent],
     LABEL: `Page ${i + 1}`
-};*/
+};
 defExports.testbed_dominator = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Dominators'
@@ -18371,14 +18458,14 @@ defExports.testbed_sentry = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Sentries'
 };
-/*defExports.testbed_misc = {
+defExports.testbed_misc = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Miscellaneous'
 };
 for (let i = 1; i < 12; i++) defExports[`testbed_misc_${i + 1}`] = {
     PARENT: [defExports.developer_parent],
     LABEL: `Page ${i + 1}`
-};*/
+};
 defExports.testbed_custom_shapes = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Custom Shapes'
@@ -18387,18 +18474,18 @@ for (let i = 1; i < 5; i++) defExports[`testbed_custom_shapes_${i + 1}`] = {
     PARENT: [defExports.developer_parent],
     LABEL: `Page ${i + 1}`
 };
-/*defExports.testbed_removed = {
+defExports.testbed_removed = {
     PARENT: [defExports.testbed_parent],
     LABEL: 'Removed Tanks'
 };
 for (let i = 1; i < 9; i++) defExports[`testbed_removed_${i + 1}`] = {
     PARENT: [defExports.testbed_parent],
     LABEL: `Page ${i + 1}`
-};*/
-/*defExports.testbed_awp = {
+};
+defExports.testbed_awp = {
     PARENT: [defExports.developer_parent],
     LABEL: 'AWPs'
-};*/
+};
 defExports.testbed_sanctuaries = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Sanctuaries'
@@ -18407,7 +18494,7 @@ defExports.testbed_X_K_X_bosses = {
     PARENT: [defExports.developer_parent],
     LABEL: 'X-K-X Bosses'
 };
-/*defExports.testbed_primes = {
+defExports.testbed_primes = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Tertia'
 };
@@ -18422,7 +18509,7 @@ defExports.testbed_primes_controls = {
 defExports.testbed_primes_bosses = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Tertia Bosses'
-};/*/
+};
 defExports.testbed_misc_laggy = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Overdone Tanks' // Misc (Laggy)
@@ -18446,7 +18533,7 @@ defExports.testbed_ceptionist = {
 defExports.testbed_ceptionist_2 = {
     PARENT: [defExports.developer_parent],
     LABEL: 'Page 2'
-};
+};*/
 
 defExports.blitzkrieg = makeAuto({
     PARENT: [defExports.genericTank],
@@ -19762,41 +19849,14 @@ defExports.fallenBoosterAI = {
     },
     BROADCAST_MESSAGE: 'A Fallen Booster has been defeated!'
 };
-defExports.sent = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Sentinel',
-    DANGER: 7,
-    STAT_NAMES: statNames.drone,
-    BODY: {
+defExports.sent = makeHybrid(defExports.assassin, 'under', {
+    name: 'Sentinel',
+    body: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
         FOV: 1.35
-    },
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [32, 8.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin]),
-            TYPE: defExports.bullet
-            //ALT_FIRE: true
-        }
-    }, {
-        POSITION: [5, 8.5, -1.6, 8, 0, 0, 0]
-    }, {
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 10
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 2);
-    }
-};
+    } 
+});
 defExports.seek = {
     PARENT: [defExports.genericTank],
     LABEL: 'Seeker',
@@ -20621,13 +20681,13 @@ defExports.hephaestus = {
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 8.3, 0, .2],
+        POSITION: [30, 1.5, 1, 0, 8, 0, .2],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin, g.less_power, g.less_damage]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 8.3, 0, .7],
+        POSITION: [30, 1.5, 1, 0, 8, 0, .7],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin, g.less_power, g.less_damage]),
             TYPE: defExports.bullet
@@ -20681,13 +20741,13 @@ defExports.hephaestus = {
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -8.3, 0, .2],
+        POSITION: [30, 1.5, 1, 0, -8, 0, .2],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin, g.less_power, g.less_damage]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -8.3, 0, .7],
+        POSITION: [30, 1.5, 1, 0, -8, 0, .7],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin, g.less_power, g.less_damage]),
             TYPE: defExports.bullet
@@ -22278,31 +22338,7 @@ defExports.polyamorous2 = {
     }, {
         POSITION: [9, 0, 0, 0, 361, 1],
         TYPE: defExports.sorcererLayer
-    },],
-	ON_DEAD: function({ sockets, ran, Entity}){
-		sockets.broadcast("It will stop at nothing to seek what it came for, not even its own grave...");
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("The Mysticals have arrived!");
-			let positions = [
-				[x + 110, y, -110, 0],
-				[x - 110, y, 110, 0],
-				[x, y + 110, 0, -110],
-				[x, y - 110, 0, 110]
-			];
-			for (let i = 0; i < 4; i++) {
-				let mystical = new Entity({
-					x: positions[i][0],
-					y: positions[i][1]
-				});
-				mystical.team = this.team;
-				mystical.control.target.x = positions[i][2];
-				mystical.control.target.y = positions[i][3];
-				mystical.define([Class.sorcererAI, Class.summonerAI, Class.enchantressAI, Class.exorcistorAI][i]);
-			}
-		}, 4000);
-	}
+    }]
 };
 for (let i = 0; i < 5; i++) defExports.polyamorous2.GUNS.push({
     POSITION: [3.5, 8.65, 1.2, 8, 0, i * 72 + 36, i / 5],
@@ -24490,9 +24526,10 @@ defExports.griefer = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.anhalt = {
@@ -24530,11 +24567,10 @@ defExports.anhalt = {
         }
     }],
     TOOLTIP: "Hold right click to teleport at the cost of some of your HP",
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: [defExports.triangleProp, {
-            COLOR: 166
-        }]
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 166
     }]
 };
 defExports.halfReloadMissile = {
@@ -25395,7 +25431,7 @@ defExports.squareBossTier3 = {
         }]
     }]
 };
-defExports.guardSpreadling = makeHybrid(defExports.miniSpread, 'Spreadguard');
+defExports.guardSpreadling = makeHybrid(defExports.miniSpread, 'drone', { name: 'Spreadguard' });
 defExports.boxer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Boxer',
@@ -26483,7 +26519,7 @@ defExports.fogseer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 3);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 3);
     }
 };
 defExports.heatSwarmMissile = {
@@ -32573,11 +32609,11 @@ defExports.autoBorer = makeAuto(defExports.borer);
 defExports.autoPunt = makeAuto(defExports.punt);
 defExports.autoHewnPellet = makeAuto(defExports.hewnPellet);
 defExports.autoSail = makeAuto(defExports.sail, 'Yacht');
-defExports.hybridPellet = makeHybrid(defExports.pellet);
-defExports.hybridBorer = makeHybrid(defExports.borer);
-defExports.hybridPunt = makeHybrid(defExports.punt, 'Spitter');
-defExports.hybridHewnPellet = makeHybrid(defExports.hewnPellet, 'Blabber');
-defExports.hybridSail = makeHybrid(defExports.sail);
+defExports.hybridPellet = makeHybrid(defExports.pellet, 'drone');
+defExports.hybridBorer = makeHybrid(defExports.borer, 'drone');
+defExports.hybridPunt = makeHybrid(defExports.punt, 'drone', { name: 'Spitter' });
+defExports.hybridHewnPellet = makeHybrid(defExports.hewnPellet, 'drone', { name: 'Blabber' });
+defExports.hybridSail = makeHybrid(defExports.sail, 'drone');
 defExports.eagle = {
     PARENT: [defExports.genericTank],
     LABEL: 'Eagle',
@@ -33364,34 +33400,11 @@ defExports.clicker = {
         FOV: 1.2
     },
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -33412,31 +33425,8 @@ defExports.rifleClicker = {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }]
 };
@@ -33450,34 +33440,11 @@ defExports.megaClicker = {
         FOV: 1.2
     },
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1.1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [10, 8.5, -1.4, 5, 0, 0, 0]
@@ -33493,34 +33460,11 @@ defExports.longClicker = {
         FOV: 1.3
     },
     GUNS: [{
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [26, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -36340,9 +36284,9 @@ defExports.constructionist = {
     }]
 };
 defExports.autoRifle = makeAuto(defExports.rifle, 'Triggerman');
-defExports.hybridRifle = makeHybrid(defExports.rifle, 'Marksman');
-defExports.hybridBuilder = makeHybrid(defExports.builder, 'Harvester');
-defExports.hybridAssassin = makeHybrid(defExports.assassin, 'Assassinator');
+defExports.hybridRifle = makeHybrid(defExports.rifle, 'drone', { name: 'Marksman' });
+defExports.hybridBuilder = makeHybrid(defExports.builder, 'drone', { name: 'Harvester' });
+defExports.hybridAssassin = makeHybrid(defExports.assassin, 'drone', { name: 'Assassinator' });
 defExports.devastator = {
     PARENT: [defExports.genericTank],
     LABEL: 'Devastator',
@@ -36639,7 +36583,7 @@ defExports.plow = {
         }
     }]
 };
-defExports.crusher = makeHybrid(defExports.obliterator, 'Crusher');
+defExports.crusher = makeHybrid(defExports.obliterator, 'drone', { name: 'Crusher' });
 defExports.bulldozer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Bulldozer',
@@ -36768,55 +36712,22 @@ defExports.miniClicker = {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -38607,7 +38518,7 @@ defExports.comet = {
     DANGER: 8,
     SIZE: 22,
     COLOR: 0,
-    FACING_TYPE: 'smoothWithMotion',
+    FACING_TYPE: 'smoothToTarget',
     BODY: {
         FOV: .96,
         SPEED: 2.5,
@@ -38763,7 +38674,7 @@ defExports.cometbetter = {
     DANGER: 8,
     SIZE: 28,
     COLOR: 223,
-    FACING_TYPE: 'smoothWithMotion',
+    FACING_TYPE: 'smoothToTarget',
     BODY: {
         FOV: .96,
         SPEED: 3,
@@ -40987,9 +40898,10 @@ defExports.overdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.skimBossAI = {
@@ -41219,7 +41131,7 @@ defExports.trapSkimmer = {
         }
     }]
 };
-defExports.hybridArtillery = makeHybrid(defExports.artillery, 'General');
+defExports.hybridArtillery = makeHybrid(defExports.artillery, 'drone', { name: 'General' });
 defExports.autoSwarmGun = {
     LABEL: '',
     BODY: {
@@ -42789,7 +42701,7 @@ defExports.AWP_Prop_1 = {
         POSITION: [4, 6.7, 1, 7.3, -4.7, 270, 0]
     }]
 };
-defExports.hybridShiftAuto = makeHybrid(defExports.hunterAuto, 'Hybrid Shifter');
+defExports.hybridShiftAuto = makeHybrid(defExports.hunterAuto, 'drone', { name: 'Hybrid Shifter' });
 defExports.sniperAutoGun2 = {
     LABEL: 'Sniper',
     BODY: {
@@ -44199,28 +44111,14 @@ defExports.multitool1 = {
         }
     }]
 };
-defExports.undergunner = {
+defExports.undergunner = makeHybrid({
     PARENT: [defExports.genericTank],
-    LABEL: 'Undergunner',
-    DANGER: 7,
-    STAT_NAMES: statNames.generic,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
         FOV: 1.1
     },
-    SHAPE: 4,
     GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
@@ -44234,46 +44132,15 @@ defExports.undergunner = {
         }
     }, {
         POSITION: [12, 11, 1, 0, 0, 0, 0]
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
-    }
-};
-defExports.undertrap = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Undertrapper',
-    DANGER: 7,
-    STAT_NAMES: statNames.generic,
-    BODY: {
+    }]
+}, 'under', { name: 'Undergunner' });
+defExports.undertrap = makeHybrid(defExports.trapper, 'under', {
+    body: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
         FOV: 1.15
-    },
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [13, 8, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [4, 8, 1.7, 13, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap]),
-            TYPE: defExports.trap,
-            STAT_CALCULATOR: gunCalcNames.trap
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
 defExports.commander = {
     PARENT: [defExports.genericTank],
     //LABEL: '[MG] Master',
@@ -45228,7 +45095,6 @@ defExports.splitSummonerCore = {
 defExports.summonerAI = {
     PARENT: [defExports.summoner],
     TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
     LEVEL: 60,
     CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
     //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
@@ -45250,7 +45116,7 @@ defExports.summonerAI = {
                     } else sockets.broadcast("The Summoner has been consoled just in time...");
                 }, 5000);
             }
-        }, 90000);
+        }, 600000);
     }
 };
 defExports.splitterSummoner = {
@@ -46197,11 +46063,12 @@ defExports.megaAnnihilator = {
         SPEED: base.SPEED * .9
     },
     GUNS: [{
-        POSITION: [21, 19.5, 1.2, 0, 0, 0, 0],
+        POSITION: [21, 20, 1.2, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize]),
             TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'decentralize'
+                MOTION_TYPE: 'decentralize',
+                VARIABLES: { addedSize: 0 }
             }]
         }
     }]
@@ -46984,9 +46851,10 @@ defExports.overwork = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.hottershot = {
@@ -47028,7 +46896,7 @@ defExports.hottershot = {
         }
     }]
 };
-defExports.hybridStream = makeHybrid(defExports.stream, 'Seeder');
+defExports.hybridStream = makeHybrid(defExports.stream, 'drone', { name: 'Seeder' });
 defExports.builderMinion = {
     PARENT: [defExports.minion],
     LABEL: 'Builder Minion',
@@ -47204,39 +47072,33 @@ defExports.siloStream = {
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
-        POSITION: [38, 8, 1, 0, 0, 0, 0],
+        POSITION: [34, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [34, 8, 1, 0, 0, 0, 1 / 6],
+        POSITION: [30, 8, 1, 0, 0, 0, .2],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 8, 1, 0, 0, 0, 2 / 6],
+        POSITION: [26, 8, 1, 0, 0, 0, .4],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.much_less_knock]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 8, 1, 0, 0, 0, 3 / 6],
+        POSITION: [22, 8, 1, 0, 0, 0, .6],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [22, 8, 1, 0, 0, 0, 4 / 6],
+        POSITION: [18, 8, 1, 0, 0, 0, .8],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [18, 8, 1, 0, 0, 0, 5 / 6],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
@@ -47478,8 +47340,9 @@ defExports.malefictDrone = {
     AI: {
      },
     ALWAYS_ACTIVE: true,
+    INVISIBLE: [.06, .02, .03],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.maleficitor = {
@@ -47498,16 +47361,14 @@ defExports.maleficitor = {
         POSITION: [5, 12, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.malefict]),
-            TYPE: [defExports.malefictDrone, {
-                INVISIBLE: [.06, .02, .03]
-            }],
+            TYPE: defExports.malefictDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.gundrive = {
@@ -47557,9 +47418,10 @@ defExports.gundrive = {
     }, {
         POSITION: [12, 11, 1, 0, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.trapdrive = {
@@ -47604,9 +47466,10 @@ defExports.trapdrive = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.harddrive = {
@@ -47632,9 +47495,10 @@ defExports.harddrive = {
             COLOR_UNMIX: 2
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.hyperdrive = {
@@ -47669,9 +47533,10 @@ defExports.hyperdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 45, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.juggernaut = {
@@ -47878,7 +47743,7 @@ defExports.fatFactory = {
         POSITION: [6, 15, 1, 6, 0, 0, 0]
     }]
 };
-defExports.hybridBarricade = makeHybrid(defExports.minitrap, 'Divider');
+defExports.hybridBarricade = makeHybrid(defExports.minitrap, 'drone', { name: 'Divider' });
 defExports.heavyDouble = {
     PARENT: [defExports.genericTank],
     LABEL: 'Knocker',
@@ -48266,7 +48131,7 @@ defExports.machineSingle = {
     }]
 };
 defExports.autoSingle = makeAuto(defExports.single);
-defExports.hybridSingle = makeHybrid(defExports.single);
+defExports.hybridSingle = makeHybrid(defExports.single, 'drone');
 defExports.flankSingle = {
     PARENT: [defExports.genericTank],
     LABEL: 'Tri-Single',
@@ -48429,7 +48294,7 @@ defExports.deca = {
         }
     }]
 };
-defExports.anniHybrid = makeHybrid(defExports.annihilator, 'Annybrid');
+defExports.anniHybrid = makeHybrid(defExports.annihilator, 'drone', { name: 'Annybrid' });
 defExports.twinTrapperConq = {
     PARENT: [defExports.genericTank],
     LABEL: 'Hewn Trapper',
@@ -49751,9 +49616,10 @@ defExports.drivenaught = {
             STAT_CALCULATOR: gunCalcNames.drone
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.machAutoBullet = makeAuto(defExports.bullet, 'Anticipating Bullet', {
@@ -49938,9 +49804,10 @@ defExports.invisianni = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.pistol = {
@@ -50304,39 +50171,13 @@ defExports.pelletception = makeAuto(defExports.pellet, 'Pelletception', { // mak
     //size: 11
 });
 defExports.destroyception = makeCeption(defExports.destroyer, 'Destroyception');
-defExports.overdriveHybrid = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Drivebrid',
-    DANGER: 7,
-    BODY: {
+defExports.overdriveHybrid = makeHybrid(defExports.destroyer, 'drive', {
+    name: 'Drivebrid',
+    body: {
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .7
-    },
-    GUNS: [{
-        POSITION: [21, 14, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [7, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.weak, g.bit_slow]),
-            TYPE: [defExports.autoDrone, {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 2
-        }
-    }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
-    }]
-};
+    }
+});
 defExports.gatlingMachGunner = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gatling Gunner',
@@ -50458,7 +50299,7 @@ defExports.floodStream = {
         }
     }]
 };
-defExports.hybridFlooder = makeHybrid(defExports.flooder, 'Grainer');
+defExports.hybridFlooder = makeHybrid(defExports.flooder, 'drone', { name: 'Grainer' });
 defExports.puntStream = {
     PARENT: [defExports.genericTank],
     LABEL: 'Punt Streamer',
@@ -50745,7 +50586,7 @@ defExports.pentamancer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Pentagon'], 0);
+        necroRam(me, them, ['Pentagon', 'Sanctuary Pentagon'], 0);
     }
 };
 defExports.blockMissile = {
@@ -50870,9 +50711,10 @@ defExports.overdriveMaster = {
             MAX_CHILDREN: 4 // 5
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.staplegun = {
@@ -50919,7 +50761,7 @@ defExports.staplegun = {
 };
 defExports.invisispike = {
     PARENT: [defExports.genericTank],
-    LABEL: 'Booby Trap', //Landspike
+    LABEL: 'Booby Trap',
     INVISIBLE: [.08, .01, .02],
     DANGER: 7,
     BODY: {
@@ -50930,13 +50772,18 @@ defExports.invisispike = {
         HEALTH: base.HEALTH * 1.4,
         SHIELD: base.SHIELD * 1.4
     },
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.weirdSpikeBody1
-    }, {
-        POSITION: [20.5, 0, 0, 180, 360, 0],
-        TYPE: defExports.weirdSpikeBody2
-    }],
+	PROPS: [
+		makeShell({
+			size: 1.3,
+			shape: 3
+		}),
+		makeShell({
+			size: 1.3,
+			shape: 3,
+			angle: 180,
+			rpm: -2
+		})
+	],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
@@ -50956,22 +50803,32 @@ defExports.chainsaw = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [20, 0, 0, 0, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20, 0, 0, 72, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20, 0, 0, 144, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20, 0, 0, -144, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20, 0, 0, -72, 360, 0],
-        TYPE: defExports.spikeBody
-    }]
+    PROPS: [
+        makeShell({
+            size: 1.05,
+            shape: -4
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+            angle: 72
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+			angle: 144
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+            angle: 216
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+            angle: 288
+        })
+    ]
 };
 defExports.overmaster = {
     PARENT: [defExports.genericTank],
@@ -51179,7 +51036,7 @@ defExports.pentaBlaster = {
         }
     }]
 };
-defExports.bentBlasterHybrid = makeHybrid(defExports.bentBlaster, 'Twisted Hybrid');
+defExports.bentBlasterHybrid = makeHybrid(defExports.bentBlaster, 'drone', { name: 'Twisted Hybrid' });
 defExports.twinDestroyer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Twin Destroyer',
@@ -52434,7 +52291,7 @@ defExports.pentaTrapper = {
         }
     }]
 };
-defExports.flankEngineer = {
+defExports.flankGuardEngineer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Deviser',
     DANGER: 7,
@@ -53008,16 +52865,20 @@ defExports.megamine = {
     },
     STAT_NAMES: statNames.smasher,
     INVISIBLE: [.08, .01, .02],
+    PROPS: [
+        makeShell({
+			size: 1.12,
+			shape: -6
+		}),
+        makeShell({
+			size: 1.12,
+			shape: -6,
+            rpm: 2
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 330, 0],
-        TYPE: defExports.megamineBody
-    }, {
-        POSITION: [24, 0, 0, 90, 360, 0],
-        TYPE: defExports.megaSmashBody
-    }]
+    STAT_NAMES: statNames.smasher
 };
 defExports.gigaSmash = {
     PARENT: [defExports.genericTank],
@@ -53034,10 +52895,12 @@ defExports.gigaSmash = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [26, 0, 0, 0, 360, 0],
-        TYPE: defExports.megaSmashBody
-    }]
+    PROPS: [
+        makeShell({
+            size: 1.24,
+            shape: -6
+        })
+    ]
 };
 defExports.constructArtillery = {
     PARENT: [defExports.genericTank],
@@ -53087,91 +52950,36 @@ defExports.streamClicker = {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [22, 4, 1, 0, 0, 0, .2],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, .2],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, .2],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [20, 4, 1, 0, 0, 0, .4],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, .4],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, .4],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [18, 4, 1, 0, 0, 0, .6],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [18, 4, 1, 0, 0, 0, .6],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [18, 4, 1, 0, 0, 0, .6],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [16, 4, 1, 0, 0, 0, .8],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [16, 4, 1, 0, 0, 0, .8],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [16, 4, 1, 0, 0, 0, .8],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stream, g.stronger]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -53190,105 +52998,30 @@ defExports.miniPuncher = {
         POSITION: [24, 4, 1.1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1.1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1.1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [22, 4, 1.1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1.1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 4, 1.1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [20, 4, 1.1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1.1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 4, 1.1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.power, g.slow, g.bit_slow, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [10, 8.5, -1.4, 5, 0, 0, 0]
     }]
 };
 defExports.autoStream = makeAuto(defExports.stream, 'Streamerliner'); // Fountain
-defExports.hybridSilo = makeHybrid(defExports.silo, 'Granuler', {
-    isYoukron: true
-});
-defExports.hybridSealer = makeHybrid({
-    PARENT: [defExports.genericTank],
-    DANGER: 7,
-    BODY: {
-        FOV: 1.4,
-        ACCELERATION: base.ACCEL * .75
-    },
-    GUNS: [{
-        POSITION: [34, 8, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [30, 8, 1, 0, 0, 0, .2],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [26, 8, 1, 0, 0, 0, .4],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [22, 8, 1, 0, 0, 0, .6],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [18, 8, 1, 0, 0, 0, .8],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.mini, g.stream, g.faster, g.much_less_knock]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [5, 8, -1.6, 8, 0, 0, 0]
-    }]
-}, 'Farmer');
+defExports.hybridSilo = makeHybrid(defExports.silo, 'drone', { name: 'Granuler' });
+defExports.hybridSealer = makeHybrid(defExports.siloStream, 'drone', { name: 'Farmer' });
 defExports.biohazard = {
     PARENT: [defExports.genericTank],
     LABEL: 'Biohazard',
@@ -53385,31 +53118,8 @@ defExports.trapClicker = {
         POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.trap
+            TYPE: defExports.trap,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -53418,41 +53128,7 @@ defExports.trapClicker = {
 defExports.buildception = makeAuto(defExports.builder, 'Blockception', {
     type: defExports.builderAutoTurret
 });
-defExports.drivebridRifle = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Longshot',
-    DANGER: 7,
-    BODY: {
-        FOV: 1.225,
-        ACCELERATION: base.ACCEL * .75
-    },
-    GUNS: [{
-        POSITION: [20, 10.5, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [24, 7, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [7, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.weak, g.bit_slow, g.bit_less_damage]),
-            TYPE: [defExports.autoDrone, {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 2
-        }
-    }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
-    }]
-};
+defExports.drivebridRifle = makeHybrid(defExports.rifle, 'drive', { name: 'Longshot' });
 defExports.gigaClicker = {
     PARENT: [defExports.genericTank],
     LABEL: 'Socker',
@@ -53560,55 +53236,22 @@ defExports.miniClipper = {
         POSITION: [25, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini, g.more_power]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [25, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [23, 4, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini, g.more_power]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [21, 4, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini, g.more_power]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [21, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [21, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.click, g.faster, g.mini]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -53840,9 +53483,10 @@ defExports.invisiCarrier = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.engineerContagion = {
@@ -54007,9 +53651,9 @@ for (let i = 0; i < 6; i++) defExports.hexahedron.TURRETS = defExports.hexahedro
     POSITION: [4.5, 6.25, 0, i * 60 + 30, 360, 1],
     TYPE: defExports.smotherAutoGun
 });
-defExports.tripletHybrid = makeHybrid(defExports.triplet, 'Tribrid');
-defExports.pentaHybrid = makeHybrid(defExports.penta, 'Pentabrid');
-defExports.seekerHybrid = makeHybrid(defExports.seek, 'Senser');
+defExports.tripletHybrid = makeHybrid(defExports.triplet, 'drone', { name: 'Tribrid' });
+defExports.pentaHybrid = makeHybrid(defExports.penta, 'drone', { name: 'Pentabrid' });
+defExports.seekerHybrid = makeHybrid(defExports.seek, 'drone', { name: 'Senser' });
 defExports.bentOverdrive = {
     PARENT: [defExports.genericTank],
     LABEL: 'Bent Overdrive',
@@ -54049,9 +53693,10 @@ defExports.bentOverdrive = {
             MAX_CHILDREN: 2
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.flankPenta = {
@@ -54287,9 +53932,10 @@ defExports.cruisedrive = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.pentaSeeker = {
@@ -54378,9 +54024,10 @@ defExports.invisimaster = {
             MAX_CHILDREN: 6
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 0, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.masterBanshee = {
@@ -55348,82 +54995,20 @@ defExports.awp_33 = {
         TYPE: defExports.obliteratorAutoGun2
     }]
 };
-defExports.overbuild = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Overbuilder',
-    DANGER: 7,
-    BODY: {
+defExports.overbuild = makeHybrid(defExports.builder, 'over', {
+    body: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
         FOV: 1.175
-    },
-    STAT_NAMES: statNames.generic,
-    GUNS: [{
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [18, 12, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [2, 12, 1.1, 18, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.less_power]),
-            TYPE: defExports.block
-        }
-    }]
-};
-defExports.underbuild = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Underbuilder',
-    DANGER: 7,
-    BODY: {
-        ACCELERATION: base.ACCEL * .6,
-        SPEED: base.SPEED * .75,
-        FOV: 1.175
-    },
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [18, 12, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [2, 12, 1.1, 18, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.less_power]),
-            TYPE: defExports.block
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
+defExports.underbuild = makeHybrid(defExports.builder, 'under', {
+    body: {
+        ACCELERATION: base.ACCEL * .6,
+        SPEED: base.SPEED * .75,
+        FOV: 1.175
+    }
+});
 defExports.builderBomber = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dropper',
@@ -56450,31 +56035,8 @@ defExports.megaTrapClicker = {
         POSITION: [2.5, 6.5, 1.4, 23, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.power, g.sniper, g.click, g.slow, g.bit_slow]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 6.5, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.power, g.sniper, g.click, g.slow, g.bit_slow]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 6.5, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.power, g.sniper, g.click, g.slow, g.bit_slow]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 6.5, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.power, g.sniper, g.click, g.slow, g.bit_slow]),
-            TYPE: defExports.trap
-        }
-    }, {
-        POSITION: [2.5, 6.5, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.power, g.sniper, g.click, g.slow, g.bit_slow]),
-            TYPE: defExports.trap
+            TYPE: defExports.trap,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 9.5, -1.3, 5, 0, 0, 0]
@@ -56483,8 +56045,8 @@ defExports.megaTrapClicker = {
 defExports.autoFighter = makeAuto(defExports.fighter, 'Whirler');
 defExports.autoPoundAngle = makeAuto(defExports.poundAngle, 'Crammer');
 defExports.autoSurfer = makeAuto(defExports.surfer, 'Jetski');
-defExports.hybridSkimmer = makeHybrid(defExports.skimmer, 'Skimbrid');
-defExports.hybridMiniHunter = makeHybrid(defExports.miniHunter);
+defExports.hybridSkimmer = makeHybrid(defExports.skimmer, 'drone', { name: 'Skimbrid' });
+defExports.hybridMiniHunter = makeHybrid(defExports.miniHunter, 'drone');
 defExports.rocketFighter = {
     PARENT: [defExports.genericTank],
     LABEL: 'Missile',
@@ -56579,7 +56141,7 @@ defExports.trapFighter = {
         }
     }]
 };
-defExports.hybridPredator = makeHybrid(defExports.predator, 'Tracker');
+defExports.hybridPredator = makeHybrid(defExports.predator, 'drone', { name: 'Tracker' });
 defExports.healMinion = {
     PARENT: [defExports.minion],
     LABEL: 'Healing Minion',
@@ -57316,9 +56878,10 @@ defExports.surfdrive = {
             STAT_CALCULATOR: gunCalcNames.thruster
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.huntguard = {
@@ -58587,43 +58150,19 @@ defExports.assassinSilo = {
         POSITION: [5, 8.5, -1.6, 8, 0, 0, 0]
     }]
 };
-defExports.underPounder = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Barracks',
-    DANGER: 7,
-    BODY: {
+defExports.underPounder = makeHybrid(defExports.pounder, 'under', {
+    name: 'Barracks',
+    body: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
         FOV: 1.1
-    },
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [20, 12, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
 defExports.elamficitor = {
     PARENT: [defExports.genericTank],
     LABEL: 'Elamficitor',
     DANGER: 7,
-    STAT_NAMES: statNames.drone,
+    STAT_NAMES: statNames.necro,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
@@ -58652,7 +58191,7 @@ defExports.elamficitor = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.poundFighter = {
@@ -59036,7 +58575,7 @@ defExports.trimancer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Triangle'], 0);
+        necroRam(me, them, ['Triangle', 'Sanctuary Triangle'], 0);
     }
 };
 defExports.megaBattery = {
@@ -59879,7 +59418,7 @@ defExports.trueMaster = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 1);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 1);
     }
 };
 defExports.bansheeOverdrive = {
@@ -59902,9 +59441,6 @@ defExports.bansheeOverdrive = {
     }, {
         POSITION: [10, 8, 0, 240, 80, 0],
         TYPE: defExports.bansheeGun
-    }, {
-        POSITION: [9, 0, 0, 0, 0, 1],
-        TYPE: defExports.squareProp
     }],
     GUNS: [{
         POSITION: [6, 11, 1.2, 8, 0, 60, 0],
@@ -59939,6 +59475,11 @@ defExports.bansheeOverdrive = {
             WAIT_TO_CYCLE: true,
             MAX_CHILDREN: 2
         }
+    }],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.colonistBullet = {
@@ -60706,9 +60247,10 @@ defExports.driveWeirdBulletThing = {
     LABEL: 'Swarming Bullet',
     FACING_TYPE: 'turnWithSpeed',
     CONTROLLERS: ['targetSelf'],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 0, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }],
     GUNS: [{
         POSITION: [21, 14, -1.25, 0, 0, 0, 0],
@@ -60741,9 +60283,10 @@ defExports.driveColonist = {
         SPEED: base.SPEED * .8,
         FOV: 1.05
     },
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 0, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }],
     GUNS: [{
         POSITION: [10, 13.5, -1.2, 5, 0, 0, 0],
@@ -62055,31 +61598,8 @@ defExports.blockClicker = {
         POSITION: [1.5, 7, 1.1, 23, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.block, g.sniper, g.click, g.fast, g.less_range, g.bit_smaller, g.stronger]),
-            TYPE: defExports.block
-        }
-    }, {
-        POSITION: [1.5, 7, 1.1, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.sniper, g.click, g.fast, g.less_range, g.bit_smaller, g.stronger]),
-            TYPE: defExports.block
-        }
-    }, {
-        POSITION: [1.5, 7, 1.1, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.sniper, g.click, g.fast, g.less_range, g.bit_smaller, g.stronger]),
-            TYPE: defExports.block
-        }
-    }, {
-        POSITION: [1.5, 7, 1.1, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.sniper, g.click, g.fast, g.less_range, g.bit_smaller]),
-            TYPE: defExports.block
-        }
-    }, {
-        POSITION: [1.5, 7, 1.1, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.sniper, g.click, g.fast, g.less_range, g.bit_smaller]),
-            TYPE: defExports.block
+            TYPE: defExports.block,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 11, -1.3, 5, 0, 0, 0]
@@ -62117,9 +61637,10 @@ defExports.invisibleTri = {
             STAT_CALCULATOR: gunCalcNames.thruster
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.bonk = {
@@ -62173,10 +61694,12 @@ defExports.teleSmash = {
         DAMAGE: base.DAMAGE * .8,
         SHIELD: base.SHIELD * 1.4
     },
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.teleSmashBody
-    }],
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -10
+        })
+    ],
     GUNS: [{
         POSITION: [2, 2, 1, 0, 0, 180, 0],
         PROPERTIES: {
@@ -62204,10 +61727,7 @@ defExports.jumpBonk = {
         DAMAGE: base.DAMAGE * 1.1,
         REGEN: base.REGEN * 1.1
     },
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody
-    }],
+    PROPS: [makeShell({ shape: -8 })],
     GUNS: [{
         POSITION: [2, 2, 1, 0, 0, 180, 0],
         PROPERTIES: {
@@ -62768,9 +62288,10 @@ defExports.beedrive = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.miniVulc = {
@@ -62806,37 +62327,37 @@ defExports.aresTank = {
     LABEL: 'Ares',
     DANGER: 7,
     GUNS: [{
-        POSITION: [30, 1.5, 1, 0, 8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, 7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, 2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, 5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, -7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, -2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, -5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
@@ -62852,77 +62373,77 @@ defExports.odinTank = {
     LABEL: 'Odin',
     DANGER: 7,
     GUNS: [{
-        POSITION: [26, 1.5, 1, 0, 8.3, 20, .25],
+        POSITION: [26, 1.5, 1, 0, 7.7, 20, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 1.5, 1, 0, 2.3, 20, .75],
+        POSITION: [26, 1.5, 1, 0, 2.7, 20, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 1.5, 1, 0, 5.3, 20, 0],
+        POSITION: [26, 1.5, 1, 0, 5.2, 20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [5, 10, 1, 17, 5.3, 20, 0]
+        POSITION: [5, 10, 1, 17, 5.2, 20, 0]
     }, {
-        POSITION: [26, 1.5, 1, 0, -8.3, -20, .25],
+        POSITION: [26, 1.5, 1, 0, -7.7, -20, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 1.5, 1, 0, -2.3, -20, .75],
+        POSITION: [26, 1.5, 1, 0, -2.7, -20, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 1.5, 1, 0, -5.3, -20, 0],
+        POSITION: [26, 1.5, 1, 0, -5.2, -20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [5, 10, 1, 17, -5.3, -20, 0]
+        POSITION: [5, 10, 1, 17, -5.2, -20, 0]
     }, {
-        POSITION: [30, 1.5, 1, 0, 8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, 7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, 2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, 5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, -7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, -2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, -5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
@@ -63246,31 +62767,8 @@ defExports.arsenalClicker = {
         POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.miniPillbox
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.miniPillbox
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.miniPillbox
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.miniPillbox
-        }
-    }, {
-        POSITION: [2.5, 4, 1.4, 23, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.click, g.faster]),
-            TYPE: defExports.miniPillbox
+            TYPE: defExports.miniPillbox,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -63297,9 +62795,10 @@ defExports.invisColonist = {
     }, {
         POSITION: [11, 11.5, 1, 5, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.invisipistol = {
@@ -63321,9 +62820,10 @@ defExports.invisipistol = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.gasHive = {
@@ -63408,44 +62908,6 @@ defExports.hornetHornet = {
         POSITION: [13, 11.5, 1, 5, 0, 0, 0]
     }]
 };
-defExports.multiTwinTurret = {
-    LABEL: '',
-    BODY: {
-        FOV: 2
-    },
-    CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
-    COLOR: 16,
-    GUNS: [{
-        POSITION: [19, 6, 1, 0, -5, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.lots_more_recoil, g.half_reload, g.half_speed]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.fixedReload
-        }
-    }, {
-        POSITION: [19, 6, 1, 0, 5, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.lots_more_recoil, g.half_reload, g.half_speed]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.fixedReload
-        }
-    }]
-};
-defExports.multiMachineTurret = {
-    LABEL: '',
-    BODY: {
-        FOV: 2
-    },
-    CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
-    COLOR: 16,
-    GUNS: [{
-        POSITION: [14, 11, 1.3, 8, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.auto_turret]),
-            TYPE: defExports.bullet
-        }
-    }]
-};
 defExports.multitool = {
     PARENT: [defExports.genericTank],
     LABEL: 'Multitool',
@@ -63453,13 +62915,13 @@ defExports.multitool = {
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 190, 0],
-        TYPE: defExports.multiTwinTurret
+        TYPE: defExports.twin3gun
     }, {
         POSITION: [11, 8, 0, 120, 190, 0],
         TYPE: defExports.sniper3gun
     }, {
         POSITION: [11, 8, 0, 240, 190, 0],
-        TYPE: defExports.multiMachineTurret
+        TYPE: defExports.machine3gun
     }]
 };
 defExports.ceptionBody = {
@@ -63571,13 +63033,12 @@ for (let i = 0; i < 20; i++) {
     });
 }
 defExports.landmineAutoTurret = {
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.landmineBody
-    }]
+    PROPS: [
+        makeShell(),
+        makeShell({
+            rpm: 2
+        })
+    ]
 };
 defExports.landmineCeption = makeAuto({
     PARENT: [defExports.genericTank],
@@ -63592,13 +63053,12 @@ defExports.landmineCeption = makeAuto({
         DAMAGE: base.DAMAGE * 0.9
     },
     INVISIBLE: [.08, .01, .02],
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.landmineBody
-    }],
+    PROPS: [
+        makeShell(),
+        makeShell({
+            rpm: 2
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
@@ -63620,13 +63080,12 @@ defExports.bonkmine = {
         REGEN: base.REGEN * 1.1
     },
     INVISIBLE: [.08, .01, .02],
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.landmineBody
-    }],
+    PROPS: [
+        makeShell(),
+        makeShell({
+            rpm: 2
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
@@ -63648,16 +63107,22 @@ defExports.bonkSpike = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 120, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 240, 360, 0],
-        TYPE: defExports.spikeBody
-    }]
+    PROPS: [
+        makeShell({
+            size: 1.05,
+            shape: -4
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+            angle: 120
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -4,
+            angle: 240
+        })
+    ]
 };
 defExports.jumpsmashProp = {
     PARENT: [defExports.genericTank],
@@ -63667,10 +63132,12 @@ defExports.jumpsmashProp = {
     }]
 };
 defExports.jumpSmashAutoTurret = {
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody
-    }]
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -8
+        })
+    ]
 };
 defExports.jumpCeption = makeAuto({
     PARENT: [defExports.genericTank],
@@ -63684,10 +63151,12 @@ defExports.jumpCeption = makeAuto({
         SHIELD: base.SHIELD * 2.2,
         DAMAGE: base.DAMAGE * 0.9
     },
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody
-    }],
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -8
+        })
+    ],
     GUNS: [{
         POSITION: [2, 2, 1, 0, 0, 180, 0],
         PROPERTIES: {
@@ -63736,7 +63205,7 @@ defExports.smasherCeption2 = makeAuto({
 defExports.mechaOverseer = makeAuto(defExports.overseer, 'Foreman', {
     type: defExports.machineAutoTurret
 });
-defExports.hybridPound = makeHybrid(defExports.pounder, 'Poundbrid');
+defExports.hybridPound = makeHybrid(defExports.pounder, 'drone', { name: 'Poundbrid' });
 defExports.halfhalf = {
     PARENT: [defExports.genericTank],
     LABEL: "Whole N' Quart",
@@ -63978,39 +63447,13 @@ defExports.typhoon = {
     }]
 };
 defExports.snipemind = makeHivemind(defExports.sniper, 'Snipemind');
-defExports.poundOverdrive = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Poundrive',
-    DANGER: 7,
-    BODY: {
+defExports.poundOverdrive = makeHybrid(defExports.pounder, 'drive', {
+    name: 'Poundrive',
+    body: {
         SPEED: base.SPEED * .975,
         ACCELERATION: base.ACCEL * .75
-    },
-    GUNS: [{
-        POSITION: [20, 12, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [7, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.weak, g.bit_slow]),
-            TYPE: [defExports.autoDrone, {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 2
-        }
-    }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
-    }]
-};
+    }
+});
 defExports.swagTurret = {
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
     LABEL: 'Swag Turret',
@@ -64031,9 +63474,10 @@ defExports.swagTurret = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.rodomontade = {
@@ -64092,9 +63536,10 @@ defExports.machOverdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 45, 0, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 45, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.snipeInferno = {
@@ -64329,7 +63774,7 @@ defExports.fighterK = {
         }
     }]
 };
-defExports.hybridTrapper = makeHybrid(defExports.trapper, 'Trapbrid');
+defExports.hybridTrapper = makeHybrid(defExports.trapper, 'drone', { name: 'Trapbrid' });
 defExports.trapMine = {
     PARENT: [defExports.trap],
     HITS_OWN_TYPE: 'never',
@@ -64464,9 +63909,10 @@ defExports.driveNado = {
             }]
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.backburnerTrap = {
@@ -65296,7 +64742,7 @@ defExports.zoomMachineSingle = {
 };
 defExports.zoomFlankSingle = makeFlank(defExports.zoomSingle);
 defExports.autoZoomSingle = makeAuto(defExports.zoomSingle, 'Assailant');
-defExports.hybridZoomSingle = makeHybrid(defExports.zoomSingle, 'Equalizer');
+defExports.hybridZoomSingle = makeHybrid(defExports.zoomSingle, 'drone', { name: 'Equalizer' });
 defExports.zoomBattery = {
     PARENT: [defExports.genericTank],
     LABEL: 'S-Battery',
@@ -65399,9 +64845,7 @@ defExports.swarmSnipeguard = {
         }
     }]
 };
-defExports.moreHybrid = makeHybrid(defExports.destroyer, 'Youkron', {
-    isYoukron: true
-});
+defExports.moreHybrid = makeHybrid(defExports.destroyer, 'youkron', { name: 'Youkron' });
 defExports.overception = makeAuto(defExports.overseer, 'Overception', {
     type: defExports.overseerAutoTurret
 });
@@ -66474,10 +65918,12 @@ defExports.zoomJumpSmash = {
         SHIELD: base.SHIELD * 1.4
     },
     SCOPED: true,
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody2
-    }],
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -10
+        })
+    ],
     GUNS: [{
         POSITION: [2, 2, 1, 0, 0, 180, 0],
         PROPERTIES: {
@@ -68891,38 +68337,13 @@ defExports.dual2 = {
         }
     }]
 };
-defExports.underSniper = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Undersniper',
-    DANGER: 7,
-    BODY: {
+defExports.underSniper = makeHybrid(defExports.sniper, 'under', {
+    body: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
         FOV: 1.15
-    },
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [24, 8.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
 defExports.woodpeck2 = {
     PARENT: [defExports.genericTank],
     LABEL: 'Woodpecker',
@@ -69179,7 +68600,7 @@ defExports.guerrilla = {
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 90, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.half_damage, g.bit_more_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69191,7 +68612,7 @@ defExports.guerrilla = {
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 270, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.half_damage, g.bit_more_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69203,7 +68624,7 @@ defExports.guerrilla = {
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.half_damage, g.bit_more_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69215,7 +68636,7 @@ defExports.guerrilla = {
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.half_damage, g.bit_more_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69290,7 +68711,7 @@ defExports.flankParatrooper = {
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 120, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta, g.half_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta, g.bit_less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69302,7 +68723,7 @@ defExports.flankParatrooper = {
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 240, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta, g.half_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta, g.bit_less_damage]),
             TYPE: defExports.fastDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -69326,7 +68747,7 @@ defExports.necroBlock = {
         POSITION: [8, .1, -55, 6, 0, 270, 0]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.necroBuilder = {
@@ -69354,7 +68775,7 @@ defExports.necroBuilder = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 1);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 1);
     }
 };
 defExports.awp39PropA = {
@@ -70303,9 +69724,10 @@ defExports.driveBuckshot = {
     }, {
         POSITION: [8, 12, -1.3, 4, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.homingMachshot = makeAuto({
@@ -70600,7 +70022,7 @@ defExports.lancer = {
     STAT_NAMES: statNames.lancer
 };
 defExports.autoBasic = makeAuto(defExports.basic2, 'Auto-Basic');
-defExports.hybridBasic = makeHybrid(defExports.basic2, 'Basebrid');
+defExports.hybridBasic = makeHybrid(defExports.basic2, 'drone', { name: 'Basebrid' });
 defExports.yankerBullet = {
     LABEL: 'Yanker Bullet',
     TYPE: 'bullet',
@@ -70979,7 +70401,7 @@ defExports.supremeAnni = {
     GUNS: [{
         POSITION: [42, 19.5, 3, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize, g.double_size]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize, g.double_size]),
             TYPE: defExports.bullet
         }
     }]
@@ -71480,9 +70902,11 @@ defExports.invisProbe = {
         TYPE: [defExports.eggBossCircleProp, {
             COLOR: 9
         }]
-    }, {
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    }],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.invisHivemind = {
@@ -71516,9 +70940,11 @@ defExports.invisHivemind = {
         TYPE: [defExports.eggBossCircleProp, {
             COLOR: 9
         }]
-    }, {
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    }],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.pentaTwin = {
@@ -71612,9 +71038,10 @@ defExports.ubercharge = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.poundUbercharge = {
@@ -71638,9 +71065,10 @@ defExports.poundUbercharge = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.armySentry = {
@@ -71702,7 +71130,7 @@ defExports.armyAutoDevestator = {
     GUNS: [{
         POSITION: [21, 19.5, 1.2, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize, g.half_reload]),
             TYPE: defExports.bullet,
             AUTOFIRE: true,
             COLOR_OVERRIDE: 13
@@ -73959,7 +73387,7 @@ defExports.collider = {
         POSITION: [1.5, 5, 1.2, -2, -6, 205.714, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.over, g.summon, g.less_reload]),
-            TYPE: defExports.colliderDrone,
+            TYPE: defExports.colliderDroneA,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -73977,19 +73405,7 @@ defExports.collider = {
     }, {
         POSITION: [4.5, 6, -2, -45, 360, 1],
         TYPE: defExports.colliderMachTurret
-    }],
-	ON_DEAD: function({ sockets, ran, Entity}){
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 3; i++) {
-			let crash = new Entity({
-				x: x,
-				y: y
-			});
-			crash.team = this.team;
-			crash.define(Class.messengerAI);
-		}
-	}
+    }]
 };
 defExports.colliderChillMachTurret = makeAuto({
     BODY: {
@@ -74124,19 +73540,7 @@ defExports.icecollider = {
         POSITION: [4.5, 6, -2, -45, 360, 1],
         TYPE: defExports.colliderChillMachTurret
     },],
-    PROPS: [makeAura(217)],
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 3; i++) {
-			let crash = new Entity({
-				x: x,
-				y: y
-			});
-			crash.team = this.team;
-			crash.define(Class.icemessengerAI);
-		}
-	}
+    PROPS: [makeAura(217)]
 };
 defExports.colliderAI = {
     PARENT: [defExports.collider],
@@ -74151,7 +73555,20 @@ defExports.colliderAI = {
     },
     HITS_OWN_TYPE: 'hard',
     SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Collider has been defeated!'
+    BROADCAST_MESSAGE: 'A Collider has been defeated!',
+	ON_DEAD: function({ sockets, ran, Entity }){
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 3; i++) {
+			let boss = new Entity({
+				x: x,
+				y: y
+			});
+			boss.team = this.team;
+			boss.define(Class.messengerAI);
+            boss.color = 14;
+		}
+	}
 };
 defExports.icecolliderAI = {
     PARENT: [defExports.icecollider],
@@ -74166,7 +73583,19 @@ defExports.icecolliderAI = {
     },
     HITS_OWN_TYPE: 'hard',
     SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'An Ice Collider has been defeated!'
+    BROADCAST_MESSAGE: 'An Ice Collider has been defeated!',
+	ON_DEAD: function ({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 3; i++) {
+			let boss = new Entity({
+				x: x,
+				y: y
+			});
+			boss.team = this.team;
+			boss.define(Class.icemessengerAI);
+		}
+	}
 };
 defExports.bentMachine = {
     PARENT: [defExports.genericTank],
@@ -74196,7 +73625,7 @@ defExports.bentMachine = {
         }
     }]
 };
-defExports.hybridBentMachine = makeHybrid(defExports.bentMachine, 'Twisted Hybrid');
+defExports.hybridBentMachine = makeHybrid(defExports.bentMachine, 'drone', { name: 'Twisted Hybrid' });
 defExports.pentaMachine = {
     PARENT: [defExports.genericTank],
     LABEL: 'Penta Machine',
@@ -74976,7 +74405,7 @@ defExports.heronBot = {
         }
     }]
 };
-defExports.hybridBoomer = makeHybrid(defExports.boomer, 'Boombrid');
+defExports.hybridBoomer = makeHybrid(defExports.boomer, 'drone', { name: 'Boombrid' });
 defExports.snipeConstruct = {
     PARENT: [defExports.genericTank],
     LABEL: 'Manufacturer',
@@ -75505,7 +74934,7 @@ defExports.bentAssassin = {
         POSITION: [5, 8.5, -1.6, 8, 0, 0, 0]
     }]
 };
-defExports.hybridBentSniper = makeHybrid(defExports.tripleShotSniper, 'Senser');
+defExports.hybridBentSniper = makeHybrid(defExports.tripleShotSniper, 'drone', { name: 'Senser' });
 defExports.autoBentSniper = makeAuto(defExports.tripleShotSniper, 'Finder');
 defExports.pentaSniper = {
     PARENT: [defExports.genericTank],
@@ -75828,7 +75257,7 @@ defExports.doubleHewnDouble = {
         }
     }]
 };
-defExports.flankCruiser = makeHybridSwarm({
+defExports.flankCruiser = makeHybrid({
     PARENT: [defExports.genericTank],
     DANGER: 4,
     GUNS: [{
@@ -75838,12 +75267,12 @@ defExports.flankCruiser = makeHybridSwarm({
             TYPE: defExports.bullet
         }
     }]
-}, 'Flank Cruiser');
-defExports.doubleSwarm = makeHybridSwarm(defExports.twin, 'Gladiator');
-defExports.cruisePound = makeHybridSwarm(defExports.pounder, 'Parapet');
-defExports.swarmSniper = makeHybridSwarm(defExports.sniper, 'Apex');
+}, 'swarm', { name: 'Flank Cruiser' });
+defExports.doubleSwarm = makeHybrid(defExports.twin, 'swarm', { name: 'Gladiator' });
+defExports.cruisePound = makeHybrid(defExports.pounder, 'swarm', { name: 'Parapet' });
+defExports.swarmSniper = makeHybrid(defExports.sniper, 'swarm', { name: 'Apex' });
 defExports.autoDirector = makeAuto(defExports.director, 'Chairman');
-defExports.hybridSniper = makeHybrid(defExports.sniper, 'Snipebrid');
+defExports.hybridSniper = makeHybrid(defExports.sniper, 'drone', { name: 'Snipebrid' });
 defExports.trapeFighterDrone = {
     PARENT: [defExports.drone],
     SHAPE: 115
@@ -76100,7 +75529,7 @@ defExports.clicker3 = { // makeAuto3
         TYPE: defExports.clicker3gun
     }]
 };
-defExports.hybridRanger = makeHybrid(defExports.ranger, 'Rangebrid');
+defExports.hybridRanger = makeHybrid(defExports.ranger, 'drone', { name: 'Rangebrid' });
 defExports.longSniperRifle = {
     PARENT: [defExports.genericTank],
     LABEL: 'Savage',
@@ -76122,7 +75551,7 @@ defExports.longSniperRifle = {
         POSITION: [8, 10.5, -1.6, 5, 0, 0, 0]
     }]
 };
-defExports.hybridSniperRifle = makeHybrid(defExports.sniperRifle, 'Tactician');
+defExports.hybridSniperRifle = makeHybrid(defExports.sniperRifle, 'drone', { name: 'Tactician' });
 defExports.stackSpreadbow = {
     PARENT: [defExports.genericTank],
     LABEL: 'Atlatl',
@@ -76175,9 +75604,7 @@ defExports.stackSpreadbow = {
         }
     }]
 };
-defExports.moreSpreadguard = makeHybrid(defExports.miniSpread, 'Consummate', {
-    isYoukron: true
-});
+defExports.moreSpreadguard = makeHybrid(defExports.miniSpread, 'youkron', { name: 'Consummate' });
 defExports.stackRefractor = {
     PARENT: [defExports.genericTank],
     LABEL: 'Genuflector',
@@ -76409,6 +75836,12 @@ defExports.manOWar = {
         }
     }]
 };
+defExports.bigSunchip = {
+    PARENT: [defExports.sunchip],
+    ON_DEALT_DAMAGE: (me, them) => {
+        necroDrone(me, them, ['Square', 'Sanctuary Square'], { sizeMult: 1.35 });
+    }
+};
 defExports.bigUnderseer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gondola',
@@ -76418,14 +75851,14 @@ defExports.bigUnderseer = {
         SPEED: base.SPEED * .875,
         FOV: 1.1
     },
-    STAT_NAMES: statNames.drone,
+    STAT_NAMES: statNames.necro,
     SHAPE: 4,
     MAX_CHILDREN: 12,
     GUNS: [{
         POSITION: [5, 14, 1.2, 8, 0, 90, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
@@ -76434,14 +75867,14 @@ defExports.bigUnderseer = {
         POSITION: [5, 14, 1.2, 8, 0, 270, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0, { sizeMult: 1.35 });
     }
 };
 defExports.longPebbler = {
@@ -77128,44 +76561,13 @@ defExports.crow = {
         FOV: 1.15
     },
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_reload, g.bit_more_damage]),
-            TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            LABEL: 'Clicker'
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_reload, g.bit_more_damage]),
-            TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            LABEL: 'Clicker'
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_reload, g.bit_more_damage]),
-            TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            LABEL: 'Clicker'
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_reload, g.bit_more_damage]),
-            TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            LABEL: 'Clicker'
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_reload, g.bit_more_damage]),
             TYPE: defExports.bullet,
             ALT_FIRE: true,
-            LABEL: 'Clicker'
+            LABEL: 'Clicker',
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -77509,31 +76911,8 @@ defExports.megaRifleClicker = {
         POSITION: [24, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click, g.power, g.slow, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [10, 8.5, -1.4, 5, 0, 0, 0]
@@ -77916,7 +77295,7 @@ defExports.frigateShip = {
         }]
     }]
 };
-defExports.hybridCarbine = makeHybrid(defExports.heavyRifle, 'Targeteer');
+defExports.hybridCarbine = makeHybrid(defExports.heavyRifle, 'drone', { name: 'Targeteer' });
 defExports.colony = {
     PARENT: [defExports.genericTank],
     LABEL: 'Colony',
@@ -78708,7 +78087,7 @@ defExports.laserFlooder = {
         }
     }]
 };
-defExports.hybridLaser = makeHybrid(defExports.oldlaser, 'Cultivator');
+defExports.hybridLaser = makeHybrid(defExports.oldlaser, 'drone', { name: 'Cultivator' });
 defExports.pelican = {
     PARENT: [defExports.genericTank],
     LABEL: 'Pelican',
@@ -78869,9 +78248,10 @@ defExports.twinOverdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [10, 0, 0, 0, 360, 1],
-        TYPE: defExports.pentagonProp
+    PROPS: [{
+        POSITION: [.5, 0, 0, 180, 1],
+        SHAPE: 5,
+        COLOR: 16
     }]
 };
 defExports.shortRailgun = {
@@ -79067,7 +78447,7 @@ defExports.pyroContagion = {
         }
     }]
 };
-defExports.hybridRailgun = makeHybrid(defExports.railgun, 'Discharger');
+defExports.hybridRailgun = makeHybrid(defExports.railgun, 'drone', { name: 'Discharger' });
 defExports.longRailgun = {
     PARENT: [defExports.genericTank],
     LABEL: 'Impactor',
@@ -79622,7 +79002,7 @@ defExports.littleMortar = {
         }
     }]
 };
-defExports.hybridHotshot = makeHybrid(defExports.hotshot, 'Plantation');
+defExports.hybridHotshot = makeHybrid(defExports.hotshot, 'drone', { name: 'Plantation' });
 defExports.autoHotshot = makeAuto(defExports.hotshot, 'Hotrod');
 defExports.megaPlow = {
     PARENT: [defExports.genericTank],
@@ -79733,37 +79113,37 @@ const miniVulcGun = a => ([{
     POSITION: [5, 10, 1, 20, 0, a, 0]
 }]);
 const aresGun = a => ([{
-    POSITION: [30, 1.5, 1, 0, 8.3, a, .25],
+    POSITION: [30, 1.5, 1, 0, 7.7, a, .25],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
         TYPE: defExports.bullet
     }
 }, {
-    POSITION: [30, 1.5, 1, 0, 2.3, a, .75],
+    POSITION: [30, 1.5, 1, 0, 2.7, a, .75],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
         TYPE: defExports.bullet
     }
 }, {
-    POSITION: [30, 1.5, 1, 0, 5.3, a, 0],
+    POSITION: [30, 1.5, 1, 0, 5.2, a, 0],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
         TYPE: defExports.bullet
     }
 }, {
-    POSITION: [30, 1.5, 1, 0, -8.3, a, .25],
+    POSITION: [30, 1.5, 1, 0, -7.7, a, .25],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
         TYPE: defExports.bullet
     }
 }, {
-    POSITION: [30, 1.5, 1, 0, -2.3, a, .75],
+    POSITION: [30, 1.5, 1, 0, -2.7, a, .75],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
         TYPE: defExports.bullet
     }
 }, {
-    POSITION: [30, 1.5, 1, 0, -5.3, a, 0],
+    POSITION: [30, 1.5, 1, 0, -5.2, a, 0],
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
         TYPE: defExports.bullet
@@ -80919,9 +80299,10 @@ defExports.modDrone = {
     BUFF_VS_FOOD: true,
     AI: {
      },
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }],
     ALWAYS_ACTIVE: true
 };
@@ -81477,7 +80858,7 @@ defExports.laserTwister = {
         }
     }]
 };
-defExports.trapperSwarm = makeHybridSwarm(defExports.trapper, 'Martyrdom');
+defExports.trapperSwarm = makeHybrid(defExports.trapper, 'swarm', { name: 'Martyrdom' });
 defExports.growingRoadblock = {
     PARENT: [defExports.genericTank],
     LABEL: 'Volley',
@@ -81746,9 +81127,10 @@ defExports.spawnerOverdrive = {
     }, {
         POSITION: [3.5, 12, 1, 8, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.poundDrone = {
@@ -83907,31 +83289,8 @@ defExports.invisBasher = {
         POSITION: [24, 4, -1.4, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, -1.4, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, -1.4, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, -1.4, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, -1.2, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.rifle, g.click]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }]
 };
@@ -83965,35 +83324,8 @@ defExports.clickerMotolov = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.arty, g.skim, g.less_damage, g.faster, g.half_reload, g.click]),
             TYPE: defExports.halfReloadTorpedo,
-            STAT_CALCULATOR: gunCalcNames.sustained
-        }
-    }, {
-        POSITION: [17, 5.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.arty, g.skim, g.less_damage, g.faster, g.half_reload, g.click]),
-            TYPE: defExports.halfReloadTorpedo,
-            STAT_CALCULATOR: gunCalcNames.sustained
-        }
-    }, {
-        POSITION: [17, 5.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.arty, g.skim, g.less_damage, g.faster, g.half_reload, g.click]),
-            TYPE: defExports.halfReloadTorpedo,
-            STAT_CALCULATOR: gunCalcNames.sustained
-        }
-    }, {
-        POSITION: [17, 5.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.arty, g.skim, g.less_damage, g.faster, g.half_reload, g.click]),
-            TYPE: defExports.halfReloadTorpedo,
-            STAT_CALCULATOR: gunCalcNames.sustained
-        }
-    }, {
-        POSITION: [17, 5.5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.arty, g.skim, g.less_damage, g.faster, g.half_reload, g.click]),
-            TYPE: defExports.halfReloadTorpedo,
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -84072,9 +83404,10 @@ defExports.invisiOsci = {
     }, {
         POSITION: [5, 7, -1.6, 8, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.trapper5 = {
@@ -84426,9 +83759,10 @@ defExports.directdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.singleTrapper = {
@@ -86063,9 +85397,10 @@ defExports.cutlass = {
     }, {
         POSITION: [12, 10, -1.5, 0, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }],
     STAT_NAMES: statNames.lancer
 };
@@ -86296,10 +85631,11 @@ defExports.submarineDrone = {
     PARENT: [defExports.blimp],
     LABEL: 'Submarine',
     INVISIBLE: [1, 1, .025],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
-    },],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
+    }]
 };
 defExports.aShip = {
     PARENT: [defExports.genericTank],
@@ -86894,7 +86230,7 @@ defExports.caravan = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm]),
             TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.drone
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [7, 12, 1.2, 8, 0, 180, 0],
@@ -86907,7 +86243,7 @@ defExports.caravan = {
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
             WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 2
+            MAX_CHILDREN: 3
         }
     }],
     STAT_NAMES: statNames.generic
@@ -87091,34 +86427,7 @@ defExports.minePropB = {
     SHAPE: 131,
     COLOR: 9
 };
-defExports.minesweeper = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Minesweeper',
-    DANGER: 7,
-    SHAPE: 132,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.15,
-        DENSITY: base.DENSITY * 2,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    TURRETS: [{
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    PROPS: [
-        makeShell()
-    ],
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher
-};
+defExports.minesweeper = makeMinesweep(defExports.smash, "Minesweeper");
 defExports.chevronLanceGun = {
     COLOR: 16,
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
@@ -87706,8 +87015,8 @@ defExports.terminator = {
     TURRETS: []
 };
 defExports.autoGlitch = makeAuto(defExports.glitch);
-defExports.hybridAutoGlitch = makeHybrid(defExports.autoGlitch);
-defExports.cruiserHybridAutoGlitch = makeHybridSwarm(defExports.hybridAutoGlitch);
+defExports.hybridAutoGlitch = makeHybrid(defExports.autoGlitch, 'drone');
+defExports.cruiserHybridAutoGlitch = makeHybrid(defExports.hybridAutoGlitch, 'swarm');
 defExports.gunnerCruiserHybridAutoGlitch = makeGunnerFlank(defExports.cruiserHybridAutoGlitch);
 defExports.schoolPistol = {
     PARENT: [defExports.genericTank],
@@ -87972,7 +87281,7 @@ defExports.trapC4 = {
     LABEL: 'Grenade',
     SHAPE: 201,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, .001],
+        POSITION: [2, 5, 1, 0, 0, 0, .00005],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.less_power, g.less_range, g.less_damage, g.less_health, g.less_reload]),
             ALT_FIRE: true,
@@ -87982,7 +87291,11 @@ defExports.trapC4 = {
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            ON_FIRE: (gun, gunInfo) => {
+                gun.fire(gunInfo);
+                gun.body.kill();
+            }
         }
     }]
 };
@@ -91082,7 +90395,7 @@ defExports.twinLittleHunter = {
     }]
 };
 defExports.autoMachTwin = makeAuto(defExports.twinMachine, 'Magnum');
-defExports.hybridStalk = makeHybrid(defExports.stalk, 'Berserker');
+defExports.hybridStalk = makeHybrid(defExports.stalk, 'drone', { name: 'Berserker' });
 defExports.autoStalk = makeAuto(defExports.stalk, 'Dissolutionist');
 function ballerAttach(me, them, damageAmnt){
 	if(them.type !== "tank" && them.type !== "minion" && them.type !== "miniboss" && them.type !== "food") return;
@@ -91871,44 +91184,14 @@ defExports.paladin = {
         POSITION: [12, 19.5, 1, 0, 0, 180, 0]
     }]
 };
-defExports.underhunter = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Witch-Hunter',
-    DANGER: 7,
-    BODY: {
+defExports.underhunter = makeHybrid(defExports.hunter, 'under', {
+    name: 'Witch-Hunter',
+    body: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
         FOV: 1.25
-    },
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [23, 7, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.hunter2]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [20, 11, 1, 0, 0, 0, .2],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter]),
-            TYPE: defExports.bullet
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
 defExports.megaSpike = {
     PARENT: [defExports.genericTank],
     LABEL: 'Acicula',
@@ -92615,60 +91898,10 @@ defExports.glassSmash = {
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
 };
-defExports.glassMinesweeper = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Cardioid',
-    SHAPE: 132,
-    DANGER: 7,
-    SEE_INVISIBLE: true,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.1,
-        DENSITY: base.DENSITY * 64,
-        HEALTH: base.HEALTH * .9,
-        SHIELD: base.SHIELD * .9
-    },
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 1],
-        TYPE: defExports.glassSmashBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher
-};
-defExports.mineAuger = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Anapsid',
-    SHAPE: 132,
-    DANGER: 7,
-    SEE_INVISIBLE: true,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.1,
-        DENSITY: base.DENSITY * 2,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    IS_SMASHER: true,
-    SKILL_CAP: [0, 0, 0, 0, 0, 15, 15, 15, 15, 15],
-    STAT_NAMES: statNames.smasher
-};
+defExports.glassMinesweeper = makeMinesweep(defExports.glassSmash, "Cardioid", {
+    radarLayer: 2
+});
+defExports.mineAuger = makeMinesweep(defExports.auger, "Anapsid");
 defExports.namencoCollar = {
     LABEL: '',
     SHAPE: 251
@@ -93595,6 +92828,13 @@ defExports.largeMiniNukeShoe = {
         }
     }]
 };
+defExports.kineticRing = {
+    PARENT: [defExports.bullet],
+    SHAPE: 136,
+    ALPHA: .7,
+    MOTION_TYPE: 'plasma',
+    HITS_OWN_TYPE: 'forcedNever',
+};
 defExports.explosiveShell = {
     PARENT: [defExports.bullet],
     LABEL: 'Shell',
@@ -93603,7 +92843,7 @@ defExports.explosiveShell = {
     GUNS: [{
         POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.c4]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_damage, g.less_damage, g.less_power, g.smaller, g.no_recoil]),
             TYPE: [defExports.bulletLayer6, {
                 MOTION_TYPE: 'explode',
                 LABEL: 'Explosion',
@@ -93613,7 +92853,27 @@ defExports.explosiveShell = {
             STAT_CALCULATOR: gunCalcNames.sustained,
             SHOOT_ON_DEATH: true
         }
-    }]
+    }, {
+        POSITION: [2, 4, 1, 0, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.plasma, g.no_recoil]),
+            TYPE: defExports.kineticRing,
+            CAN_SHOOT: false
+        }
+    }],
+    VARIABLES: { ringsToShoot: 2 },
+    ON_TICK: (me) => {
+        if (me.isAlive()) {
+            me.variables.delay ??= 1;
+            for (let i = me.variables.ringsToShoot; i > 0; i--) {
+                if (me.variables.ringsToShoot > i - 1 && me.range <= me.RANGE / (me.variables.ringsToShoot + me.variables.delay) * i) {
+                    fireGun(me.guns[1]);
+                    me.variables.ringsToShoot--;
+                    me.variables.delay++;
+                }
+            }
+        }
+    }
 };
 defExports.kinetic = {
     PARENT: [defExports.genericTank],
@@ -93644,7 +92904,7 @@ defExports.explosiveShellHalfPower = {
     GUNS: [{
         POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_power]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_damage, g.less_damage, g.less_power, g.smaller, g.no_recoil, g.half_power]),
             TYPE: [defExports.bulletLayer6, {
                 MOTION_TYPE: 'explode',
                 LABEL: 'Explosion',
@@ -93654,7 +92914,27 @@ defExports.explosiveShellHalfPower = {
             STAT_CALCULATOR: gunCalcNames.sustained,
             SHOOT_ON_DEATH: true
         }
-    }]
+    }, {
+        POSITION: [2, 4, 1, 0, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.plasma, g.no_recoil]),
+            TYPE: defExports.kineticRing,
+            CAN_SHOOT: false
+        }
+    }],
+    VARIABLES: { ringsToShoot: 2 },
+    ON_TICK: (me) => {
+        if (me.isAlive()) {
+            me.variables.delay ??= 1;
+            for (let i = me.variables.ringsToShoot; i > 0; i--) {
+                if (me.variables.ringsToShoot > i - 1 && me.range <= me.RANGE / (me.variables.ringsToShoot + me.variables.delay) * i) {
+                    fireGun(me.guns[1]);
+                    me.variables.ringsToShoot--;
+                    me.variables.delay++;
+                }
+            }
+        }
+    }
 };
 defExports.blastMultishot = {
     PARENT: [defExports.genericTank],
@@ -94239,7 +93519,7 @@ defExports.cagepentagon = {
     EVOLUTIONS: [],
     SKILL: setSkill(0, 0, 9, 9, 9, 9, 0, 0, 0, 0),
     GUNS: [{
-        POSITION: [0.01, 20, 0, 0, 0, 0, Infinity],
+        POSITION: [0.01, 25, 0, 0, 0, 0, Infinity],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.shrapnelExplosion]),
             TYPE: [defExports.cageShoe, { BODY: { RANGE: 0 } }],
@@ -94835,7 +94115,7 @@ defExports.newWideshot = {
         }
     ]
 };
-defExports.hybridSteamroll = makeHybrid(defExports.steamroll, 'Cavalcade');
+defExports.hybridSteamroll = makeHybrid(defExports.steamroll, 'drone', { name: 'Cavalcade' });
 defExports.machineGuard = {
     PARENT: [defExports.genericTank],
     LABEL: 'Machine Guard',
@@ -94950,7 +94230,7 @@ defExports.newAxolotl = {
     }]
 };
 defExports.autoDiepSpreadling = makeAuto(defExports.diepSpreadling);
-defExports.hybridDiepSpreadling = makeHybrid(defExports.diepSpreadling, 'Spreadguard');
+defExports.hybridDiepSpreadling = makeHybrid(defExports.diepSpreadling, 'drone', { name: 'Spreadguard' });
 defExports.spreadbow = {
     PARENT: [defExports.genericTank],
     LABEL: 'Spreadbow',
@@ -94994,13 +94274,13 @@ defExports.heavyGunner = {
     LABEL: 'Rimfire',
     DANGER: 7,
     GUNS: [{
-        POSITION: [12, 5, 1, 0, 7.25, 10, .5],
+        POSITION: [12, 5, 1, 0, 7.25, 0, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.fast, g.pound]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [12, 5, 1, 0, -7.25, -10, .75],
+        POSITION: [12, 5, 1, 0, -7.25, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.fast, g.pound]),
             TYPE: defExports.bullet
@@ -95251,9 +94531,10 @@ defExports.deroShrapnel = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.clusternuke = {
@@ -96199,7 +95480,7 @@ defExports.hymn = {
         TYPE: defExports.bansheeGun
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.minishotSniper = {
@@ -96398,10 +95679,12 @@ defExports.megaBonk = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.megaSmashBody
-    }]
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -6
+        })
+    ]
 };
 defExports.bonkAuger = {
     PARENT: [defExports.genericTank],
@@ -96416,10 +95699,12 @@ defExports.bonkAuger = {
         DAMAGE: base.DAMAGE * 1.1,
         REGEN: base.REGEN * 1.1
     },
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.spikeBody
-    }],
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -4
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [0, 0, 0, 0, 0, 15, 15, 15, 15, 15],
     STAT_NAMES: statNames.smasher
@@ -96527,7 +95812,7 @@ defExports.doubleMachGunner = {
         }
     }]
 };
-defExports.hybridMachGunner = makeHybrid(defExports.machineGunner, 'Liquidator');
+defExports.hybridMachGunner = makeHybrid(defExports.machineGunner, 'drone', { name: 'Liquidator' });
 defExports.autoHybridSail = makeAuto(defExports.hybridSail, 'Hindenburg');
 defExports.axis4gun = {
     LABEL: '',
@@ -97009,7 +96294,7 @@ defExports.bulletnecro = {
     PARENT: [defExports.bullet],
     LABEL: 'Plague',
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Egg']);
+        necroDrone(me, them, ['Egg', 'Sanctuary Egg']);
     }
 };
 defExports.bulletpenta = {
@@ -97017,7 +96302,7 @@ defExports.bulletpenta = {
     LABEL: 'Parasite',
     SHAPE: 5,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Pentagon']);
+        necroDrone(me, them, ['Pentagon', 'Sanctuary Pentagon']);
     }
 };
 defExports.bullettri = {
@@ -97025,7 +96310,7 @@ defExports.bullettri = {
     LABEL: 'Parasite',
     SHAPE: 3,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Triangle']);
+        necroDrone(me, them, ['Triangle', 'Sanctuary Triangle']);
     }
 };
 defExports.bulletsquare = {
@@ -97033,7 +96318,7 @@ defExports.bulletsquare = {
     LABEL: 'Parasite',
     SHAPE: 4,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.necromissile = {
@@ -97057,7 +96342,7 @@ defExports.necromissile = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Egg']);
+        necroDrone(me, them, ['Egg', 'Sanctuary Egg']);
     }
 };
 defExports.necrohive = {
@@ -97083,7 +96368,7 @@ defExports.necrohive = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Egg']);
+        necroDrone(me, them, ['Egg', 'Sanctuary Egg']);
     }
 };
 defExports.basicnecro = {
@@ -98210,7 +97495,7 @@ defExports.bitskriegAI = {
 };
 defExports.octoTrapception = makeCeption(defExports.octoTrap);
 defExports.octoTrapceptionception = makeCeption(defExports.octoTrapception);
-defExports.cruiserGunner = makeHybridSwarm({
+defExports.cruiserGunner = makeHybrid({
     PARENT: [defExports.genericTank],
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -98227,11 +97512,11 @@ defExports.cruiserGunner = makeHybridSwarm({
     }, {
         POSITION: [12, 11, 1, 0, 0, 0, 0]
     }]
-}, 'Grenadier');
+}, 'swarm', { name: 'Grenadier' });
 defExports.contagionception = makeCeption(defExports.contagion);
 defExports.autoSwarmTrapper = makeAuto(defExports.swarmTrapper, 'Botanist');
 defExports.swarmTrapception = makeCeption(defExports.swarmTrapper, 'Swarm Trapception');
-defExports.hybridTwin = makeHybrid(defExports.twin, 'Twinbrid');
+defExports.hybridTwin = makeHybrid(defExports.twin, 'drone', { name: 'Twinbrid' });
 defExports.basicContagion = { // My idea, this is accidentally Subduer
     PARENT: [defExports.genericTank],
     LABEL: 'Pestilence',
@@ -98416,7 +97701,7 @@ defExports.twister4 = makeAutoN(defExports.twister, 4);
 defExports.pounder2 = makeAutoN(defExports.pounder, 2, 'Mega-2');
 defExports.destroyer2 = makeAutoN(defExports.destroyer, 2, 'Giga-2');
 defExports.annihilator2 = makeAutoN(defExports.annihilator, 2, 'Tera-2');
-defExports.decentralizer2 = makeAutoN(defExports.megaAnnihilator, 2, 'Tera-2');
+defExports.decentralizer2 = makeAutoN(defExports.megaAnnihilator, 2, 'Peta-2');
 defExports.blasterBuilder = {
     PARENT: [defExports.genericTank],
     LABEL: 'Barber',
@@ -98481,7 +97766,7 @@ for (let i = 0; i < 8; i++) defExports.megaStovepipe.GUNS = defExports.megaStove
         MAX_CHILDREN: 2
     }
 });
-defExports.hybridShrapnel = makeHybrid(defExports.miniNukeShooter, 'Barong');
+defExports.hybridShrapnel = makeHybrid(defExports.miniNukeShooter, 'drone', { name: 'Barong' });
 defExports.arsenalception = makeCeption(defExports.arsenal);
 defExports.fallenOcto = makeFallen(defExports.octo);
 defExports.highwaymanGun = {
@@ -98897,8 +98182,9 @@ for (let i = 0; i < 2; i++) defExports.quadCruiseBlock.GUNS.push({
         STAT_CALCULATOR: gunCalcNames.swarm
     }
 });
-defExports.driveBlock = makeAuto({
+defExports.driveBlock = {
     PARENT: [defExports.trap],
+    LABEL: 'Blockdrive',
     SHAPE: -4,
     MOTION_TYPE: 'motor',
     CONTROLLERS: ['block', 'alwaysFire'],
@@ -98920,11 +98206,13 @@ defExports.driveBlock = makeAuto({
             TYPE: defExports.autoSwarm2,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
+    }],
+    PROPS: [{
+        POSITION: [.5, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
-}, 'Blockdrive', {
-    type: defExports.sunchip,
-    size: 12
-});
+};
 defExports.autoShipBlock = {
     PARENT: [defExports.pillbox],
     LABEL: 'Pillbox',
@@ -99049,8 +98337,9 @@ defExports.gps = {
         POSITION: [14, 12, .6, 0, 0, 180, 0]
     }]
 };
-defExports.recalculator = makeAuto({
+defExports.recalculator = {
     PARENT: [defExports.genericTank],
+    LABEL: 'Recalculator',
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
@@ -99070,11 +98359,13 @@ defExports.recalculator = makeAuto({
         }
     }, {
         POSITION: [14, 12, .6, 0, 0, 180, 0]
+    }],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
-}, 'Recalculator', {
-    type: defExports.squareProp,
-    size: 12
-});
+};
 defExports.reposition = {
     PARENT: [defExports.genericTank],
     LABEL: 'Repositioner',
@@ -99744,9 +99035,9 @@ defExports.article13gun = {
         TEST: true
     },
     GUNS: [{
-        POSITION: [21, 19.5, 1.2, 0, 0, 0, 0],
+        POSITION: [21, 20, 1.25, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize, g.flank, g.auto]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize, g.flank, g.auto]),
             TYPE: defExports.bulletLayer6,
             COLOR_OVERRIDE: 111,
             COLOR: 111,
@@ -99806,9 +99097,10 @@ defExports.thunder = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.basebridMind = makeHivemind(defExports.hybridBasic, 'Hybemind');
@@ -100112,17 +99404,18 @@ defExports.xSpray = {
 defExports.zeppelinBullet = {
     PARENT: [defExports.bullet],
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_damage, g.half_damage, g.no_speed]),
-            SHOOT_ON_DEATH: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'explode',
                 LABEL: 'Explosion',
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            SHOOT_ON_DEATH: true
         }
     }],
     GO_THRU_OBSTACLES: true
@@ -100430,53 +99723,14 @@ defExports.bigSubduer = {
         }
     }]
 };
-defExports.arsenalOvertrap = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Galleon',
-    DANGER: 7,
-    BODY: {
+defExports.arsenalOvertrap = makeHybrid(defExports.arsenal, 'over', {
+    name: 'Galleon',
+    body: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
         FOV: 1.15
-    },
-    STAT_NAMES: statNames.generic,
-    GUNS: [{
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [15, 10, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [5, 13, 1, 5, 0, 0, 0]
-    }, {
-        POSITION: [3, 10, 1.5, 15, 0, 0, 0],
-        PROPERTIES: {
-            MAX_CHILDREN: 16,
-            DESTROY_OLDEST_CHILD: true,
-            SHOOT_SETTINGS: combineStats([g.trap, g.stronger, g.bit_slow]),
-            TYPE: defExports.miniPillbox,
-            STAT_CALCULATOR: gunCalcNames.trap
-        }
-    }]
-};
+    }
+});
 defExports.twinSniperContagion = {
     PARENT: [defExports.genericTank],
     LABEL: 'Contamination',
@@ -102373,9 +101627,10 @@ defExports.overOverdrive = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.octoProp
+    PROPS: [{
+        POSITION: [.45, 0, 0, 0, 1],
+        SHAPE: 8,
+        COLOR: 16
     }]
 };
 defExports.autwillery = {
@@ -103167,9 +102422,10 @@ defExports.battledrive = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.infernoAutoGun = {
@@ -103400,37 +102656,7 @@ defExports.machMegaArsenal = {
         }
     }]
 };
-defExports.landmineSweeper = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Radar',
-    DANGER: 7,
-    SHAPE: 132,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.15,
-        DENSITY: base.DENSITY * 2,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    INVISIBLE: [.08, .01, .02],
-    SEE_INVISIBLE: true,
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.landmineBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher
-};
+defExports.landmineSweeper = makeMinesweep(defExports.landmine, "Radar");
 defExports.nailerAI = {
     PARENT: [defExports.nailer],
     TYPE: 'miniboss',
@@ -104356,13 +103582,13 @@ defExports.multitool5 = {
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 190, 0],
-        TYPE: defExports.multiTwinTurret
+        TYPE: defExports.twin3gun
     }, {
         POSITION: [11, 8, 0, 72, 190, 0],
         TYPE: defExports.sniper3gun
     }, {
         POSITION: [11, 8, 0, 144, 190, 0],
-        TYPE: defExports.multiMachineTurret
+        TYPE: defExports.machine3gun
     }, {
         POSITION: [11, 8, 0, 216, 190, 0],
         TYPE: defExports.trapper3gun
@@ -104938,7 +104164,7 @@ defExports.fueron = makeAuto({ // https://cdn.discordapp.com/attachments/4518541
     angle: 0,
     size: 3
 });
-defExports.hybridMegaHewnTwin = makeHybrid(defExports.megaHewnTwin, 'Contortionist');
+defExports.hybridMegaHewnTwin = makeHybrid(defExports.megaHewnTwin, 'drone', { name: 'Contortionist' });
 defExports.thrasherBody = {
     COLOR: 9,
     SHAPE: 6,
@@ -105075,9 +104301,10 @@ defExports.invisiFortress = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.maplayerBullet = {
@@ -106371,22 +105598,7 @@ defExports.pentaguardian = {
     },
     FACING_TYPE: 'spinSlowly2',
     GUNS: [],
-    TURRETS: [],
-	ON_DEAD: function({ sockets, ran, Entity }){
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("The Guardians have arrived.");
-			for (let i = 0; i < 5; i++) {
-				let boss = new Entity({
-					x: x,
-					y: y
-				});
-				boss.team = this.team;
-				boss.define(Class.guardianAI);
-			}
-		}, 3000);
-	}
+    TURRETS: []
 };
 for (let i = 0; i < 5; i++) defExports.pentaguardian.TURRETS = defExports.pentaguardian.TURRETS.concat({
     POSITION: [14, 5.4, 0, i * 72 + 36, 0, 1],
@@ -106436,22 +105648,7 @@ defExports.quintet = {
     },
     FACING_TYPE: 'spinSlowly2',
     GUNS: [],
-    TURRETS: [],
-	ON_DEAD: function({ sockets, ran, Entity }){
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("The Guardians have arrived.");
-			for (let i = 0; i < 6; i++) {
-				let boss = new Entity({
-					x: x,
-					y: y
-				});
-				boss.team = this.team;
-				boss.define([Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.pentaguardianAI][i]);
-			}
-		}, 3000);
-	}
+    TURRETS: []
 };
 for (let i = 0; i < 5; i++) defExports.quintet.TURRETS = defExports.quintet.TURRETS.concat({
     POSITION: [7.5, 11, 0, i * 72, 0, 1],
@@ -107170,7 +106367,8 @@ defExports.briefcase = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.more_range, g.more_reload, g.bigger, g.fast]),
             TYPE: defExports.megasplitTrap,
-            STAT_CALCULATOR: gunCalcNames.trap
+            STAT_CALCULATOR: gunCalcNames.trap,
+            DUO_FIRE: true
         }
     }]
 };
@@ -107306,7 +106504,8 @@ defExports.giftwrapper = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.more_range, g.more_reload, g.bigger, g.fast]),
             TYPE: defExports.giftTrap,
-            STAT_CALCULATOR: gunCalcNames.trap
+            STAT_CALCULATOR: gunCalcNames.trap,
+            DUO_FIRE: true
         }
     }],
     PROPS: [{
@@ -107339,7 +106538,8 @@ defExports.wardrobe = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.destroy, g.more_range, g.bigger, g.faster, g.bit_more_damage]),
             TYPE: defExports.megasplitTrap,
-            STAT_CALCULATOR: gunCalcNames.trap
+            STAT_CALCULATOR: gunCalcNames.trap,
+            DUO_FIRE: true
         }
     }]
 };
@@ -107919,26 +107119,29 @@ defExports.explodeTrap = {
     LABEL: 'Mine',
     SHAPE: 0,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.less_damage]),
-            SHOOT_ON_DEATH: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'flakGun',
                 LABEL: 'Explosion',
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            SHOOT_ON_DEATH: true
         }
     }],
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }, {
-        POSITION: [20.5, 0, 0, 180, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }],
+    PROPS: [{
+		POSITION: [1.45, 0, 0, 180, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}, {
+		POSITION: [1.45, 0, 0, 0, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}],
     INDEPENDENT: true
 };
 defExports.packageBomb = {
@@ -107975,23 +107178,26 @@ defExports.explodeSplitTrap = {
     LABEL: 'Mine',
     SHAPE: -3,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4]),
-            SHOOT_ON_DEATH: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'flakGun',
                 LABEL: 'Explosion',
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            SHOOT_ON_DEATH: true
         }
     }],
-    TURRETS: [{
-        POSITION: [16, 0, 0, 180, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }],
+    TURRETS: [],
+    PROPS: [{
+		POSITION: [.75, 0, 0, 0, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}],
     INDEPENDENT: true
 };
 defExports.miniExplodeTrap = {
@@ -107999,26 +107205,29 @@ defExports.miniExplodeTrap = {
     LABEL: 'Mine',
     SHAPE: 0,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_power]),
-            SHOOT_ON_DEATH: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'flakGun',
                 LABEL: 'Explosion',
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            SHOOT_ON_DEATH: true
         }
     }],
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }, {
-        POSITION: [20.5, 0, 0, 180, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }],
+    PROPS: [{
+		POSITION: [1.45, 0, 0, 180, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}, {
+		POSITION: [1.45, 0, 0, 0, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}],
     INDEPENDENT: true
 };
 for (let i = 0; i < 3; i++) {
@@ -108072,10 +107281,10 @@ defExports.megaExplodeTrap = {
     LABEL: 'Mine',
     SHAPE: 0,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.shrapnelExplosion, g.half_range]),
-            ALT_FIRE: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'crockett',
                 LABEL: 'Explosion',
@@ -108086,13 +107295,15 @@ defExports.megaExplodeTrap = {
             SHOOT_ON_DEATH: true
         }
     }],
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }, {
-        POSITION: [20.5, 0, 0, 180, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }],
+    PROPS: [{
+		POSITION: [1.45, 0, 0, 180, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}, {
+		POSITION: [1.45, 0, 0, 0, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}],
     INDEPENDENT: true
 };
 defExports.payload = {
@@ -108120,7 +107331,8 @@ defExports.payload = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.more_range, g.bigger, g.fast]),
             TYPE: defExports.megaExplodeTrap,
-            STAT_CALCULATOR: gunCalcNames.trap
+            STAT_CALCULATOR: gunCalcNames.trap,
+            DUO_FIRE: true
         }
     }]
 };
@@ -108137,7 +107349,8 @@ defExports.yankee = {
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.trap
+            TYPE: defExports.trap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [2, 12, .6, 22, 0, 0, 0],
@@ -108152,49 +107365,57 @@ defExports.yankee = {
         POSITION: [4, 1.5, 1, 11, 3, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.trap
+            TYPE: defExports.trap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [4, 2, 1, 13, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.trap
+            TYPE: defExports.trap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [1, 2.5, 1, 12, -1, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.explodeTrap
+            TYPE: defExports.explodeTrap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [1, 2.5, 1, 11, 1, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.explodeTrap
+            TYPE: defExports.explodeTrap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [1, 2.5, 1, 12, -1, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.explodeTrap
+            TYPE: defExports.explodeTrap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [1, 2.5, 1, 11, 1, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.slow, g.bit_less_reload]),
-            TYPE: defExports.explodeTrap
+            TYPE: defExports.explodeTrap,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [15, 4, 1, 6, 3, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.fake, g.bit_less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [15, 4, 1, 6, -3, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.fake, g.bit_less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [15, 7, -1.3, 0, 0, 180, 0]
@@ -108202,7 +107423,8 @@ defExports.yankee = {
         POSITION: [4, 12, 1.7, 17, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.sgun, g.musketeer, g.fake, g.bit_less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }]
 };
@@ -108211,7 +107433,7 @@ defExports.explodeTrapC4 = {
     LABEL: 'Grenade',
     SHAPE: 201,
     GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, .001],
+        POSITION: [2, 5, 1, 0, 0, 0, .00005],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.less_power, g.less_range, g.less_damage, g.less_health, g.less_reload]),
             ALT_FIRE: true,
@@ -108221,29 +107443,36 @@ defExports.explodeTrapC4 = {
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            ON_FIRE: (gun, gunInfo) => {
+                gun.fire(gunInfo);
+                gun.body.kill();
+            }
         }
     }, {
-        POSITION: [2, 5, 1, 0, 0, 0, 100],
+        POSITION: [2, 5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.c4]),
-            SHOOT_ON_DEATH: true,
+            CAN_SHOOT: false,
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'flakGun',
                 LABEL: 'Explosion',
                 PERSISTS_AFTER_DEATH: true,
                 GO_THRU_OBSTACLES: true
             }],
-            STAT_CALCULATOR: gunCalcNames.sustained
+            STAT_CALCULATOR: gunCalcNames.sustained,
+            SHOOT_ON_DEATH: true
         }
     }],
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }, {
-        POSITION: [20.5, 0, 0, 180, 360, 0],
-        TYPE: defExports.darkTriangleProp
-    }],
+    PROPS: [{
+		POSITION: [1.45, 0, 0, 180, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}, {
+		POSITION: [1.45, 0, 0, 0, 0],
+		SHAPE: 3,
+		COLOR: 9
+	}]
 };
 defExports.fracker = {
     PARENT: [defExports.genericTank],
@@ -108271,7 +107500,8 @@ defExports.fracker = {
             SHOOT_SETTINGS: combineStats([g.trap, g.bit_slow, g.less_reload]),
             TYPE: defExports.explodeTrapC4,
             MAX_CHILDREN: 8,
-            DESTROY_OLDEST_CHILD: true
+            DESTROY_OLDEST_CHILD: true,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [17, 8, 1, 0, 0, 0, 0],
@@ -108621,47 +107851,8 @@ defExports.xContagionOverseer = {
         }
     }]
 };
-defExports.hybridCruiser = makeHybrid(defExports.cruiser, 'Debaucher');
-defExports.hewnCruiser = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Hewn Cruiser',
-    DANGER: 7,
-    STAT_NAMES: statNames.swarm,
-    BODY: {
-        ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
-    },
-    GUNS: [{
-        POSITION: [7, 7.5, .6, 7, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm]),
-            TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 7, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm]),
-            TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [4.5, 10, 1, 10.5, 0, 180, 0]
-    }, {
-        POSITION: [1, 12, 1.01, 15, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory, g.weak]),
-            TYPE: defExports.minion,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            MAX_CHILDREN: 3,
-            INDEPENDENT: true
-        }
-    }, {
-        POSITION: [3.5, 12, 1, 8, 0, 180, 0]
-    }]
-};
+defExports.hybridCruiser = makeHybrid(defExports.cruiser, 'drone', { name: 'Debaucher' });
+defExports.hewnCruiser = makeHybrid(defExports.cruiser, 'minion', { name: 'Hewn Cruiser' });
 defExports.sidekick = makeSidekick(defExports.destroyer, 'Sidekick');
 defExports.ultima3PinkBasic = makeAuto({
     COLOR: 5,
@@ -108730,9 +107921,10 @@ defExports.directdriveturret = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.swagger = {
@@ -109127,7 +108319,6 @@ defExports.PDK_Maleficitor = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.malefict, g.half_reload]),
             TYPE: [defExports.malefictDrone, {
-                INVISIBLE: [.06, .02, .03],
                 LAYER: 6
             }],
             AUTOFIRE: true,
@@ -109855,7 +109046,19 @@ defExports.constellation = {
 	}, {
 		POSITION: [6, 19, 0, 135, 360, 1],
 		TYPE: defExports.constGun
-	}],
+	}]
+};
+defExports.constAI = {
+    PARENT: [defExports.constellation],
+    TYPE: 'miniboss',
+    LEVEL: 45,
+    VALUE: 3e5,
+    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    AI: {
+        BLIND: true
+    },
+    HITS_OWN_TYPE: 'hard',
+    SKILL: setSkill(0, 8, 9, 7, 7, 7, 8, 0, 0, 0),
 	ON_DEAD: function({ sockets, ran, Entity }){
 		sockets.broadcast("A Constellation boss may have been defeated, but the battle is not won yet...");
 		let x = this.x,
@@ -109892,18 +109095,6 @@ defExports.constellation = {
 			core.settings.broadcastMessage = "A Constellation Core has been defeated!";
 		}, 7500);
 	}
-};
-defExports.constAI = {
-    PARENT: [defExports.constellation],
-    TYPE: 'miniboss',
-    LEVEL: 45,
-    VALUE: 3e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        BLIND: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 9, 7, 7, 7, 8, 0, 0, 0)
 };
 defExports.vanTurret = {
     PARENT: [defExports.auto3gun],
@@ -110205,41 +109396,7 @@ defExports.bow = makeAuto({
     }, {
         POSITION: [26, 16.2, 0, 270, 0, 0],
         TYPE: defExports.bowSegment
-    }],
-    ON_DEAD: function({ sockets, ran, Entity }){
-		sockets.broadcast("A Bow may have been defeated, but the battle is not over yet...");
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("Bow Shards have spawned to avenge the Bow!");
-			let positions = [
-				[x + 100, y, 100, 0],
-				[x - 100, y, -100, 0]
-			],
-				names = ran.chooseBossName("a", 3);
-			for (let i = 0; i < 2; i++) {
-				let shard = new Entity({
-					x: positions[i][0],
-					y: positions[i][1]
-				});
-				shard.team = -100;
-				shard.control.target.x = positions[i][2];
-				shard.control.target.y = positions[i][3];
-				shard.define(Class.bowShard);
-				shard.name = names[i];
-				shard.settings.broadcastMessage = "A Bow Shard has been defeated!";
-			}
-			let core = new Entity({
-				x: x,
-				y: y
-			});
-			core.team = -100;
-			core.control.target.x = core.control.target.y = 100;
-			core.define(Class.bowCore);
-			core.name = names[2];
-			core.settings.broadcastMessage = "A Bow Core has been defeated!";
-		}, 5000);
-	}
+    }]
 }, 'Bow', {
     type: defExports.autoWreckingBallTurret,
     independent: false,
@@ -110308,7 +109465,41 @@ defExports.bowAI = {
         BLIND: true
     },
     HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 4, 9, 7, 7, 7, 8, 0, 0, 0)
+    SKILL: setSkill(0, 4, 9, 7, 7, 7, 8, 0, 0, 0),
+    ON_DEAD: function({ sockets, ran, Entity }) {
+		sockets.broadcast("A Bow may have been defeated, but the battle is not over yet...");
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("Bow Shards have spawned to avenge the Bow!");
+			let positions = [
+				[x + 100, y, 100, 0],
+				[x - 100, y, -100, 0]
+			],
+				names = ran.chooseBossName("a", 3);
+			for (let i = 0; i < 2; i++) {
+				let shard = new Entity({
+					x: positions[i][0],
+					y: positions[i][1]
+				});
+				shard.team = -100;
+				shard.control.target.x = positions[i][2];
+				shard.control.target.y = positions[i][3];
+				shard.define(Class.bowShard);
+				shard.name = names[i];
+				shard.settings.broadcastMessage = "A Bow Shard has been defeated!";
+			}
+			let core = new Entity({
+				x: x,
+				y: y
+			});
+			core.team = -100;
+			core.control.target.x = core.control.target.y = 100;
+			core.define(Class.bowCore);
+			core.name = names[2];
+			core.settings.broadcastMessage = "A Bow Core has been defeated!";
+		}, 5000);
+	}
 };
 defExports.masterHivemind = makeHivemind(defExports.master, 'Mastermind');
 defExports.streamliner50 = {
@@ -110940,10 +110131,8 @@ defExports.xHash = {
         HEALTH: base.HEALTH * 1.4,
         SHIELD: base.SHIELD * 1.4
     },
+    PROPS: [makeShell()],
     TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
         POSITION: [34, 0, 0, 0, 0, 0],
         TYPE: defExports.xHashBase
     }],
@@ -111439,7 +110628,7 @@ defExports.spammer = {
         POSITION: [7, 10, -1.6, 6, 0, 0, 0]
     }]
 };
-defExports.hybridContraband = makeHybrid(defExports.trapperHunter, 'Smuggler');
+defExports.hybridContraband = makeHybrid(defExports.trapperHunter, 'drone', { name: 'Smuggler' });
 defExports.invisStream = {
     PARENT: [defExports.genericTank],
     LABEL: 'Megahelix',
@@ -111609,7 +110798,7 @@ defExports.hybridShot = makeHybrid({
             TYPE: defExports.bullet
         }
     }]
-}, 'Barge');
+}, 'drone', { name: 'Barge' });
 defExports.megaBlaster = {
     PARENT: [defExports.genericTank],
     LABEL: 'Furnace',
@@ -112155,42 +111344,28 @@ defExports.watchtrap = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
-};
-defExports.plasmaRing = {
-    PARENT: [defExports.bullet],
-    SHAPE: 136,
-    ALPHA: .7
 };
 defExports.plasmaBullet = {
-    PARENT: [defExports.bullet],
+    PARENT: [defExports.explosiveShell],
     LABEL: 'Rocket',
-    SHAPE: 141,
-    HAS_NO_RECOIL: true,
-    GUNS: [{
-        POSITION: [2, 5, 1, 0, 0, 0, Infinity],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.c4, g.half_damage, g.less_damage, g.less_power, g.smaller, g.no_recoil]),
-            TYPE: [defExports.bulletLayer6, {
-                MOTION_TYPE: 'explode',
-                LABEL: 'Explosion',
-                PERSISTS_AFTER_DEATH: true,
-                GO_THRU_OBSTACLES: true
-            }],
-            STAT_CALCULATOR: gunCalcNames.sustained,
-            SHOOT_ON_DEATH: true
+    VARIABLES: { ringsToShoot: 2 },
+    ON_TICK: (me) => {
+        if (me.isAlive()) {
+            me.variables.delay ??= 1;
+            for (let i = me.variables.ringsToShoot; i > 0; i--) {
+                if (me.variables.ringsToShoot > i - 1 && me.range <= me.RANGE / (me.variables.ringsToShoot + me.variables.delay) * i) {
+                    fireGun(me.guns[1]);
+                    me.variables.ringsToShoot--;
+                    me.variables.delay++;
+                }
+            }
         }
-    }, {
-        POSITION: [2, 4, 1, 0, 0, 180, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.plasma, g.no_recoil]),
-            TYPE: defExports.plasmaRing,
-            AUTOFIRE: true
-        }
-    }]
+    }
 };
 defExports.plasmaTurret = {
     PARENT: [defExports.auto3gun],
@@ -112226,9 +111401,9 @@ defExports.ionTank = {
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
-        POSITION: [12, 7.25, 1, 0, 0, 0, 0]
+        POSITION: [14, 7.25, 1, 0, 0, 90, 0] // 12 (length) 0 (angle)
     }, {
-        POSITION: [12, 7.25, 1, 0, 0, 180, 0]
+        POSITION: [14, 7.25, 1, 0, 0, 270, 0] // 12 (length) 180 (angle)
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 190, 0],
@@ -112244,13 +111419,13 @@ defExports.sprite = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: 1.45
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
-        POSITION: [12, 7.25, 1, 0, 0, 0, 0]
+        POSITION: [14, 7.25, 1, 0, 0, 90, 0] // 12 (length) 0 (angle)
     }, {
-        POSITION: [12, 7.25, 1, 0, 0, 180, 0]
+        POSITION: [14, 7.25, 1, 0, 0, 270, 0] // 12 (length) 180 (angle)
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 190, 0],
@@ -112404,7 +111579,7 @@ defExports.necrogunner = {
         POSITION: [12, 11, 1, 0, 0, 0, 0]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.autoGoldola = makeAuto(defExports.bigUnderseer);
@@ -112449,16 +111624,14 @@ defExports.ficitor = {
         POSITION: [5, 12, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.malefict]),
-            TYPE: [defExports.malefictDrone, {
-                INVISIBLE: [.06, .02, .03]
-            }],
+            TYPE: defExports.malefictDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.giffardBullet = {
@@ -112627,42 +111800,20 @@ defExports.reaperOverdrive = {
     }, {
         POSITION: [3.5, 12, 1, 8, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.clickerMinion = {
     PARENT: [defExports.sniperMinion],
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -112681,7 +111832,7 @@ defExports.clickerFactory = {
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
     }, {
-        POSITION: [1, 12, 1.01, 16, 0, 0, 0],
+        POSITION: [1, 12, 1.01, 15, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
             TYPE: defExports.clickerMinion,
@@ -112990,9 +112141,10 @@ defExports.tweakedThunder = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.infinitePuntGunner = {
@@ -113070,7 +112222,7 @@ for (let i = 0; i < 32; i++) defExports.infinitePuntGunner.GUNS = defExports.inf
 });
 defExports.infinitePuntGunner.GUNS.reverse();
 defExports.anniCompressor = makeGunnerFlank(defExports.annihilator, 'Blastdoor');
-defExports.hybridLieutenant = makeHybrid(defExports.builderArtillery, 'Infantry');
+defExports.hybridLieutenant = makeHybrid(defExports.builderArtillery, 'drone', { name: 'Infantry' });
 defExports.zoomSwarmingBuilder = {
     PARENT: [defExports.genericTank],
     LABEL: 'Swarming Composer',
@@ -113128,9 +112280,7 @@ defExports.bazooka = { // blasterArtillery
         }
     }]
 };
-defExports.newMoreSpreadguard = makeHybrid(defExports.diepSpreadling, 'Consummate', {
-    isYoukron: true
-});
+defExports.newMoreSpreadguard = makeHybrid(defExports.diepSpreadling, 'youkron', { name: 'Consummate' });
 defExports.gust = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gust',
@@ -114051,7 +113201,8 @@ defExports.pissRifle = {
         PROPERTIES: {
             COLOR: 337
         }
-    }]
+    }],
+    PROPS: [makeAura(337)]
 };
 defExports.jarate = {
     PARENT: [defExports.genericTank],
@@ -114075,7 +113226,8 @@ defExports.jarate = {
         PROPERTIES: {
             COLOR: 337
         }
-    }]
+    }],
+    PROPS: [makeAura(337)]
 };
 defExports.pissGun = {
     PARENT: [defExports.genericTank],
@@ -114110,7 +113262,8 @@ defExports.pissGun = {
         PROPERTIES: {
             COLOR: 337
         }
-    }]
+    }],
+    PROPS: [makeAura(337)]
 };
 defExports.irritateBullet = {
     PARENT: [defExports.swellBullet],
@@ -114146,40 +113299,40 @@ defExports.irritator = {
 defExports.erisTank = {
     PARENT: [defExports.genericTank],
     LABEL: 'Eris',
-    TOOLTIP: "Right click to shoot an allergen bullet",
+    TOOLTIP: "Right click to shoot an Allergen bullet.",
     DANGER: 7,
     GUNS: [{
-        POSITION: [30, 1.5, 1, 0, 8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, 7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, 2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, 5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, 5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -8.3, 0, .25],
+        POSITION: [30, 1.5, 1, 0, -7.7, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -2.3, 0, .75],
+        POSITION: [30, 1.5, 1, 0, -2.7, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.twin]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 1.5, 1, 0, -5.3, 0, 0],
+        POSITION: [30, 1.5, 1, 0, -5.2, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.vulc, g.double_reload, g.twin]),
             TYPE: defExports.bullet
@@ -114685,17 +113838,23 @@ defExports.poisonSpike = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.poisonSpikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 120, 360, 0],
-        TYPE: defExports.poisonSpikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 240, 360, 0],
-        TYPE: defExports.poisonSpikeBody
-    }],
-    PROPS: [makeAura(31)]
+    PROPS: [
+		makeAura(31),
+		makeShell({
+            shape: -5,
+			color: 31
+        }),
+        makeShell({
+            shape: -5,
+			color: 31,
+            angle: 120
+        }),
+        makeShell({
+            shape: -5,
+			color: 31,
+            angle: 240
+        })
+	]
 };
 defExports.whiteoutBullet = {
     PARENT: [defExports.infernoBullet],
@@ -114938,10 +114097,8 @@ defExports.triebflugel = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
+    PROPS: [makeShell()],
     TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
         POSITION: [34, 0, 0, 0, 0, 0],
         TYPE: defExports.triebflugelBase
     }]
@@ -115034,32 +114191,7 @@ defExports.hf61TrapBase = makeAutoN({
     }]
 }, 7, 'Trap Base');
 defExports.hf61TrapBase.FACING_TYPE = 'toTarget';
-defExports.hf61Top = makeAuto({
-    PARENT: [defExports.genericTank],
-    SHAPE: 7,
-    BODY: {
-        FOV: 1.15,
-        HEALTH: 12500,
-        DAMAGE: base.DAMAGE * 1.25,
-        REGEN: base.REGEN * .75,
-        SPEED: base.SPEED * .35,
-        ACCELARATION: base.ACCEL * .4
-    },
-    GUNS: [],
-    TURRETS: []
-}, 'HF-61', {
-    type: defExports.hf61TrapBase,
-    independent: false,
-    color: 218,
-    size: 11.75,
-    angle: 0
-});
-defExports.hf61Top.FACING_TYPE = 'toTarget';
-for (let i = 0; i < 7; i++) defExports.hf61Top.TURRETS.push({
-    POSITION: [5.35, 9.85, 0, i * 360 / 7, 125, 0],
-    TYPE: defExports.hf61VulcanTurret
-});
-defExports.hf61 = makeAuto({
+defExports.hf61 = {
     PARENT: [defExports.genericTank],
     LABEL: 'HF-61',
     SIZE: 50,
@@ -115075,27 +114207,33 @@ defExports.hf61 = makeAuto({
         ACCELARATION: base.ACCEL * .4
     },
     FACING_TYPE: 'autospin',
-    GUNS: []
-}, 'HF-61', {
-    type: defExports.hf61Top,
-    independent: false,
-    color: 219,
-    size: 21,
-    angle: 0,
-    rot: 0
-});
-for (let i = 0; i < 7; i++) defExports.hf61.GUNS = defExports.hf61.GUNS.concat({
-    POSITION: [14.5, 5.5, 1, 0, 0, i * 360 / 7 + 180, 0],
-    PROPERTIES: {
-        SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
-        TYPE: defExports.chillerBullet
-    }
-}, {
-    POSITION: [12.25, 3, 1, 0, 0, i * 360 / 7 + 180, 0],
-    PROPERTIES: {
-        COLOR: 217
-    }
-});
+    GUNS: ((guns = []) => {
+		for (let i = 0; i < 7; i++) guns.push({
+			POSITION: [14.5, 5.5, 1, 0, 0, i * 360 / 7 + 180, 0],
+			PROPERTIES: {
+				SHOOT_SETTINGS: combineStats([g.basic, g.sniper]),
+				TYPE: defExports.chillerBullet
+			}
+		}, {
+			POSITION: [12.25, 3, 1, 0, 0, i * 360 / 7 + 180, 0],
+			PROPERTIES: {
+				COLOR: 217
+			}
+		});
+		return guns;
+	})(),
+    TURRETS: ((turrets = [{
+		POSITION: [11.75, 0, 0, 0, 360, 1],
+		TYPE: [defExports.hf61TrapBase, { COLOR: 218 }]
+	}]) => {
+		for (let i = 0; i < 7; i++) turrets.push({
+			POSITION: [5.35, 9.85, 0, i * 360 / 7, 125, 0],
+			TYPE: defExports.hf61VulcanTurret
+		});
+		return turrets;
+	})(),
+    PROPS: [makeAura(217)]
+};
 defExports.newInferno = {
     PARENT: [defExports.genericTank],
     LABEL: 'Flamethrower',
@@ -115224,47 +114362,14 @@ defExports.megaInferno = {
         }
     }]
 };
-defExports.overflame = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Overflamer',
-    DANGER: 7,
-    BODY: {
+defExports.overflame = makeHybrid(defExports.newInferno, 'over', {
+    name: 'Overflamer',
+    body: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
         FOV: 1.15
-    },
-    STAT_NAMES: statNames.generic,
-    GUNS: [{
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3
-        }
-    }, {
-        POSITION: [15.077, 8, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.inferno]),
-            TYPE: defExports.bullet,
-            SKIN: 1
-        }
-    }]
-};
+    }
+});
 defExports.flankNewInferno = makeFlank({
     PARENT: [defExports.genericTank],
     DANGER: 7,
@@ -115849,6 +114954,7 @@ defExports.nukeProjectile = {
     PARENT: [defExports.bullet],
     LABEL: 'Bomb',
     FACING_TYPE: 'turnWithSpeed',
+    HAS_NO_RECOIL: true,
     GUNS: [{
         POSITION: [28, 2, 1, 0, 0, 0, 0],
         PROPERTIES: {
@@ -116494,9 +115600,10 @@ defExports.invisSplitBuilder = {
             DESTROY_OLDEST_CHILD: true
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.autoSplitBlock = makeAuto(defExports.splitBlock, 'Block', {
@@ -117418,9 +116525,9 @@ defExports.decentralizerAutoGun = {
         FOV: 2.5
     },
     GUNS: [{
-        POSITION: [21, 19.5, 1.2, 0, 0, 0, 0],
+        POSITION: [21, 20, 1.25, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize]),
             TYPE: defExports.bullet
         }
     }]
@@ -117472,45 +116579,7 @@ defExports.snowflake = {
         SPEED: 1.58,
         ACCELERATION: 1.04
     },
-    TURRETS: [],
-	ON_DEAD: function({ sockets, ran, Entity}){
-		sockets.broadcast("A Snowflake may have been defeated, but the battle is not over yet...");
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("Snowflake Shards have spawned to avenge the Snowflake!");
-			let positions = [
-				[x, y + 100, 0, 100],
-				[x + 86.602, y + 50, 86.602, 50],
-				[x + 86.602, y - 50, 86.602, -50],
-				[x, y - 100, 0, -100],
-				[x - 86.602, y - 50, -86.602, -50],
-				[x - 86.602, y + 50, -86.602, 50]
-			],
-				names = ran.chooseBossName("a", 7);
-			for (let i = 0; i < 6; i++) {
-				let shard = new Entity({
-					x: positions[i][0],
-					y: positions[i][1]
-				});
-				shard.team = -100;
-				shard.control.target.x = positions[i][2];
-				shard.control.target.y = positions[i][3];
-				shard.define(Class.snowflakeShard);
-				shard.name = names[i];
-				shard.settings.broadcastMessage = "A Snowflake Shard has been defeated!";
-			}
-			let core = new Entity({
-				x: x,
-				y: y
-			});
-			core.team = -100;
-			core.control.target.x = core.control.target.y = 100;
-			core.define(Class.snowflakeCore);
-			core.settings.broadcastMessage = "A Snowflake Core has been defeated!";
-			core.name = names[2];
-		}, 7500);
-	}
+    TURRETS: []
 };
 for (let i = 0; i < 3; i++) {
     let angle = i * 120;
@@ -117608,7 +116677,45 @@ defExports.snowflakeAI = {
         BLIND: true
     },
     HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 1, 7, 4, 4, 4, 3, 0, 0, 0)
+    SKILL: setSkill(0, 1, 7, 4, 4, 4, 3, 0, 0, 0),
+	ON_DEAD: function({ sockets, ran, Entity}){
+		sockets.broadcast("A Snowflake may have been defeated, but the battle is not over yet...");
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("Snowflake Shards have spawned to avenge the Snowflake!");
+			let positions = [
+				[x, y + 100, 0, 100],
+				[x + 86.602, y + 50, 86.602, 50],
+				[x + 86.602, y - 50, 86.602, -50],
+				[x, y - 100, 0, -100],
+				[x - 86.602, y - 50, -86.602, -50],
+				[x - 86.602, y + 50, -86.602, 50]
+			],
+				names = ran.chooseBossName("a", 7);
+			for (let i = 0; i < 6; i++) {
+				let shard = new Entity({
+					x: positions[i][0],
+					y: positions[i][1]
+				});
+				shard.team = -100;
+				shard.control.target.x = positions[i][2];
+				shard.control.target.y = positions[i][3];
+				shard.define(Class.snowflakeShard);
+				shard.name = names[i];
+				shard.settings.broadcastMessage = "A Snowflake Shard has been defeated!";
+			}
+			let core = new Entity({
+				x: x,
+				y: y
+			});
+			core.team = -100;
+			core.control.target.x = core.control.target.y = 100;
+			core.define(Class.snowflakeCore);
+			core.settings.broadcastMessage = "A Snowflake Core has been defeated!";
+			core.name = names[2];
+		}, 7500);
+	}
 };
 defExports.radiant = {
     PARENT: [defExports.genericTank],
@@ -117904,19 +117011,19 @@ defExports.betterLandmine = {
         SHIELD: base.SHIELD * 1.4
     },
     INVISIBLE: [1, 1, .025],
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.landmineBody
-    }, {
-        POSITION: [21.5, 0, 0, 90, 360, 0],
-        TYPE: defExports.landmineBody
-    }],
+    PROPS: [
+        makeShell(),
+        makeShell({
+            angle: 90
+        }),
+        makeShell({
+            rpm: 2
+        }),
+        makeShell({
+            rpm: 2,
+            angle: 90
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
@@ -118846,15 +117953,17 @@ defExports.overdriver = {
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }, {
-        POSITION: [5, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+        POSITION: [.275, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
-defExports.hybridTwinDestroyer = makeHybrid(defExports.twinDestroyer, 'Split Hybrid');
+defExports.hybridTwinDestroyer = makeHybrid(defExports.twinDestroyer, 'drone', { name: 'Split Hybrid' });
 defExports.hybridDouble = {
     PARENT: [defExports.genericTank],
     LABEL: 'Protozoa',
@@ -118996,7 +118105,7 @@ defExports.bomberDeluxe = {
         }
     }]
 };
-defExports.hybridMxgun = makeHybrid(defExports.mxgun, "MX-Hybrid");
+defExports.hybridMxgun = makeHybrid(defExports.mxgun, 'drone', { name: 'MX-Hybrid' });
 defExports.hewnPuntUpg1 = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dispositioner',
@@ -119391,64 +118500,13 @@ defExports.quintMech = makeAuto({
     type: defExports.quintMechTop,
     independent: true
 });
-defExports.terrorhedronAnni = {
-    SHAPE: 3,
-    COLOR: 5,
-    TURRETS: [{
-        POSITION: [11, 0, 9, 0, 190, 0],
-        TYPE: [defExports.annihilator, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }, {
-        POSITION: [11, 0, -9, 0, 190, 0],
-        TYPE: [defExports.annihilator, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }]
-};
-defExports.terrorhedronSubduer = {
-    SHAPE: 3,
-    COLOR: 5,
-    TURRETS: [{
-        POSITION: [11, 0, 9, 0, 190, 0],
-        TYPE: [defExports.littleHunter, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }, {
-        POSITION: [11, 0, -9, 0, 190, 0],
-        TYPE: [defExports.littleHunter, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }]
-};
-defExports.terrorhedronStaplegun = {
-    SHAPE: 3,
-    COLOR: 5,
-    TURRETS: [{
-        POSITION: [11, 0, 9, 0, 190, 0],
-        TYPE: [defExports.staplegun, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }, {
-        POSITION: [11, 0, -9, 0, 190, 0],
-        TYPE: [defExports.staplegun, {
-            COLOR: 5,
-            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
-        }]
-    }]
-};
 defExports.terrorhedron = {
     PARENT: [defExports.genericTank],
     LABEL: 'Terrorhedron',
     SHAPE: 3,
     COLOR: 5,
     FACING_TYPE: 'autospin2',
-    SIZE: 20,
+    SIZE: 36,
     BODY: {
         FOV: 1.25,
         HEALTH: 3000,
@@ -119456,21 +118514,52 @@ defExports.terrorhedron = {
         SPEED: 1.58,
         ACCELERATION: 1.04
     },
+	PROPS: [{
+		POSITION: [.4875, 0, 0, 0, 1],
+		SHAPE: 3
+	}],
     TURRETS: [{
-        POSITION: [11, 0, 0, 0, 361, 1],
+        POSITION: [6, 0, 0, 0, 361, 1],
         TYPE: [defExports.stream, {
             COLOR: 5,
             CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
         }]
     }, {
-        POSITION: [20, 16, 0, 60, 0, 0],
-        TYPE: defExports.terrorhedronSubduer
+        POSITION: [6, 9, 4, 0, 190, 0],
+        TYPE: [defExports.staplegun, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
     }, {
-        POSITION: [20, 16, 0, 180, 0, 0],
-        TYPE: defExports.terrorhedronStaplegun
+        POSITION: [6, 9, -4, 0, 190, 0],
+        TYPE: [defExports.staplegun, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
+	}, {
+        POSITION: [6, 9, 4, 120, 190, 0],
+        TYPE: [defExports.annihilator, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
     }, {
-        POSITION: [20, 16, 0, 300, 0, 0],
-        TYPE: defExports.terrorhedronAnni
+        POSITION: [6, 9, -4, 120, 190, 0],
+        TYPE: [defExports.annihilator, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
+	}, {
+        POSITION: [6, 9, 4, 240, 190, 0],
+        TYPE: [defExports.littleHunter, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
+    }, {
+        POSITION: [6, 9, -4, 240, 190, 0],
+        TYPE: [defExports.littleHunter, {
+            COLOR: 5,
+            CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster']
+        }]
     }]
 };
 defExports.quads = {
@@ -119813,9 +118902,9 @@ defExports.bentTwinFighter = {
         }
     }]
 };
-defExports.hybridDevastator = makeHybrid(defExports.devastator, 'Overwhelmer');
-defExports.hybridCarnivore = makeHybrid(defExports.carnivore, 'Quadruped');
-defExports.hybridSearcher = makeHybrid(defExports.gatlingSpray, 'Pathfinder');
+defExports.hybridDevastator = makeHybrid(defExports.devastator, 'drone', { name: 'Overwhelmer' });
+defExports.hybridCarnivore = makeHybrid(defExports.carnivore, 'drone', { name: 'Quadruped' });
+defExports.hybridSearcher = makeHybrid(defExports.gatlingSpray, 'drone', { name: 'Pathfinder' });
 defExports.tripleGuard = {
     PARENT: [defExports.genericTank],
     LABEL: 'Triple Guard',
@@ -121412,7 +120501,7 @@ defExports.aerochip = {
     PARENT: [defExports.sunchip],
     SHAPE: 10001,
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.aeromancer = {
@@ -123774,7 +122863,7 @@ defExports.twinGigaTrapper = {
         POSITION: [10, 17.2, 3.26, -4.4, 0, 0, 0]
     }]
 };
-defExports.hybridShift = makeHybrid(defExports.shift, 'Iamb');
+defExports.hybridShift = makeHybrid(defExports.shift, 'drone', { name: 'Iamb' });
 defExports.hybridShift.SIZE = 9.5
 defExports.hybridShift.BODY = {
     SPEED: base.SPEED * 1.285,
@@ -124219,9 +123308,7 @@ defExports.hybridBorerNaturalist = makeHybrid({
     }, {
         POSITION: [4.5, 8.5, -1.6, 7.5, 0, 0, 0]
     }]
-}, 'Division Bell', {
-    isYoukron: true
-});
+}, 'youkron', { name: 'Division Bell' });
 defExports.phylloxeraShard = makeAuto({
     PARENT: [defExports.genericTank],
     SHAPE: 5,
@@ -124425,7 +123512,7 @@ defExports.fatDevastator = {
         }
     }]
 };
-defExports.hybridBulldozer = makeHybrid(defExports.bulldozer, 'Woodcutter');
+defExports.hybridBulldozer = makeHybrid(defExports.bulldozer, 'drone', { name: 'Woodcutter' });
 defExports.fatPredator = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dematerializer',
@@ -124946,7 +124033,7 @@ defExports.doubleSprayer = {
     }]
 };
 defExports.gunnerFlankStalker = makeGunnerFlank(defExports.stalk, 'Artemis');
-defExports.hybridMultishot = makeHybrid(defExports.multishot, 'Multigun');
+defExports.hybridMultishot = makeHybrid(defExports.multishot, 'drone', { name: 'Multigun' });
 defExports.sidekickMultishot = makeSidekick(defExports.multishot, 'Quisling');
 defExports.sidekickMultishot.TOOLTIP = 'Et tu, Brutus?!';
 defExports.sidekickSpreadling = makeSidekick(defExports.diepSpreadling, 'Abetter');
@@ -125670,10 +124757,10 @@ defExports.hewnNecromancer = {
         TYPE: defExports.heavy3gun
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
-defExports.hybridLancer = makeHybrid(defExports.lancer, 'Lancebrid');
+defExports.hybridLancer = makeHybrid(defExports.lancer, 'drone', { name: 'Lancebrid' });
 defExports.lancerDirector = {
     PARENT: [defExports.genericTank],
     LABEL: 'Switchblade',
@@ -125917,7 +125004,7 @@ defExports.infinityGauntlet = makeAuto({
     size: 20,
     rot: 0
 });
-defExports.hybridSmother = makeHybrid(defExports.smother);
+defExports.hybridSmother = makeHybrid(defExports.smother, 'drone');
 defExports.ghetsis = {
     PARENT: [defExports.genericTank],
     LABEL: 'Ghetsis',
@@ -125981,7 +125068,6 @@ defExports.trapperCloserAI = {
 defExports.cometAI = {
     PARENT: [defExports.comet],
     TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
     LEVEL: 45,
     VALUE: 5e4,
     CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
@@ -125994,7 +125080,6 @@ defExports.cometAI = {
 defExports.cometbetterAI = {
     PARENT: [defExports.cometbetter],
     TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
     LEVEL: 45,
     VALUE: 1e6,
     CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
@@ -126007,7 +125092,6 @@ defExports.cometbetterAI = {
 defExports.brownCometAI = {
     PARENT: [defExports.comet],
     TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
     LEVEL: 45,
     VALUE: 5e4,
     COLOR: 190,
@@ -126593,7 +125677,7 @@ defExports.newGunborer = {
         POSITION: [4.5, 9, -1.5, 7.5, 0, 0, 0]
     }]
 };
-defExports.hybridFlail = makeHybrid(defExports.flail, 'Collectivist');
+defExports.hybridFlail = makeHybrid(defExports.flail, 'drone', { name: 'Collectivist' });
 defExports.newCyanideBullet = {
     PARENT: [defExports.poisonBullet],
     ON_DEALT_DAMAGE: (me, them) => {
@@ -126718,7 +125802,7 @@ defExports.rupertBunker = {
         }
     }]
 };
-defExports.myCreativityIsGone = makeHybrid(makeCeption(defExports.basic));
+defExports.myCreativityIsGone = makeHybrid(makeCeption(defExports.basic), 'drone');
 defExports.megaMiniNukeShooter = {
     PARENT: [defExports.genericTank],
     LABEL: 'Oppenheimer',
@@ -126839,7 +125923,7 @@ defExports.eggmancer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Egg'], 0);
+        necroRam(me, them, ['Egg', 'Sanctuary Egg'], 0);
     }
 };
 g.infestor = [.5, 0, 1, 1, .8, .8, .7, .8, .8, 1, 1, 1, 1];
@@ -126899,7 +125983,7 @@ defExports.infestor = {
         }]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Egg'], 0);
+        necroRam(me, them, ['Egg', 'Sanctuary Egg'], 0);
     }
 };
 defExports.mountedTurret = {
@@ -126984,9 +126068,10 @@ defExports.opiate = {
             MAX_CHILDREN: 3
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.vigintiTres = {
@@ -127205,7 +126290,7 @@ defExports.invisNecro = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.zoomSingleSingle = {
@@ -127456,7 +126541,7 @@ makeFlail('quadFlail', 'Windmill', {
     flailAmount: 4,
     flailLength: 2
 });
-defExports.flankDreadnought = makeHybridSwarm(defExports.hybridBasic, 'Flank Dreadnought');
+defExports.flankDreadnought = makeHybrid(defExports.hybridBasic, 'swarm', { name: 'Flank Dreadnought' });
 defExports.autoDoubleGunner = makeAuto(defExports.doubleGunner);
 defExports.tripleGunner = makeFlank(defExports.gunner, 3, 'Triple Gunner');
 defExports.pusher = {
@@ -127498,7 +126583,8 @@ defExports.pusher = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 16, 0, 180, 0]
@@ -127543,7 +126629,8 @@ defExports.shover = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 16, 0, 180, 0]
@@ -127588,7 +126675,8 @@ defExports.golfer = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 90, 0, 180, 0]
@@ -127633,7 +126721,8 @@ defExports.booper = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [18, 30, 1, 16, 0, 180, 0]
@@ -127678,7 +126767,8 @@ defExports.megaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 16, 0, 180, 0]
@@ -127691,7 +126781,8 @@ defExports.megaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 16, 0, 100, 0]
@@ -127704,7 +126795,8 @@ defExports.megaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 16, 0, -100, 0]
@@ -127749,7 +126841,8 @@ defExports.aegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 16, 0, 180, 0]
@@ -127762,7 +126855,8 @@ defExports.aegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 120, 0]
@@ -127775,7 +126869,8 @@ defExports.aegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, -120, 0]
@@ -127820,7 +126915,8 @@ defExports.pentaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 16, 0, 180, 0]
@@ -127833,7 +126929,8 @@ defExports.pentaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 120, 0]
@@ -127846,7 +126943,8 @@ defExports.pentaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, -120, 0]
@@ -127859,7 +126957,8 @@ defExports.pentaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 60, 0]
@@ -127872,7 +126971,8 @@ defExports.pentaegis = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, -60, 0]
@@ -127892,7 +126992,8 @@ defExports.pusherMinion = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [12, 20, 1, 16, 0, 0, 0]
@@ -127951,7 +127052,8 @@ defExports.pushmi_pullu = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 120, 0]
@@ -127964,7 +127066,8 @@ defExports.pushmi_pullu = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, -120, 0]
@@ -128003,7 +127106,7 @@ defExports.flankOverseer = makeFlank(defExports.director, 6, 'Flank Overseer', {
     reload_delay: [0, .5, 0, .5, 0, .5]
 });
 defExports.flankFlooder = makeFlank(defExports.flooder);
-defExports.hybridInferno = makeHybrid(defExports.inferno);
+defExports.hybridInferno = makeHybrid(defExports.inferno, 'drone');
 defExports.kevlarSpikeBody = {
     LABEL: '',
     CONTROLLERS: ['spin'],
@@ -128025,16 +127128,22 @@ defExports.kevlarSpike = {
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [21, 0, 0, 0, 360, 0],
-        TYPE: defExports.kevlarSpikeBody
-    }, {
-        POSITION: [21, 0, 0, 120, 360, 0],
-        TYPE: defExports.kevlarSpikeBody
-    }, {
-        POSITION: [21, 0, 0, 240, 360, 0],
-        TYPE: defExports.kevlarSpikeBody
-    }]
+    PROPS: [
+        makeShell({
+            shape: -7,
+			color: 209
+        }),
+        makeShell({
+            shape: -7,
+			color: 209,
+            angle: 120
+        }),
+        makeShell({
+            shape: -7,
+			color: 209,
+            angle: 240
+        })
+    ]
 };
 defExports.trapperCruisedrive = {
     PARENT: [defExports.genericTank],
@@ -128078,9 +127187,10 @@ defExports.trapperCruisedrive = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.padawan = {
@@ -128572,37 +127682,37 @@ defExports.miniSilo = {
         FOV: 1.32
     },
     GUNS: [{
-        POSITION: [34, 6, 1, 0, 0, 0, 0],
+        POSITION: [38, 6, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.hunter2, g.mini, g.faster, g.more_health]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [30, 6, 1, 0, 0, 0, 1 / 3],
+        POSITION: [34, 6, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.hunter2, g.mini, g.faster, g.more_health]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [26, 6, 1, 0, 0, 0, 2 / 3],
+        POSITION: [30, 6, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.hunter2, g.mini, g.faster, g.more_health]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [22, 10, 1, 0, 0, 0, 0],
+        POSITION: [26, 10, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.mini, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [18, 10, 1, 0, 0, 0, 1 / 3],
+        POSITION: [22, 10, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.mini, g.faster]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [13, 10, 1, 0, 0, 0, 2 / 3],
+        POSITION: [18, 10, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.hunter, g.mini, g.faster]),
             TYPE: defExports.bullet
@@ -128906,7 +128016,7 @@ defExports.fogBoomer = {
     }]
 };
 defExports.bulldozer2 = makeAutoN(defExports.bulldozer, 2, 'Extricator');
-defExports.vantabrid = makeHybrid(defExports.vantalancer, 'Lipan');
+defExports.vantabrid = makeHybrid(defExports.vantalancer, 'drone', { name: 'Lipan' });
 defExports.machContagiBuilder = {
     PARENT: [defExports.genericTank],
     LABEL: 'Basilisk',
@@ -129453,25 +128563,8 @@ defExports.accelMiniClicker = {
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'accelerate'
             }],
-            COLOR: 188
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 188
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 188
+            COLOR: 188,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
@@ -129480,25 +128573,8 @@ defExports.accelMiniClicker = {
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'accelerate'
             }],
-            COLOR: 187
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 187
-        }
-    }, {
-        POSITION: [22, 4, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 187
+            COLOR: 187,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
@@ -129507,25 +128583,8 @@ defExports.accelMiniClicker = {
             TYPE: [defExports.bullet, {
                 MOTION_TYPE: 'accelerate'
             }],
-            COLOR: 186
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 186
-        }
-    }, {
-        POSITION: [20, 4, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.mini, g.stronger, g.less_range, g.bit_slow]),
-            TYPE: [defExports.bullet, {
-                MOTION_TYPE: 'accelerate'
-            }],
-            COLOR: 186
+            COLOR: 186,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0],
@@ -129626,7 +128685,7 @@ defExports.accelMiniRifle = {
     }]
 };
 defExports.autoAccelMini = makeAuto(defExports.accelMini);
-defExports.hybridAccelMini = makeHybrid(defExports.accelMini);
+defExports.hybridAccelMini = makeHybrid(defExports.accelMini, 'drone');
 defExports.accelStreamFlankCeption = makeCeption(makeFlank(defExports.accelStream));
 defExports.flankHotshot = makeFlank(defExports.hotshot, 3, 'Hotflank');
 defExports.twinTriAuto4 = {
@@ -129694,15 +128753,15 @@ defExports.eagleArtillery = makeProp(defExports.artillery, 'Paixhans', 'eagle');
 defExports.triHarasser = makeProp(defExports.littleMortar, 'Contaminator', 'tri', [g.less_damage]);
 defExports.surferRecruit = makeProp(defExports.littleCannon, 'Networker', 'surfer');
 defExports.shootistOwl = makeProp(defExports.minishotSniper, 'Cassowary', 'eagle');
-defExports.hybridMinishot = makeHybrid(defExports.littleArtillery, 'Private');
+defExports.hybridMinishot = makeHybrid(defExports.littleArtillery, 'drone', { name: 'Private' });
 defExports.autoHybridMinishot = makeAuto(defExports.hybridMinishot, 'Veteran');
 defExports.autoHybridArtillery = makeAuto(defExports.hybridArtillery, 'Legionnaire');
-defExports.swarmsmanHybrid = makeHybrid(defExports.swarmArtillery, 'Schwarmzmann');
-defExports.howitzerHybrid = makeHybrid(defExports.howitzer, 'Haubitze');
-defExports.fieldGunHybrid = makeHybrid(defExports.fieldGun, 'Feldgeschutz');
-defExports.recruitHybrid = makeHybrid(defExports.littleCannon, 'Militant');
-defExports.cannonHybrid = makeHybrid(defExports.cannon, 'Insurgent');
-defExports.scalerHybrid = makeHybrid(defExports.newScaler, 'Minuteman');
+defExports.swarmsmanHybrid = makeHybrid(defExports.swarmArtillery, 'drone', { name: 'Schwarmzmann' });
+defExports.howitzerHybrid = makeHybrid(defExports.howitzer, 'drone', { name: 'Haubitze' });
+defExports.fieldGunHybrid = makeHybrid(defExports.fieldGun, 'drone', { name: 'Feldgeschutz' });
+defExports.recruitHybrid = makeHybrid(defExports.littleCannon, 'drone', { name: 'Militant' });
+defExports.cannonHybrid = makeHybrid(defExports.cannon, 'drone', { name: 'Insurgent' });
+defExports.scalerHybrid = makeHybrid(defExports.newScaler, 'drone', { name: 'Minuteman' });
 defExports.autoStacker = makeAuto(defExports.miniHunter);
 defExports.flankStacker = makeFlank(defExports.miniHunter, 3, 'Stockpiler');
 defExports.accelMiniMiniSwarmer = {
@@ -131326,7 +130385,8 @@ defExports.spyeeter = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 0, 0]
@@ -131481,61 +130541,15 @@ defExports.twinClicker = {
         POSITION: [24, 4, 1, 0, 4, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [24, 4, 1, 0, -4, 0, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.twin]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 6.5, -1.1, 5, 4, 0, 0]
@@ -131557,34 +130571,11 @@ defExports.clickerNailgun = {
         FOV: 1.2
     },
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.more_health]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.more_health]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.more_health]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.more_health]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.more_health]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -131748,64 +130739,14 @@ defExports.emp = {
     }],
     PROPS: [makeAura(31)]
 };
-defExports.underClicker = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Underclicker', // Dark Star
-    DANGER: 7,
-    BODY: {
+defExports.underClicker = makeHybrid(defExports.clicker, 'under', {
+    //name: 'Dark Star',
+    body: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
         FOV: 1.15
-    },
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [24, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
     }
-};
+});
 defExports.dropferno = {
     PARENT: [defExports.genericTank],
     LABEL: 'Tubular Bells',
@@ -131923,7 +130864,7 @@ defExports.auto4Shooter = {
         }
     }]
 };
-defExports.hybridDropship = makeHybrid(defExports.dropship, 'Chrome');
+defExports.hybridDropship = makeHybrid(defExports.dropship, 'drone', { name: 'Chrome' });
 defExports.sidekickDropship = makeSidekick(defExports.dropship, 'Google');
 defExports.dropshipTrapper = {
     PARENT: [defExports.genericTank],
@@ -132137,7 +131078,22 @@ defExports.quintetAI = {
     },
     SKILL: setSkill(0, 4, 9, 6, 6, 2, 9, 0, 0, 0),
     VALUE: 2e6,
-    BROADCAST_MESSAGE: 'A Quintet has been defeated, but theres still a looming threat...'
+    BROADCAST_MESSAGE: 'A Quintet has been defeated, but theres still a looming threat...',
+	ON_DEAD: function({ sockets, ran, Entity }){
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("The Guardians have arrived!");
+			for (let i = 0; i < 6; i++) {
+				let boss = new Entity({
+					x: x,
+					y: y
+				});
+				boss.team = this.team;
+				boss.define([Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.guardianAI, Class.pentaguardianAI][i]);
+			}
+		}, 3000);
+	}
 };
 defExports.pentaguardianAI = {
     PARENT: [defExports.pentaguardian],
@@ -132152,7 +131108,22 @@ defExports.pentaguardianAI = {
     },
     SKILL: setSkill(0, 4, 9, 6, 6, 2, 9, 0, 0, 0),
     VALUE: 1e6,
-    BROADCAST_MESSAGE: `A Pentaguardian has been slain, but it's not over yet...`
+    BROADCAST_MESSAGE: `A Pentaguardian has been slain, but it's not over yet...`,
+	ON_DEAD: function({ sockets, ran, Entity }){
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("The Guardians have arrived!");
+			for (let i = 0; i < 5; i++) {
+				let boss = new Entity({
+					x: x,
+					y: y
+				});
+				boss.team = this.team;
+				boss.define(Class.guardianAI);
+			}
+		}, 3000);
+	}
 };
 defExports.underchiller = {
     PARENT: [defExports.genericTank],
@@ -132189,7 +131160,7 @@ defExports.underchiller = {
     }],
     PROPS: [makeAura(217)],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.lightningDestroyer = {
@@ -132314,7 +131285,7 @@ defExports.poisonMini = {
     }, {
         POSITION: [17, 8, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.less_power, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.less_power]),
             TYPE: defExports.formaldehydeBullet
         }
     }, {
@@ -132386,7 +131357,27 @@ defExports.guardianBullet = {
                 HITS_OWN_TYPE: 'hard'
             }],
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 5
+        }
+    }]
+};
+defExports.greenGuardianBullet = {
+    PARENT: [defExports.heatBullet],
+    INDEPENDENT: true,
+    LABEL: 'Guardian',
+    SHAPE: 3,
+    GUNS: [{
+        POSITION: [6, 12, 1.25, 6, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.swarm, g.more_recoil, g.guardian, g.more_reload, g.more_reload, g.half_damage]),
+            TYPE: [defExports.swarm, {
+                CONTROLLERS: ['nearestDifferentMaster', 'canRepel', 'hangOutNearMaster'],
+                HITS_OWN_TYPE: 'hard'
+            }],
+            STAT_CALCULATOR: gunCalcNames.swarm,
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 31
         }
     }]
 };
@@ -132401,13 +131392,16 @@ defExports.guardianLauncher = {
         POSITION: [18.5, 19.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.bit_less_reload, g.bit_slow, g.less_health, g.less_damage]),
-            TYPE: defExports.guardianBullet
+            TYPE: defExports.guardianBullet,
+			DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [3, 23, 1.2, 17.5, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.bit_less_reload, g.less_health, g.less_damage, g.bit_slow, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+			DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
@@ -132419,8 +131413,15 @@ defExports.guardianLauncher = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.bit_less_reload, g.fake]),
             TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            ON_SHOOT: 'oxy'
+			ON_FIRE: gun => {
+                gun.body.define(Class.greenGuardianLauncher);
+                setTimeout(() => {
+                    if (gun.body.isAlive()) {
+                        gun.body.define(Class.guardianLauncher);
+                    }
+                }, 2000);
+            },
+            ALT_FIRE: true
         }
     }]
 };
@@ -132574,7 +131575,7 @@ defExports.goldenRectChip = {
     CONTROLLERS: ['nearestDifferentMaster', 'canRepel', 'mapTargetToGoal', 'hangOutNearMaster'],
     RANDOM_TYPE: 'Rectangmancer',
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.necroRectangle = {
@@ -132707,31 +131708,8 @@ defExports.clickerInvariant = {
         POSITION: [28, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_damage]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [28, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_damage]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [28, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_damage]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [28, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_damage]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [28, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.less_damage]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 8, 0, 0, 0]
@@ -132820,9 +131798,10 @@ defExports.invariantdrive = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [16, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.9, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.invariantBoost = {
@@ -133614,10 +132593,13 @@ defExports.marbleSmash = {
         SHIELD: base.SHIELD * 1.4
     },
     INVISIBLE: [.08, .01, .02],
+    PROPS: [
+        makeShell({
+            size: 1.12,
+            shape: -8
+        })
+    ],
     TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody
-    }, {
         POSITION: [20, 0, 0, 0, 360, 1],
         TYPE: defExports.marbleBody
     }, {
@@ -133663,28 +132645,32 @@ defExports.bowedSanc = makeAuto({
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller]),
             TYPE: defExports.singularSquare,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 90, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller]),
             TYPE: defExports.singularSquare,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 180, .50],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller]),
             TYPE: defExports.singularSquare,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }, {
         POSITION: [4, 11, 1.2, 8, 0, 270, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.blank, g.half_reload, g.half_reload, g.half_reload, g.half_reload, g.smaller]),
             TYPE: defExports.singularSquare,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
         }
     }],
     TURRETS: [{
@@ -137343,7 +136329,7 @@ defExports.awpeTrapB = {
 defExports.awpeDecentralizerGun = {
     COLOR: 13,
     GUNS: [{
-        POSITION: [18, 19.5, 1.2, 0, 0, 0, 0],
+        POSITION: [18, 20, 1.25, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.decentralize]),
             TYPE: defExports.bullet
@@ -139557,34 +138543,11 @@ defExports.divisionB = {
 defExports.divisionC = {
     PARENT: [defExports.autoTankGun],
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.auto, g.half_damage, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.auto, g.half_damage, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.auto, g.half_damage, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.auto, g.half_damage, g.less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.auto, g.half_damage, g.less_reload]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -140134,10 +139097,10 @@ defExports.baseBullet = {
         }]
     }],
 	ON_DEFINED: function(self){
-		self.master.define(Class.baseThrowerFire)
-	},
-    ON_DEAD: function({sockets, ran, Entity}){
-        if (this.master.isAlive()) this.master.define(Class.baseThrower);
+		self.master.define(Class.baseThrowerFire);
+        setTimeout(() => {
+            if (self.master.isAlive()) self.master.define(Class.baseThrower);
+        }, 4250);
 	}
 };
 defExports.turretBaseKiva = {
@@ -140177,7 +139140,6 @@ defExports.baseThrower = {
             TYPE: defExports.baseBullet,
             COLOR_OVERRIDE: 9,
             ALT_FIRE: true,
-            ON_SHOOT: 'revo',
             SKIN: 34
         }
     }],
@@ -140198,7 +139160,7 @@ defExports.baseThrowerFire = {
         }
     }]
 };
-defExports.donutbrid = makeHybrid(defExports.donutDestroyer, 'Timbit');
+defExports.donutbrid = makeHybrid(defExports.donutDestroyer, 'drone', { name: 'Timbit' });
 defExports.donutAnni = {
     PARENT: [defExports.genericTank],
     LABEL: 'Beignet',
@@ -140509,8 +139471,9 @@ defExports.tanukiDrone = makeAuto(defExports.drone, 'Drone', {
     type: defExports.tanukiTurret,
     size: 11
 });
-defExports.homingdrive = makeAuto({
+defExports.homingdrive = {
     PARENT: [defExports.genericTank],
+    LABEL: 'Tanuki',
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
@@ -140540,55 +139503,13 @@ defExports.homingdrive = makeAuto({
             WAIT_TO_CYCLE: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
-    }]
-}, 'Tanuki', {
-    type: defExports.squareProp,
-    color: 238,
-    size: 9,
-    rot: 0
-});
-defExports.hoinfodaCruiser = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Demolitionist',
-    DANGER: 7,
-    STAT_NAMES: statNames.swarm,
-    BODY: {
-        ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
-    },
-    GUNS: [{
-        POSITION: [7, 7.5, .6, 7, 4, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm]),
-            TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 7, -4, 0, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm]),
-            TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [6, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_damage, g.weak]),
-            TYPE: [defExports.explodingDrone, {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            SKIN: 2,
-            MAX_CHILDREN: 3
-        }
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 238
     }]
 };
+defExports.hoinfodaCruiser = makeHybrid(defExports.cruiser, 'hoinfoda', { name: 'Demolitionist' });
 g.atrium = [.5, 0, 1, .45, .25, .25, .5, 1, 1, 1, 1, 3, 1];
 defExports.atriumConstruct = createTurret(defExports.construct, [g.bit_less_damage, g.one_fifth_reload]);
 defExports.atrium = makeAuto({
@@ -140666,45 +139587,13 @@ defExports.atriumAI = {
     SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
     BROADCAST_MESSAGE: 'An Atrium has been defeated!'
 };
-defExports.overdestroyer = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Overdestroyer',
-    DANGER: 7,
-    BODY: {
-        FOV: 1.1,
+defExports.overdestroyer = makeHybrid(defExports.destroyer, 'over', {
+    body: {
         ACCELERATION: base.ACCEL * .6,
-        SPEED: base.SPEED * .85
-    },
-    GUNS: [{
-        POSITION: [21, 14, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.bit_less_reload]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 125, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3,
-            AUTOFIRE: true
-        }
-    }, {
-        POSITION: [6, 11, 1.2, 8, 0, 235, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta]),
-            TYPE: defExports.drone,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 3,
-            AUTOFIRE: true
-        }
-    }]
-};
+        SPEED: base.SPEED * .8,
+        FOV: 1.15
+    }
+});
 defExports.borerFalcon = {
     PARENT: [defExports.genericTank],
     LABEL: 'Buzzard',
@@ -141591,10 +140480,6 @@ defExports.autoTurretHand = {
 for (let i = 0; i < 81; i++) defExports[`autoHandBasic${i}`] = makeAuto(defExports[`handBasic${i}`], 'Auto-Glove', {
     type: defExports.autoTurretHand
 });
-defExports.greenGuardianBullet = {
-    PARENT: [defExports.guardianBullet],
-    MOTION_TYPE: 'oxy'
-};
 defExports.greenGuardianLauncher = {
     PARENT: [defExports.genericTank],
     LABEL: 'Oxyrrhexis',
@@ -141603,28 +140488,26 @@ defExports.greenGuardianLauncher = {
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
-        POSITION: [18.5, 19.5, 1, 0, 0, 0, .125],
+        POSITION: [18.5, 19.5, 1, 0, 0, 0, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.more_damage]),
-            TYPE: defExports.greenGuardianBullet
+            TYPE: defExports.greenGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
         }
     }, {
-        POSITION: [3, 23, 1.2, 17.5, 0, 0, 0],
+        POSITION: [3, 23, 1.2, 17.5, 0, 0, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 31
         }
-    }],
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		setTimeout(() => {
-			if (this.isAlive()) this.define(Class.guardianLauncher);
-		}, 2000);
-	}
+    }]
 };
 //
 //[21, 14, 1, 0, 0, 0, 0],
@@ -141639,18 +140522,66 @@ defExports.miniGuardianLauncher = {
         POSITION: [16.5, 14.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr]),
-            TYPE: defExports.guardianBullet
+            TYPE: defExports.guardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 5
+        }
+    }, {
+        POSITION: [1, 16, 1, 0, 0, 180, 2.5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+			ON_FIRE: gun => {
+                gun.body.define(Class.greenMiniGuardianLauncher);
+                gun.body.upgrades = [];
+                setTimeout(() => {
+                    if (gun.body.isAlive()) {
+                        gun.body.define(Class.miniGuardianLauncher);
+                    }
+                }, 2000);
+            },
+            ALT_FIRE: true
+        }
+    }]
+};
+defExports.greenMiniGuardianLauncher = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Oxyrrhynchium',
+    DANGER: 7,
+    BODY: {
+        ACCELERATION: base.ACCEL * .8
+    },
+    GUNS: [{
+        POSITION: [16.5, 14.5, 1, 0, 0, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.more_damage]),
+            TYPE: defExports.greenGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
+        }
+    }, {
+        POSITION: [3, 18, 1.2, 15.5, 0, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
+        }
+    }, {
+        POSITION: [19, .3, -55, 0, 0, 180, 0],
+        PROPERTIES: {
+            COLOR: 31
         }
     }]
 };
@@ -141669,30 +140600,99 @@ defExports.twinMiniGuardianLauncher = {
         POSITION: [16.5, 14.5, 1, 6, 10, 20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr]),
-            TYPE: defExports.guardianBullet
+            TYPE: defExports.guardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [3, 18, 1.2, 21.5, 10, 20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [16.5, 14.5, 1, 6, -10, -20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr]),
-            TYPE: defExports.guardianBullet
+            TYPE: defExports.guardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [3, 18, 1.2, 21.5, -10, -20, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 5
+        }
+    }, {
+        POSITION: [1, 16, 1, 0, 0, 180, 2.5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+			ON_FIRE: gun => {
+                gun.body.define(Class.greenTwinMiniGuardianLauncher);
+                setTimeout(() => {
+                    if (gun.body.isAlive()) {
+                        gun.body.define(Class.twinMiniGuardianLauncher);
+                    }
+                }, 2000);
+            },
+            ALT_FIRE: true
+        }
+    }]
+};
+defExports.greenTwinMiniGuardianLauncher = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Oxysplitsy',
+    DANGER: 7,
+    BODY: {
+        ACCELERATION: base.ACCEL * .8
+    },
+    GUNS: [{
+        POSITION: [17.6, .3, -55, 0, -1.8, 100, 0]
+    }, {
+        POSITION: [17.6, .3, -55, 0, 1.8, -100, 0]
+    }, {
+        POSITION: [16.5, 14.5, 1, 6, 10, 20, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.more_damage]),
+            TYPE: defExports.greenGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
+        }
+    }, {
+        POSITION: [3, 18, 1.2, 21.5, 10, 20, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
+        }
+    }, {
+        POSITION: [16.5, 14.5, 1, 6, -10, -20, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.more_damage]),
+            TYPE: defExports.greenGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
+        }
+    }, {
+        POSITION: [3, 18, 1.2, 21.5, -10, -20, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
+        }
+    }, {
+        POSITION: [19, .3, -55, 0, 0, 180, 0],
+        PROPERTIES: {
+            COLOR: 31
         }
     }]
 };
@@ -141719,8 +140719,7 @@ const oxysexGun = a => ([{
     PROPERTIES: {
         SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.bit_less_reload, g.fake]),
         TYPE: defExports.bullet,
-        ALT_FIRE: true,
-        ON_SHOOT: 'oxy'
+        ALT_FIRE: true
     }
 }]);
 defExports.oxysexis = {
@@ -142706,7 +141705,7 @@ defExports.mar30 = {
 };
 defExports.poundShooter = makeCeptionist(defExports.pounder, 'Poundceptionist');
 defExports.autoBasicInsect = makeAuto(defExports.basicInsect);
-defExports.hybridHeavyTwin = makeHybrid(defExports.heavyTwin, 'Heavy Hybrid');
+defExports.hybridHeavyTwin = makeHybrid(defExports.heavyTwin, 'drone', { name: 'Heavy Hybrid' });
 defExports.smotherShooter = makeCeptionist(defExports.smother, 'Smotherceptionist', {
     type: defExports.smother
 });
@@ -143221,7 +142220,7 @@ defExports.val31 = {
     }],
     ON_ALT: (me) => animate(me, 'val', 31, 14, false)
 };
-defExports.hybridWarship = makeHybrid(defExports.warship, 'Starfighter');
+defExports.hybridWarship = makeHybrid(defExports.warship, 'drone', { name: 'Starfighter' });
 defExports.apacheGunGun = {
     SYNC_TURRET_SKILLS: true,
     LABEL: '',
@@ -143979,7 +142978,7 @@ defExports.contagionUnderseer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Kinoko',
     DANGER: 7,
-    STAT_NAMES: statNames.drone,
+    STAT_NAMES: statNames.necro,
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .875,
@@ -144020,7 +143019,7 @@ defExports.contagionUnderseer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 2);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 2);
     }
 };
 defExports.lancerUnderseer = {
@@ -144100,7 +143099,7 @@ defExports.lancerUnderseer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 7);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 7);
     }
 };
 defExports.homingOptic = {
@@ -144803,7 +143802,7 @@ defExports.stick31 = {
     }],
     ON_ALT: (me) => animate(me, 'stick', 31, 14, false)
 };
-defExports.hybridEngineer = makeHybrid(defExports.engineer, 'Dispulsor');
+defExports.hybridEngineer = makeHybrid(defExports.engineer, 'drone', { name: 'Dispulsor' });
 defExports.overlordTrapper = {
     PARENT: [defExports.genericTank],
     LABEL: 'Lord Trapper', // Traplord
@@ -145258,7 +144257,7 @@ defExports.shapeChange0 = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 for (let i = 1; i < 31; i++) defExports[`shapeChange${i}`] = makeAuto({
@@ -145950,7 +144949,7 @@ defExports.misAnnihilator = {
         }
     }]
 };
-defExports.hybridConstruct = makeHybrid(defExports.construct, 'Piler');
+defExports.hybridConstruct = makeHybrid(defExports.construct, 'drone', { name: 'Piler' });
 defExports.autoContraband = makeAuto(defExports.trapperHunter);
 defExports.propContraband = makeProp(defExports.trapperHunter, 'Afterburner');
 defExports.buildTrapperHunter = {
@@ -145990,7 +144989,7 @@ defExports.buildTrapperHunter = {
         }
     }]
 };
-defExports.hybridrang = makeHybrid(defExports.traprang, 'Ricochet');
+defExports.hybridrang = makeHybrid(defExports.traprang, 'drone', { name: 'Ricochet' });
 defExports.boomionBoomerang = {
     PARENT: [defExports.trap],
     LABEL: 'Boomerang',
@@ -146609,7 +145608,8 @@ defExports.ledZeppelin31 = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 16, 0, 180, 0]
@@ -146622,7 +145622,8 @@ defExports.ledZeppelin31 = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, 120, 0]
@@ -146635,7 +145636,8 @@ defExports.ledZeppelin31 = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [5, 11, 1, 14, 0, -120, 0]
@@ -146663,7 +145665,7 @@ defExports.autoSunchip = makeAuto(defExports.sunchip, 'Auto-Sunchip', {
     size: 11
 });
 defExports.autoSunchip.ON_DEALT_DAMAGE = (me, them) => {
-    necroDrone(me, them, ['Square']);
+    necroDrone(me, them, ['Square', 'Sanctuary Square']);
 };
 defExports.underseerOverdrive = {
     PARENT: [defExports.genericTank],
@@ -146702,7 +145704,7 @@ defExports.underseerOverdrive = {
         COLOR: 16
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.tasLittleCannon = {
@@ -146755,7 +145757,7 @@ defExports.autoSquareDrone = makeAuto(defExports.squareDrone, 'Auto-Drone', {
     size: 11
 });
 defExports.autoSquareDrone.ON_DEALT_DAMAGE = (me, them) => {
-    necroDrone(me, them, ['Square']);
+    necroDrone(me, them, ['Square', 'Sanctuary Square']);
 };
 defExports.turretAssistedSummoner = {
     PARENT: [defExports.genericTank],
@@ -146827,7 +145829,6 @@ defExports.turretAssistedSummoner = {
 defExports.turretAssistedSummonerAI = {
     PARENT: [defExports.turretAssistedSummoner],
     TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
     LEVEL: 60,
     CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
     AI: {
@@ -147981,9 +146982,10 @@ defExports.zoomNightseeker = {
     }, {
         POSITION: [8.1, 11, -1.6, 4.9, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.kamiBody = {
@@ -148657,50 +147659,7 @@ defExports.smallSurfer = {
         }
     }]
 };
-defExports.cropdustDrive = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Cropdriver',
-    DANGER: 7,
-    BODY: {
-        FOV: 1.2
-    },
-    GUNS: [{
-        POSITION: [21, 8, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [19, 8, 1, 0, 0, 0, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [17, 8, 1, 0, 0, 0, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
-            TYPE: defExports.bullet
-        }
-    }, {
-        POSITION: [7, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.weak, g.bit_slow]),
-            TYPE: [defExports.autoDrone, {
-                INDEPENDENT: true
-            }],
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.drone,
-            WAIT_TO_CYCLE: true,
-            MAX_CHILDREN: 2
-        }
-    }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
-    }]
-};
+defExports.cropdustDrive = makeHybrid(defExports.hybridMini, 'drive', { name: 'Cropdrive' });
 defExports.par0 = {
     PARENT: [defExports.genericTank],
     LABEL: 'Particle Accelerator',
@@ -151350,23 +150309,26 @@ defExports.eggQueenZero = {
         }]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Egg'], 0);
+        necroRam(me, them, ['Egg', 'Sanctuary Egg'], 0);
     }
 };
 defExports.ruse = {
     PARENT: [defExports.genericTank],
     LABEL: "Ruse",
-    TOOLTIP: "Right click to shoot a large bullet",
     DANGER: 7,
+    BODY: {
+        FOV: 1.05
+    },
+    TOOLTIP: "Right click to shoot a large bullet.",
     GUNS: [{
-        POSITION: [18, 19.75, 1, 0, 0, 0, 0],
+        POSITION: [17.5, 19, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.one_fifth_reload]),
             TYPE: defExports.bullet,
             ALT_FIRE: true
         }
     }, {
-        POSITION: [21, 10, 1, 0, 0, 0, 0],
+        POSITION: [21, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.bit_more_spread]),
             TYPE: defExports.bullet
@@ -152184,11 +151146,10 @@ defExports.numerator = {
             MAX_CHILDREN: 3
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: [defExports.squareProp, {
-            COLOR: 18
-        }]
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 18
     }]
 };
 defExports.notation = {
@@ -152665,7 +151626,7 @@ defExports.cultist = {
         TYPE: defExports.cultistShell
     }]
 };
-defExports.trainee = makeAuto(makeHybrid(defExports.machineMinishot), 'Trainee', {
+defExports.trainee = makeAuto(makeHybrid(defExports.machineMinishot, 'drone'), 'Trainee', {
     size: 10
 });
 defExports.crusader = {
@@ -152952,7 +151913,7 @@ defExports.littleChungus = {
         }
     }]
 };
-defExports.soldier = makeAuto(makeHybrid(defExports.littleCannon, "Soldier"), "Soldier");
+defExports.soldier = makeAuto(makeHybrid(defExports.littleCannon, 'drone', { name: 'Soldier' }), 'Soldier');
 defExports.autopilot = makeAuto({
     PARENT: [defExports.genericTank],
     LABEL: "Autopilot",
@@ -154366,29 +153327,16 @@ defExports.hewnDoubleLofi = {
         }
     }]
 };
-defExports.barrage = makeHybrid(defExports.gunner, 'Barrage');
-defExports.gunderseer = {
+defExports.barrage = makeHybrid(defExports.gunner, 'drone', { name: 'Barrage' });
+defExports.gunderseer = makeHybrid({
     PARENT: [defExports.genericTank],
-    LABEL: 'Gunderseer',
     DANGER: 7,
-    STAT_NAMES: statNames.generic,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
         FOV: 1.1
     },
-    SHAPE: 4,
     GUNS: [{
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }, {
         POSITION: [12, 3.5, 1, 0, 7, 0, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.fast]),
@@ -154412,11 +153360,8 @@ defExports.gunderseer = {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.fast]),
             TYPE: defExports.bullet
         }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
-    }
-};
+    }]
+}, 'under', { name: 'Gunderseer' });
 defExports.autoBulwark = makeAuto(defExports.bulwark);
 defExports.buildwark = {
     PARENT: [defExports.genericTank],
@@ -154601,7 +153546,7 @@ defExports.bulwarkArsenal = {
         }
     }]
 };
-defExports.gunnerCruiserBrid = makeHybrid(defExports.gunCruiser, 'Funner Cruiser');
+defExports.gunnerCruiserBrid = makeHybrid(defExports.gunCruiser, 'drone', { name: 'Funner Cruiser' });
 defExports.flamethrowerBlizzard = makeAuto({
     PARENT: [defExports.genericTank],
     DANGER: 7,
@@ -154639,7 +153584,7 @@ defExports.flamethrowerBlizzard = makeAuto({
 }, 'Frostburn', {
     type: defExports.blizzardTurret
 });
-defExports.hybridFerreter = makeHybrid(defExports.gunnerHunter, 'X-Barrage');
+defExports.hybridFerreter = makeHybrid(defExports.gunnerHunter, 'drone', { name: 'X-Barrage' });
 defExports.circhester = {
     PARENT: [defExports.genericTank],
     LABEL: 'Circhester',
@@ -154726,7 +153671,7 @@ defExports.shatter = {
         }
     }]
 };
-defExports.tormentor = makeHybrid(defExports.autoHarasser, 'Tormentor');
+defExports.tormentor = makeHybrid(defExports.autoHarasser, 'drone', { name: 'Tormentor' });
 defExports.autoScaler = makeAuto(defExports.newScaler);
 defExports.magmachception = makeCeption(defExports.machineMinishot);
 defExports.hewnBattler = {
@@ -155623,7 +154568,8 @@ makeAnimTank('shove', 'Shovel', {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [2, 7, 1, 1, -17.5, 45, 0],
@@ -155634,7 +154580,8 @@ makeAnimTank('shove', 'Shovel', {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [2, 7, 1, 1, -32, 45, 0],
@@ -155645,7 +154592,8 @@ makeAnimTank('shove', 'Shovel', {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [2, 7, 1, 1, 17.5, -45, 0],
@@ -155656,7 +154604,8 @@ makeAnimTank('shove', 'Shovel', {
             TYPE: [defExports.bullet, {
                 ALPHA: 0
             }],
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            SKIN: 15
         }
     }, {
         POSITION: [2, 7, 1, 1, 32, -45, 0],
@@ -157052,13 +156001,13 @@ defExports.dogfighter = {
         }
     }]
 };
-defExports.woodhick = makeHybrid(defExports.zoomSniperSingle, 'Woodhick');
+defExports.woodhick = makeHybrid(defExports.zoomSniperSingle, 'drone', { name: 'Woodhick' });
 defExports.appurtenance = makeSidekick(defExports.zoomSingle, 'Appurtenance');
-defExports.ecchymosis = makeHybrid(defExports.singlePound, 'Ecchymosis');
-defExports.counterpoise = makeHybrid(defExports.zoomTwinSingle, 'Counterpoise');
-defExports.lestion = makeHybrid(defExports.autoZoomSingle, 'Lestion');
+defExports.ecchymosis = makeHybrid(defExports.singlePound, 'drone', { name: 'Ecchymosis' });
+defExports.counterpoise = makeHybrid(defExports.zoomTwinSingle, 'drone', { name: 'Counterpoise' });
+defExports.lestion = makeHybrid(defExports.autoZoomSingle, 'drone', { name: 'Lestion' });
 defExports.stratagem = makeAuto(defExports.singleMinishot, 'Stratagem');
-defExports.knife = makeHybrid(defExports.singleMinishot, 'Knife');
+defExports.knife = makeHybrid(defExports.singleMinishot, 'drone', { name: 'Knife' });
 defExports.lumberjackMinishot = {
     PARENT: [defExports.genericTank],
     LABEL: 'Panga',
@@ -157281,7 +156230,8 @@ defExports.summonerBullet = {
             SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.bee_swarm]),
             TYPE: defExports.beeAI,
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 32
         }
     }, {
         POSITION: [3.5, 8.65, 1.2, 8, 0, 270, .5],
@@ -157289,7 +156239,8 @@ defExports.summonerBullet = {
             SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.bee_swarm]),
             TYPE: defExports.beeAI,
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 32
         }
     }, {
         POSITION: [3.5, 8.65, 1.2, 8, 0, 0, .25],
@@ -157297,7 +156248,8 @@ defExports.summonerBullet = {
             SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.bee_swarm]),
             TYPE: defExports.beeAI,
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 32
         }
     }, {
         POSITION: [3.5, 8.65, 1.2, 8, 0, 180, .75],
@@ -157305,7 +156257,21 @@ defExports.summonerBullet = {
             SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.bee_swarm]),
             TYPE: defExports.beeAI,
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 32
+        }
+    }]
+};
+defExports.defenderBulletTurret = {
+    PARENT: [defExports.inceptionAutoTurret],
+    GUNS: [{
+        POSITION: [21.5, 10, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto_turret, g.less_power, g.less_reload]),
+            TYPE: [defExports.bulletLayer6, {
+                PERSISTS_AFTER_DEATH: true
+            }],
+            COLOR_OVERRIDE: 13
         }
     }]
 };
@@ -157322,7 +156288,8 @@ defExports.defenderBullet = {
                 PERSISTS_AFTER_DEATH: true
             }],
             STAT_CALCULATOR: gunCalcNames.trap,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 13
         }
     }, {
         POSITION: [16, 8, 1, 0, 0, 300, 0]
@@ -157334,7 +156301,8 @@ defExports.defenderBullet = {
                 PERSISTS_AFTER_DEATH: true
             }],
             STAT_CALCULATOR: gunCalcNames.trap,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 13
         }
     }, {
         POSITION: [16, 8, 1, 0, 0, -300, 0]
@@ -157346,12 +156314,13 @@ defExports.defenderBullet = {
                 PERSISTS_AFTER_DEATH: true
             }],
             STAT_CALCULATOR: gunCalcNames.trap,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 13
         }
     }],
     TURRETS: [{
         POSITION: [10, 0, 0, 0, 360, 1],
-        TYPE: defExports.inceptionAutoTurret
+        TYPE: defExports.defenderBulletTurret
     }]
 };
 defExports.xyvBullet = {
@@ -157375,7 +156344,8 @@ defExports.xyvBullet = {
             TYPE: [defExports.guardianBullet, {
                 PERSISTS_AFTER_DEATH: true
             }],
-            SHOOT_ON_DEATH: true
+            SHOOT_ON_DEATH: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [2, 18, 1, 0, 0, 120, 0],
@@ -157384,7 +156354,8 @@ defExports.xyvBullet = {
             TYPE: [defExports.summonerBullet, {
                 PERSISTS_AFTER_DEATH: true
             }],
-            SHOOT_ON_DEATH: true
+            SHOOT_ON_DEATH: true,
+            COLOR_OVERRIDE: 13
         }
     }, {
         POSITION: [2, 18, 1, 0, 0, 240, 0],
@@ -157393,7 +156364,8 @@ defExports.xyvBullet = {
             TYPE: [defExports.defenderBullet, {
                 PERSISTS_AFTER_DEATH: true
             }],
-            SHOOT_ON_DEATH: true
+            SHOOT_ON_DEATH: true,
+            COLOR_OVERRIDE: 2
         }
     }],
     TURRETS: [{
@@ -157424,7 +156396,8 @@ defExports.alliance = {
         POSITION: [16.5, 14.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.damage_m30, g.reload_m5]),
-            TYPE: defExports.xyvBullet
+            TYPE: defExports.xyvBullet,
+            COLOR_OVERRIDE: 190
         }
     }, {
         POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
@@ -157836,13 +156809,13 @@ defExports.moreZoomSmasher = {
         HEALTH: base.HEALTH * 1.4,
         SHIELD: base.SHIELD * 1.4
     },
-    TURRETS: [{
-        POSITION: [21, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [22, 0, 0, 0, 360, 0],
-        TYPE: defExports.moreZoomSmasherShell
-    }],
+    PROPS: [
+        makeShell(),
+        makeShell({
+            size: .97,
+            shape: 12
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
@@ -157953,10 +156926,8 @@ defExports.autominer = {
     },
     SEE_INVISIBLE: true,
     TOOLTIP: "Your radar lets you see invisible players.",
+    PROPS: [makeShell()],
     TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
         POSITION: [6, 0, 0, 0, 360, 1],
         TYPE: defExports.autominerPropA
     }, {
@@ -158066,13 +157037,16 @@ defExports.megaZoomSmasher = {
         HEALTH: base.HEALTH * 1.4,
         SHIELD: base.SHIELD * 1.4
     },
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.megaSmashBody
-    }, {
-        POSITION: [25, 0, 0, 0, 360, 0],
-        TYPE: defExports.moreZoomSmasherShell
-    }],
+    PROPS: [
+        makeShell({
+			size: 1.12,
+			shape: -6
+		}),
+        makeShell({
+			size: 1.03,
+			shape: 12
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher,
@@ -158153,37 +157127,7 @@ defExports.acolyteSpedDemon = {
         }, 5000)
     }
 };
-defExports.bonkMinesweeper = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Signal',
-    DANGER: 7,
-    SHAPE: 132,
-    SIZE: 10.25,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.3,
-        DENSITY: base.DENSITY * 2,
-        HEALTH: base.HEALTH * .95,
-        SHIELD: base.SHIELD * .8,
-        DAMAGE: base.DAMAGE * 1.1,
-        REGEN: base.REGEN * 1.1
-    },
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher
-};
+defExports.bonkMinesweeper = makeMinesweep(defExports.bonk, "Signal");
 defExports.penUltiMultDestroy = {
     PARENT: [defExports.auto3gun],
     LABEL: 'Destroyer',
@@ -158360,19 +157304,19 @@ defExports.minimach = {
     }, {
         POSITION: [21, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 8, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [17, 8, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }]
@@ -158401,19 +157345,19 @@ defExports.macromach = {
     }, {
         POSITION: [21, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 8, 1, 0, 0, 0, 1 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [17, 8, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.arty]),
             TYPE: defExports.bullet
         }
     }]
@@ -158457,34 +157401,7 @@ defExports.mayfly = makeAuto({
         }]
     }]
 }, 'Mayfly');
-defExports.drillbit = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Drillbit',
-    DANGER: 7,
-    SHAPE: 132,
-    BODY: {
-        FOV: 1.1,
-        SPEED: base.SPEED * 1.2,
-        DENSITY: base.DENSITY * 4,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher,
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.megaSmashBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }]
-};
+defExports.drillbit = makeMinesweep(defExports.megaSmash, "Drillbit");
 defExports.playableAC = {
     PARENT: [defExports.genericTank],
     LABEL: 'Arena Closer',
@@ -158540,7 +157457,27 @@ defExports.autoMulti = {
     }]
 };
 defExports.autoOxy = makeAuto(defExports.miniGuardianLauncher, 'Oxygen');
-defExports.hybridOxy = makeHybrid(defExports.miniGuardianLauncher, 'Resurrection');
+defExports.autoOxy.GUNS[3].PROPERTIES.ON_FIRE = gun => {
+    gun.body.define(Class.greenAutoOxy);
+    gun.body.upgrades = [];
+    setTimeout(() => {
+        if (gun.body.isAlive()) {
+            gun.body.define(Class.autoOxy);
+        }
+    }, 2000);
+};
+defExports.greenAutoOxy = makeAuto(defExports.greenMiniGuardianLauncher, 'Oxygen');
+defExports.hybridOxy = makeHybrid(defExports.miniGuardianLauncher, 'drone', { name: 'Resurrection' });
+defExports.hybridOxy.GUNS[3].PROPERTIES.ON_FIRE = gun => {
+    gun.body.define(Class.greenHybridOxy);
+    gun.body.upgrades = [];
+    setTimeout(() => {
+        if (gun.body.isAlive()) {
+            gun.body.define(Class.hybridOxy);
+        }
+    }, 2000);
+};
+defExports.greenHybridOxy = makeHybrid(defExports.greenMiniGuardianLauncher, 'drone', { name: 'Resurrection' });
 defExports.marshall = makeAuto(defExports.builderArtillery, 'Marshall');
 defExports.hummel = {
     PARENT: [defExports.genericTank],
@@ -158927,43 +157864,7 @@ defExports.vander = {
         POSITION: [13.75, 12, -1.6, 1, 0, 0, 0]
     }]
 };
-defExports.jumpSmashSweep = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Gimlet',
-    DANGER: 7,
-    SHAPE: 132,
-    BODY: {
-        FOV: 1.05,
-        SPEED: base.SPEED * 1.15,
-        DENSITY: 1,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: defExports.jumpSmashBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
-    GUNS: [{
-        POSITION: [2, 2, 1, 0, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.jumpSmash]),
-            TYPE: [defExports.bullet, {
-                ALPHA: 0
-            }]
-        }
-    }],
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.jumpSmash
-};
+defExports.jumpSmashSweep = makeMinesweep(defExports.jumpSmash, "Gimlet");
 defExports.locatorProp = {
     COLOR: 11,
     CONTROLLERS: ['reverseFastSpin'],
@@ -158974,9 +157875,8 @@ defExports.locatorProp = {
         }
     }]
 };
-defExports.locator = {
+defExports.locator = makeMinesweep({
     PARENT: [defExports.genericTank],
-    LABEL: 'Locator',
     DANGER: 7,
     SHAPE: 132,
     BODY: {
@@ -158986,57 +157886,14 @@ defExports.locator = {
         HEALTH: base.HEALTH * 1.4,
         SHIELD: base.SHIELD * 1.4
     },
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.smasherBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.locatorProp
-    }, {
-        POSITION: [50, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }],
+    PROPS: [makeShell()],
     IS_SMASHER: true,
     SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.smasher
-};
-defExports.radio = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Radio',
-    DANGER: 7,
-    SHAPE: 132,
-    BODY: {
-        FOV: 1.05,
-        DAMAGE: base.DAMAGE * 1.15,
-        SPEED: base.SPEED * 1.05,
-        DENSITY: base.DENSITY * 2,
-        HEALTH: base.HEALTH * 1.4,
-        SHIELD: base.SHIELD * 1.4
-    },
-    SEE_INVISIBLE: true,
-    TOOLTIP: "Your radar lets you see invisible players.",
-    IS_SMASHER: true,
-    SKILL_CAP: [12, 0, 0, 0, 0, 12, 12, 12, 12, 12],
-    STAT_NAMES: statNames.smasher,
-    TURRETS: [{
-        POSITION: [20.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 120, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [20.5, 0, 0, 240, 360, 0],
-        TYPE: defExports.spikeBody
-    }, {
-        POSITION: [6, 0, 0, 0, 360, 1],
-        TYPE: defExports.minePropA
-    }, {
-        POSITION: [40, 0, 0, 0, 360, 0],
-        TYPE: defExports.minePropB
-    }]
-};
+}, "Locator", {
+    length: 3
+});
+defExports.radio = makeMinesweep(defExports.spike, "Radio");
 g.rocketCopter = [1, 1, .5, 1, 2, .15, 1, 2.5, 2.5, .7, 1, .5, 1];
 defExports.rocketCopter = makeAuto({
     PARENT: [defExports.genericTank],
@@ -159545,15 +158402,18 @@ defExports.kamiMine = {
             STAT_CALCULATOR: gunCalcNames.sustained,
         }
     }],
-    TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.kamiBody
-    }, {
-        POSITION: [21.5, 0, 0, 36, 360, 0],
-        TYPE: [defExports.kamiBody, {
-            CONTROLLERS: ['slowSpin']
-        }]
-    }],
+    PROPS: [
+        makeShell({
+            size: 1.05,
+            shape: -5
+        }),
+        makeShell({
+            size: 1.05,
+            shape: -5,
+            angle: 36,
+            rpm: 2
+        }),
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [4, 4, 4, 4, 4, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.autoSmash
@@ -160012,12 +158872,15 @@ defExports.border = {
         }
     }],
     TURRETS: [{
-        POSITION: [21.5, 0, 0, 0, 360, 0],
-        TYPE: defExports.kamiBody
-    }, {
         POSITION: [34, 0, 0, 0, 0, 0],
         TYPE: defExports.rotoSmashBase
     }],
+    PROPS: [
+        makeShell({
+            shape: -5,
+            size: 1.05
+        })
+    ],
     IS_SMASHER: true,
     SKILL_CAP: [4, 4, 4, 4, 4, 12, 12, 12, 12, 12],
     STAT_NAMES: statNames.autoSmash
@@ -160652,9 +159515,8 @@ neoMakeAnimTank('tripleDropship', 'Triple Dropship', [{
 }, {
     tank: defExports.triplet
 }]);
-defExports.metalOxy = {
+defExports.metalOxy = makeIron({
     PARENT: [defExports.genericTank],
-    LABEL: 'Metal Oxy',
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8
@@ -160667,27 +159529,75 @@ defExports.metalOxy = {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr]),
             TYPE: [defExports.guardianBullet, {
                 ABILITY_IMMUNE: true
-            }]
+            }],
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 9
         }
-    }],
-    TURRETS: [{
-        POSITION: [24, 0, 0, 0, 360, 0],
-        TYPE: [defExports.jumpSmashBody, {
-            COLOR: 209
-        }]
+    }, {
+        POSITION: [1, 16, 1, 0, 0, 180, 2.5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+			ON_FIRE: gun => {
+                gun.body.define(Class.greenMetalOxy);
+                gun.body.upgrades = [];
+                setTimeout(() => {
+                    if (gun.body.isAlive()) {
+                        gun.body.define(Class.metalOxy);
+                    }
+                }, 2000);
+            },
+            ALT_FIRE: true
+        }
     }]
-};
+}, "Metal Oxy", {
+    prop: true
+});
+defExports.greenMetalOxy = makeIron({
+    PARENT: [defExports.genericTank],
+    DANGER: 7,
+    BODY: {
+        ACCELERATION: base.ACCEL * .8
+    },
+    ABILITY_IMMUNE: true,
+    GUNS: [{
+        POSITION: [16.5, 14.5, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.more_damage]),
+            TYPE: [defExports.greenGuardianBullet, {
+                ABILITY_IMMUNE: true
+            }],
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
+        }
+    }, {
+        POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
+        }
+    }, {
+        POSITION: [19, .3, -55, 0, 0, 180, 0],
+        PROPERTIES: {
+            COLOR: 31
+        }
+    }]
+}, "Metal Oxy", {
+    prop: true
+});
 defExports.covert = {
     PARENT: [defExports.genericTank],
     LABEL: 'Covert',
@@ -163360,9 +162270,9 @@ defExports.splitterTriangle = {
     COLOR: 12,
     DRAW_HEALTH: true,
     PROPS: [{
-        POSITION: [0.5, 0, 0, 0, 1],
+        POSITION: [0.48, 0, 0, 0, 1],
         SHAPE: 3,
-        FILL: false
+        COLOR: 12
     }],
 	ON_DEAD: function ({ sockets, ran, Entity }) {
 		let x = this.x,
@@ -163382,16 +162292,6 @@ defExports.splitterTriangle = {
         ["splitterSplitterTriangle", 40],
         ["ascendedTriangle", .5]
     ]
-};
-defExports.splitterTriangleprop = {
-    LABEL: 'Splitter Triangle',
-    COLOR: 12,
-    SHAPE: 3,
-    PROPS: [{
-        POSITION: [0.5, 0, 0, 0, 1],
-        SHAPE: 3,
-        FILL: false
-    }],
 };
 defExports.splitterSplitterTriangle = {
     PARENT: [defExports.food],
@@ -163414,7 +162314,6 @@ defExports.splitterSplitterTriangle = {
         SHAPE: 3,
         COLOR: 2,
     }],
-    TURRETS: [],
 	ON_DEAD: function({sockets, ran, Entity}){
 		let x = this.x,
 			y = this.y,
@@ -163440,9 +162339,15 @@ defExports.splitterSplitterTriangle = {
         ["splitterSplitterPentagon", 30]
     ]
 };
-for (let i = 0; i < 3; i++) defExports.splitterSplitterTriangle.TURRETS.push({
-    POSITION: [9, 6, 0, i * 120, 0, 0],
-    TYPE: defExports.splitterTriangleprop
+for (let i = 0; i < 3; i++) defExports.splitterSplitterTriangle.PROPS.push({
+	POSITION: [.55, -.65, 0, (i + .5) * 120, 0],
+	SHAPE: 3,
+	COLOR: 12
+});
+for (let i = 0; i < 3; i++) defExports.splitterSplitterTriangle.PROPS.push({
+	POSITION: [.28, .65, 0, i * 120, 0],
+	SHAPE: 3,
+	COLOR: 12
 });
 defExports.nuclearWinterBullet = {
     PARENT: [defExports.iceBullet],
@@ -163620,7 +162525,7 @@ defExports.vestalance = {
     }],
     STAT_NAMES: statNames.generic
 };
-defExports.guitarist = makeHybrid(defExports.vestalance, 'Guitarist');
+defExports.guitarist = makeHybrid(defExports.vestalance, 'drone', { name: 'Guitarist' });
 defExports.campaigner = {
     PARENT: [defExports.genericTank],
     LABEL: 'Campaigner',
@@ -164013,7 +162918,7 @@ defExports.machFieldGun = {
     }, {
         POSITION: [17, 3, 5 / 3, 0, -6, -7, .25],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.arty]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.arty, g.mach, g.mach_smaller]),
             TYPE: defExports.bullet
         }
     }, {
@@ -165544,7 +164449,7 @@ defExports.fortifiedDominator = {
         return out;
     })()
 };
-defExports.revolutionbrid = makeHybrid(defExports.revolutionist, 'Revolutionbrid');
+defExports.revolutionbrid = makeHybrid(defExports.revolutionist, 'drone', { name: 'Revolutionbrid' });
 defExports.revelationSidekick = {
     PARENT: [defExports.minion],
     LABEL: 'Sidekick',
@@ -165845,7 +164750,7 @@ defExports.pergola = {
         POSITION: [5, 14, 1.2, 8, 0, 90, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
@@ -165854,7 +164759,7 @@ defExports.pergola = {
         POSITION: [5, 14, 1.2, 8, 0, 270, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
@@ -165863,7 +164768,7 @@ defExports.pergola = {
         POSITION: [5, 14, 1.2, 8, 0, 0, 0.5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
@@ -165872,14 +164777,14 @@ defExports.pergola = {
         POSITION: [5, 14, 1.2, 8, 0, 180, 0.5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchip,
+            TYPE: defExports.bigSunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0, { sizeMult: 1.35 });
     }
 };
 defExports.uluKnife = {
@@ -166143,12 +165048,13 @@ defExports.esquire = {
             STAT_CALCULATOR: gunCalcNames.drone
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
-defExports.homingTwinbrid = makeHybrid(defExports.homingTwin, 'Homing Twinbrid');
+defExports.homingTwinbrid = makeHybrid(defExports.homingTwin, 'drone', { name: 'Homing Twinbrid' });
 defExports.tantrum = {
     PARENT: [defExports.genericTank],
     LABEL: 'Tantrum',
@@ -166552,7 +165458,7 @@ defExports.pyromancerChip = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.pyromancer = {
@@ -166590,7 +165496,7 @@ defExports.pyromancer = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.matulaTree6 = {
@@ -166961,7 +165867,7 @@ defExports.sunchipYang = {
         }]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.sunchipYin = {
@@ -166975,7 +165881,7 @@ defExports.sunchipYin = {
         }]
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroDrone(me, them, ['Square']);
+        necroDrone(me, them, ['Square', 'Sanctuary Square']);
     }
 };
 defExports.multiplier = {
@@ -167012,7 +165918,7 @@ defExports.multiplier = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.dividend = {
@@ -167072,7 +165978,7 @@ defExports.dividend = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0);
     }
 };
 defExports.tachyon = {
@@ -169138,7 +168044,7 @@ defExports.ammonia = {
     }],
     PROPS: [makeAura(34)]
 };
-defExports.skunkspray = makeHybrid(defExports.pepperspray, 'Skunkspray');
+defExports.skunkspray = makeHybrid(defExports.pepperspray, 'drone', { name: 'Skunkspray' });
 defExports.lsdBullet = {
     PARENT: [defExports.blurBullet],
     ON_DEALT_DAMAGE: (me, them) => {
@@ -169868,7 +168774,7 @@ defExports.hexaNaturalist = makeFlank(defExports.naturalist, 6, 'Acclimator', {
     reload_delay: [.5, .5, .5, 0, 0, 0],
     stats: [g.flank]
 });
-defExports.hybridTwinBuilder = makeHybrid(defExports.twinBuilder, 'Accumulator');
+defExports.hybridTwinBuilder = makeHybrid(defExports.twinBuilder, 'drone', { name: 'Accumulator' });
 defExports.accuatorPillbox = {
     PARENT: [defExports.trap],
     SHAPE: -3,
@@ -170128,7 +169034,7 @@ defExports.anschluss = makeAuto(defExports.subTrapGuard, 'Anschluss');
 defExports.aphexTwin = makeAuto(defExports.twin, 'Aphex Twin', {
     type: defExports.minigun3gun
 });
-defExports.apiculturist = makeHybrid(defExports.miniMiniSwarmer, 'Apiculturist');
+defExports.apiculturist = makeHybrid(defExports.miniMiniSwarmer, 'drone', { name: 'Apiculturist' });
 defExports.cephalopodLimbA = {
     COLOR: 16,
     CONTROLLERS: ['onlyAcceptInArc'],
@@ -170358,7 +169264,7 @@ defExports.armsman = {
         POSITION: [5, 8.5, -1.6, 8, 0, 0, 0]
     }]
 };
-defExports.arquebusier = makeHybrid(defExports.gunHunter, 'Arquebusier');
+defExports.arquebusier = makeHybrid(defExports.gunHunter, 'drone', { name: 'Arquebusier' });
 defExports.arthropod = {
     PARENT: [defExports.genericTank],
     LABEL: 'Arthropod',
@@ -170568,8 +169474,8 @@ defExports.asymmetricQuintuplet = {
         }
     }]
 };
-defExports.aubridery = makeHybrid(defExports.autillery, 'Aubridery');
-defExports.audiobrid = makeHybrid(defExports.autoRevol, 'Audiobrid');
+defExports.aubridery = makeHybrid(defExports.autillery, 'drone', { name: 'Aubridery' });
+defExports.audiobrid = makeHybrid(defExports.autoRevol, 'drone', { name: 'Audiobrid' });
 defExports.aumineryAutoTurret = {
     LABEL: 'Secondary Auto Turret',
     BODY: {
@@ -172030,7 +170936,7 @@ defExports.blastceptioner = {
     }]
 };
 defExports.blastceptionist = makeCeptionist(defExports.blaster, 'Blastceptionist');
-defExports.blowback = makeHybrid(defExports.rocketeer, 'Blowback');
+defExports.blowback = makeHybrid(defExports.rocketeer, 'drone', { name: 'Blowback' });
 defExports.cryoMissileNuke = {
     PARENT: [defExports.miniNukeShoe],
     GUNS: ((out = []) => {
@@ -172138,7 +171044,7 @@ defExports.bracer = {
     SKILL_CAP: [0, 0, 0, 0, 0, 15, 15, 15, 15, 15],
     STAT_NAMES: statNames.jumpSmash
 };
-defExports.bridwinder = makeHybrid(defExports.sidewind, 'Bridwinder');
+defExports.bridwinder = makeHybrid(defExports.sidewind, 'drone', { name: 'Bridwinder' });
 defExports.buster = {
     PARENT: [defExports.genericTank],
     LABEL: 'Buster',
@@ -172172,7 +171078,7 @@ defExports.buster = {
         POSITION: [15, 17, -1.177, 1, 0, 180, 0]
     }]
 };
-defExports.canard = makeHybrid(defExports.borerSail, 'Canard');
+defExports.canard = makeHybrid(defExports.borerSail, 'drone', { name: 'Canard' });
 defExports.cantabrian = makeFlank(defExports.miniRifle, 3, 'Cantabrian');
 defExports.miniPillboxMine = {
     PARENT: [defExports.miniPillbox],
@@ -172217,19 +171123,19 @@ defExports.sparrer = {
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [15, 12, 1, 6, 7, 180, 0],
+        POSITION: [15, 10, 1, 6, 6.5, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pound, g.destroy, g.bit_less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pound]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [15, 12, 1, 6, -7, 180, .5],
+        POSITION: [15, 10, 1, 6, -6.5, 180, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pound, g.destroy, g.bit_less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pound]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [10, 17.2, 1.51, -4.4, 0, 180, 0]
+        POSITION: [10, 15.2, 1.51, -4.4, 0, 180, 0]
     }]
 };
 defExports.champion = {
@@ -172272,34 +171178,11 @@ defExports.chelicera = {
     },
     GUNS: [...((out = []) => {
         for (let i = 0; i < 3; i++) out.push({
-            POSITION: [23, 4, 1, 0, 0, 120 * i, 0],
-            PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.spam]),
-                TYPE: defExports.bullet
-            }
-        }, {
-            POSITION: [23, 4, 1, 0, 0, 120 * i, 0],
-            PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.spam]),
-                TYPE: defExports.bullet
-            }
-        }, {
-            POSITION: [23, 4, 1, 0, 0, 120 * i, 0],
-            PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.spam]),
-                TYPE: defExports.bullet
-            }
-        }, {
-            POSITION: [23, 4, 1, 0, 0, 120 * i, 0],
-            PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.spam]),
-                TYPE: defExports.bullet
-            }
-        }, {
             POSITION: [24, 4, 1, 0, 0, 120 * i, 0],
             PROPERTIES: {
                 SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.flank, g.spam]),
-                TYPE: defExports.bullet
+                TYPE: defExports.bullet,
+                TIMES_TO_FIRE: 5
             }
         }, {
             POSITION: [8, 8.5, -1.3, 5, 0, 120 * i, 0]
@@ -172364,8 +171247,8 @@ defExports.chelyabinsk = {
         POSITION: [16.5, 11.5, -1.5, 0, 0, 0, 0]
     }]
 };
-defExports.chillbrid = makeHybrid(defExports.chiller, 'Chillbrid');
-defExports.clickbrid = makeHybrid(defExports.clicker, 'Clickbrid');
+defExports.chillbrid = makeHybrid(defExports.chiller, 'drone', { name: 'Chillbrid' });
+defExports.clickbrid = makeHybrid(defExports.clicker, 'drone', { name: 'Clickbrid' });
 defExports.propellerHelix = makeProp(defExports.dropshipBasic, 'Engineer Gaming', 'prop'); // engi
 defExports.cocktail = {
     PARENT: [defExports.genericTank],
@@ -172433,7 +171316,7 @@ defExports.icegun = {
     }, {
         POSITION: [17, 8, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.less_power, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.less_power]),
             TYPE: defExports.chillerBullet
         }
     }, {
@@ -172444,7 +171327,7 @@ defExports.icegun = {
     }],
     PROPS: [makeAura(217)]
 };
-defExports.coldsnap = makeHybrid(defExports.icegun, 'Coldsnap');
+defExports.coldsnap = makeHybrid(defExports.icegun, 'drone', { name: 'Coldsnap' });
 defExports.coleoptile = {
     PARENT: [defExports.genericTank],
     LABEL: 'Coleoptile',
@@ -172517,8 +171400,8 @@ defExports.coleoptile = {
         }
     }]
 };
-defExports.collector = makeHybrid(defExports.snipeBuilder, 'Collector');
-defExports.compactor = makeHybrid(defExports.heavyTwinSniper, 'Compator');
+defExports.collector = makeHybrid(defExports.snipeBuilder, 'drone', { name: 'Collector' });
+defExports.compactor = makeHybrid(defExports.heavyTwinSniper, 'drone', { name: 'Compator' });
 defExports.compiler = {
     PARENT: [defExports.genericTank],
     LABEL: 'Compiler',
@@ -172671,8 +171554,8 @@ defExports.contriver = {
     }]
 };
 defExports.convincer = makeAuto(defExports.flankBlaster, 'Convincer');
-defExports.cookieClickbrid = makeHybrid(defExports.autoClicker, 'Cookie Clickbrid');
-defExports.copilot = makeProp(defExports.hewnTwin, 'Copilot');
+defExports.cookieClickbrid = makeHybrid(defExports.autoClicker, 'drone', { name: 'Cookie Clickbrid' });
+defExports.copilot = makeProp(defExports.hewnTwin, 'Copilot', 'tri');
 defExports.corkscrew = {
     PARENT: [defExports.genericTank],
     LABEL: 'Corkscrew',
@@ -172905,7 +171788,7 @@ defExports.curtana = {
         }
     }]
 };
-defExports.ddos = makeHybrid(defExports.swarmShotgun, 'DDoS');
+defExports.ddos = makeHybrid(defExports.swarmShotgun, 'drone', { name: 'DDoS' });
 defExports.deadeye = {
     PARENT: [defExports.genericTank],
     LABEL: 'Deadeye',
@@ -173014,9 +171897,10 @@ defExports.deposer = {
             TYPE: defExports.bullet
         }
     }],
-    TURRETS: [{
-        POSITION: [7.25, 0, 0, 0, 360, 1],
-        TYPE: defExports.triangleProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 3,
+        COLOR: 16
     }]
 };
 defExports.detour = makeFlank(defExports.gatlingTrapper, 3, 'Detour');
@@ -173126,7 +172010,7 @@ defExports.dimegun = {
         POSITION: [12, 12.5, -1.5, 0, 0, 0, 0]
     }]
 };
-defExports.dibloidbrid = makeHybrid(defExports.twinNaturalist, 'Diploidbrid');
+defExports.dibloidbrid = makeHybrid(defExports.twinNaturalist, 'drone', { name: 'Diploidbrid' });
 defExports.director2 = makeAutoN(defExports.director, 2);
 defExports.director2.MAX_CHILDREN = 6;
 defExports.director3 = makeAutoN(defExports.director, 3);
@@ -173237,9 +172121,10 @@ defExports.diverDown = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.dmr = {
@@ -173448,9 +172333,10 @@ defExports.doxdrive = {
     }, {
         POSITION: [8, 14, -1.3, 4, 0, 0, 0]
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.drillgun = {
@@ -173525,9 +172411,10 @@ defExports.driveshaft = {
             STAT_CALCULATOR: gunCalcNames.trap
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.dropception = makeCeption(defExports.dropship, 'Dropception');
@@ -174638,7 +173525,7 @@ defExports.newConscript = {
         COLOR: 16
     }]
 };
-defExports.newDischarger = makeHybrid(defExports.newRailgun, 'Discharger');
+defExports.newDischarger = makeHybrid(defExports.newRailgun, 'drone', { name: 'Discharger' });
 defExports.newImpactor = {
     PARENT: [defExports.genericTank],
     LABEL: 'Impactor',
@@ -176350,9 +175237,10 @@ defExports.bumbler = {
             LABEL: 'Primary'
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.crucible = {
@@ -176431,7 +175319,27 @@ defExports.donutGuardianBullet = {
                 HITS_OWN_TYPE: 'hard'
             }],
             STAT_CALCULATOR: gunCalcNames.swarm,
-            AUTOFIRE: true
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 5
+        }
+    }]
+};
+defExports.greenDonutGuardianBullet = {
+    PARENT: [defExports.heatBullet],
+    INDEPENDENT: true,
+    LABEL: 'Guardian',
+    SHAPE: 305,
+    GUNS: [{
+        POSITION: [6, 12, 1.25, 6, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.swarm, g.more_recoil, g.guardian, g.more_reload, g.more_reload, g.half_damage]),
+            TYPE: [defExports.swarm, {
+                CONTROLLERS: ['nearestDifferentMaster', 'canRepel', 'hangOutNearMaster'],
+                HITS_OWN_TYPE: 'hard'
+            }],
+            STAT_CALCULATOR: gunCalcNames.swarm,
+            AUTOFIRE: true,
+            COLOR_OVERRIDE: 31
         }
     }]
 };
@@ -176446,7 +175354,9 @@ defExports.donutGuardianLauncher = {
         POSITION: [16.5, 14.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.lots_more_recoil]),
-            TYPE: defExports.donutGuardianBullet
+            TYPE: defExports.donutGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 5
         }
     }, {
         POSITION: [5, 5, 1, 12, 0, 0, 0],
@@ -176458,12 +175368,64 @@ defExports.donutGuardianLauncher = {
         POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.lots_more_recoil, g.fake]),
-            TYPE: defExports.bullet
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
         }
     }, {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 5
+        }
+    }, {
+        POSITION: [1, 16, 1, 0, 0, 180, 2.5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.fake]),
+            TYPE: defExports.bullet,
+			ON_FIRE: gun => {
+                gun.body.define(Class.greenDonutGuardianLauncher);
+                gun.body.upgrades = [];
+                setTimeout(() => {
+                    if (gun.body.isAlive()) {
+                        gun.body.define(Class.donutGuardianLauncher);
+                    }
+                }, 2000);
+            },
+            ALT_FIRE: true
+        }
+    }]
+};
+defExports.greenDonutGuardianLauncher = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Oxyphenbutazone',
+    DANGER: 7,
+    BODY: {
+        ACCELERATION: base.ACCEL * .8
+    },
+    GUNS: [{
+        POSITION: [16.5, 14.5, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.lots_more_recoil, g.more_damage]),
+            TYPE: defExports.greenDonutGuardianBullet,
+            DUO_FIRE: true,
+            COLOR_OVERRIDE: 31
+        }
+    }, {
+        POSITION: [5, 5, 1, 12, 0, 0, 0],
+        PROPERTIES: {
+            COLOR: 1,
+            SKIN: 3
+        }
+    }, {
+        POSITION: [3, 18, 1.2, 15.5, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.oxyrr, g.lots_more_recoil, g.fake]),
+            TYPE: defExports.bullet,
+            DUO_FIRE: true
+        }
+    }, {
+        POSITION: [19, .3, -55, 0, 0, 180, 0],
+        PROPERTIES: {
+            COLOR: 31
         }
     }]
 };
@@ -177061,9 +176023,10 @@ defExports.coefficient = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.parabolic = {
@@ -177895,51 +176858,22 @@ defExports.entomologist = {
         POSITION: [4.5, 8.5, -1.6, 7.5, 0, 0, 0]
     }]
 };
-defExports.launchbrid = makeHybrid(defExports.littleSkimmer, 'Launchbrid');
-defExports.trundler = makeHybrid(defExports.fatLittleSkimmer, 'Trundler');
-defExports.twistbrid = makeHybrid(defExports.twister, 'Twistbrid');
-defExports.esplanade = makeHybrid(defExports.trapLittleSkimmer, 'Esplanade');
-defExports.twinLaunchbrid = makeHybrid(defExports.twinLauncher, 'Twin Launchbrid');
-defExports.entourage = makeHybrid(defExports.littleSkimmer, 'Entourage', {
-    isYoukron: true
-});
+defExports.launchbrid = makeHybrid(defExports.littleSkimmer, 'drone', { name: 'Launchbrid' });
+defExports.trundler = makeHybrid(defExports.fatLittleSkimmer, 'drone', { name: 'Trundler' });
+defExports.twistbrid = makeHybrid(defExports.twister, 'drone', { name: 'Twistbrid' });
+defExports.esplanade = makeHybrid(defExports.trapLittleSkimmer, 'drone', { name: 'Esplanade' });
+defExports.twinLaunchbrid = makeHybrid(defExports.twinLauncher, 'drone', { name: 'Twin Launchbrid' });
+defExports.entourage = makeHybrid(defExports.littleSkimmer, 'youkron', { name: 'Entourage' });
 defExports.munition = makeSidekick(defExports.littleSkimmer, 'Munition');
-defExports.megaTrapbrid = makeHybrid(defExports.megaTrapper, 'Mega Trapbrid');
-defExports.gigaTrapbrid = makeHybrid(defExports.gigaTrapper, 'Giga Trapbrid');
-defExports.undermega = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Undermega',
-    DANGER: 7,
-    STAT_NAMES: statNames.generic,
-    SHAPE: 4,
-    BODY: {
+defExports.megaTrapbrid = makeHybrid(defExports.megaTrapper, 'drone', { name: 'Mega Trapbrid' });
+defExports.gigaTrapbrid = makeHybrid(defExports.gigaTrapper, 'drone', { name: 'Giga Trapbrid' });
+defExports.undermega = makeHybrid(defExports.megaTrapper, 'under', {
+    name: 'Undermega',
+    body: {
         SPEED: base.SPEED * .9,
         FOV: 1.1
-    },
-    GUNS: [{
-        POSITION: [13.5, 14, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [3.5, 14, 1.8, 13.5, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.more_range, g.more_reload, g.bigger, g.fast]),
-            TYPE: defExports.trap,
-            STAT_CALCULATOR: gunCalcNames.trap
-        }
-    }, {
-        POSITION: [5, 12, 1.2, 8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.meta]),
-            TYPE: defExports.sunchip,
-            AUTOFIRE: true,
-            SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
-            MAX_CHILDREN: 8
-        }
-    }],
-    ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 2);
     }
-};
+})
 defExports.entrencherMinion = makeAuto(defExports.trapion, 'Auto-Trapper', {
     type: defExports.swarmDroneTurret,
     size: 11
@@ -177965,15 +176899,13 @@ defExports.entrencher = {
             SYNCS_SKILLS: true
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.3, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
-defExports.equaldriver = makeHybrid(defExports.zoomSingle, 'Equaldriver', {
-    isDrive: true,
-    drone: 'autoDrone'
-});
+defExports.equaldriver = makeHybrid(defExports.zoomSingle, 'drive', { name: 'Equaldriver' });
 defExports.detonationDrone = {
     PARENT: [defExports.drone],
     SHAPE: 277,
@@ -178075,13 +177007,13 @@ defExports.remote = {
     TOOLTIP: 'Double click to make some of your drones explode!',
     DANGER: 7,
     GUNS: [{
-        POSITION: diep2arras([75, 0.5, 1, 0, -16, 0, 0]),
+        POSITION: diep2arras([75, 0.5, 1, 0, -16, 0, .5]),
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.twin, g.tons_more_recoil, g.lots_more_recoil, g.bit_slow, g.bit_less_damage]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: diep2arras([75, 0.5, 1, 0, 16, 0, 0.2]),
+        POSITION: diep2arras([75, 0.5, 1, 0, 16, 0, 0]),
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.twin, g.tons_more_recoil, g.lots_more_recoil, g.bit_slow, g.bit_less_damage]),
             TYPE: defExports.bullet
@@ -178627,7 +177559,11 @@ defExports.factorial = {
         POSITION: [5, 14, 1.2, 8, 0, 90, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchipYang,
+            TYPE: [defExports.sunchipYang, {
+                ON_DEALT_DAMAGE: (me, them) => {
+                    necroDrone(me, them, ['Square', 'Sanctuary Square'], { sizeMult: 1.35 });
+                }
+            }],
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro,
@@ -178637,7 +177573,11 @@ defExports.factorial = {
         POSITION: [5, 14, 1.2, 8, 0, 270, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.bit_bigger, g.pound]),
-            TYPE: defExports.sunchipYin,
+            TYPE: [defExports.sunchipYin, {
+                ON_DEALT_DAMAGE: (me, them) => {
+                    necroDrone(me, them, ['Square', 'Sanctuary Square'], { sizeMult: 1.35 });
+                }
+            }],
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.necro,
@@ -178645,7 +177585,7 @@ defExports.factorial = {
         }
     }],
     ON_DEALT_DAMAGE: (me, them) => {
-        necroRam(me, them, ['Square'], 0);
+        necroRam(me, them, ['Square', 'Sanctuary Square'], 0, { sizeMult: 1.35 });
     }
 };
 defExports.fart = {
@@ -178946,9 +177886,10 @@ defExports.flankSwarmdrive = {
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
-    TURRETS: [{
-        POSITION: [9, 0, 0, 0, 360, 1],
-        TYPE: defExports.squareProp
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
     }]
 };
 defExports.flankceptionist = makeCeptionist(defExports.flank, 'Flankceptionist');
@@ -179016,7 +177957,7 @@ defExports.flycatcher = {
         }
     }]
 };
-defExports.footsoldier = makeHybrid(defExports.rifleHunter, 'Footsoldier');
+defExports.footsoldier = makeHybrid(defExports.rifleHunter, 'drone', { name: 'Footsoldier' });
 defExports.fortifier = {
     PARENT: [defExports.genericTank],
     LABEL: 'Fortifier',
@@ -179043,7 +177984,7 @@ defExports.fortifier = {
         }
     }]
 };
-defExports.freezebrid = makeHybrid(defExports.freezer, 'Freezebrid');
+defExports.freezebrid = makeHybrid(defExports.freezer, 'drone', { name: 'Freezebrid' });
 defExports.freezerayLine = {
     PARENT: [defExports.iceBullet],
     SHAPE: -1,
@@ -180354,7 +179295,7 @@ defExports.halligan = {
         TYPE: defExports.heavy3gun
     }, {
         POSITION: [10, 8, 0, 150, 190, 0],
-        TYPE: defExports.multiTwinTurret
+        TYPE: defExports.twin3gun
     }, {
         POSITION: [10, 8, 0, 210, 190, 0],
         TYPE: defExports.machine3gun
@@ -187267,68 +186208,7 @@ defExports.moonBoss = {
     }, {
         POSITION: [2.25, 5, 0, (360 / 10) * 9, 120, 1],
         TYPE: defExports.moonLauncher
-    },],
-	ON_DEAD: function({sockets, ran, Entity}){
-		let x = this.x,
-			y = this.y;
-		setTimeout(() => {
-			sockets.broadcast("The remnants of the Moon have activated!");
-			let core = new Entity({
-				x: x,
-				y: y
-			});
-			core.team = this.team;
-			core.define(Class.moonCoreAI);
-			let boss1 = new Entity({
-				x: x + 600,
-				y: y
-			});
-			boss1.team = this.team;
-			boss1.define(Class.moonShardAAI);
-			let boss2 = new Entity({
-				x: x - 600,
-				y: y
-			});
-			boss2.team = this.team;
-			boss2.define(Class.moonShardAAI);
-			let boss3 = new Entity({
-				x: x,
-				y: y + 600
-			});
-			boss3.team = this.team;
-			boss3.define(Class.moonShardAAI);
-			let boss4 = new Entity({
-				x: x,
-				y: y - 600
-			});
-			boss4.team = this.team;
-			boss4.define(Class.moonShardAAI);
-			let boss5 = new Entity({
-				x: x + 600,
-				y: y + 600
-			});
-			boss5.team = this.team;
-			boss5.define(Class.moonShardBAI);
-			let boss6 = new Entity({
-				x: x - 600,
-				y: y - 600
-			});
-			boss6.team = this.team;
-			boss6.define(Class.moonShardBAI);
-			let boss7 = new Entity({
-				x: x - 600,
-				y: y + 600
-			});
-			boss7.team = this.team;
-			boss7.define(Class.moonShardBAI);
-			let boss8 = new Entity({
-				x: x + 600,
-				y: y - 600
-			});
-			boss8.team = this.team;
-			boss8.define(Class.moonShardBAI);
-		}, 4900);
-	}
+    }]
 };
 defExports.moonBoss.TURRETS.push({
     POSITION: [5.5, 0, 0, 0, 361, 1],
@@ -187546,19 +186426,7 @@ defExports.neutronStarBoss = {
     }, {
         POSITION: [8, 2, 0, 0, 361, 1],
         TYPE: defExports.neutronrocketeer
-    },],
-	ON_DEAD: function({ sockets, ran, Entity }){
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 12; i++) {
-			let boss = new Entity({
-				x: x,
-				y: y
-			});
-			boss.team = this.team;
-			boss.define([Class.quasarAI, Class.quasarAI, Class.pulsarAI, Class.magnetarAI, Class.magnetarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI][i]);
-		}
-	}
+    }]
 };
 /******************************************* ALIENS ****************************************/
 defExports.tridrant = {
@@ -189892,39 +188760,12 @@ defExports.yellowsection = {
 defExports.clickerMinionL = {
     PARENT: [defExports.sniperMinion],
     GUNS: [{
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet,
-            COLOR_OVERRIDE: 326,
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet,
-            COLOR_OVERRIDE: 326,
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet,
-            COLOR_OVERRIDE: 326,
-        }
-    }, {
-        POSITION: [23, 4, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
-            TYPE: defExports.bullet,
-            COLOR_OVERRIDE: 326,
-        }
-    }, {
         POSITION: [24, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.click, g.minion]),
             TYPE: defExports.bullet,
             COLOR_OVERRIDE: 326,
+            TIMES_TO_FIRE: 5
         }
     }, {
         POSITION: [8, 8.5, -1.3, 5, 0, 0, 0]
@@ -189943,16 +188784,16 @@ defExports.greensection = {
         DAMAGE: 5,
         REGEN: 0.45,
     },
+    MAX_CHILDREN: 4,
     GUNS: [{
         POSITION: [4.5, 10, 1, 7.5, 0, 0, 0]
     }, {
-        POSITION: [1, 12, 1.01, 13, 0, 0, 0],
+        POSITION: [1, 12, 1.01, 12, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
             TYPE: defExports.clickerMinionL,
             STAT_CALCULATOR: gunCalcNames.drone,
             AUTOFIRE: true,
-            MAX_CHILDREN: 1,
             COLOR_OVERRIDE: 326,
             SYNCS_SKILLS: true
         }
@@ -189963,7 +188804,6 @@ defExports.greensection = {
             TYPE: defExports.clickerMinionL,
             STAT_CALCULATOR: gunCalcNames.drone,
             AUTOFIRE: true,
-            MAX_CHILDREN: 1,
             COLOR_OVERRIDE: 326,
             SYNCS_SKILLS: true
         }
@@ -189974,7 +188814,6 @@ defExports.greensection = {
             TYPE: defExports.clickerMinionL,
             STAT_CALCULATOR: gunCalcNames.drone,
             AUTOFIRE: true,
-            MAX_CHILDREN: 1,
             COLOR_OVERRIDE: 326,
             SYNCS_SKILLS: true
         }
@@ -189985,7 +188824,6 @@ defExports.greensection = {
             TYPE: defExports.clickerMinionL,
             STAT_CALCULATOR: gunCalcNames.drone,
             AUTOFIRE: true,
-            MAX_CHILDREN: 1,
             COLOR_OVERRIDE: 326,
             SYNCS_SKILLS: true
         }
@@ -190764,14 +189602,6 @@ defExports.guardianLauncherPCU = {
         POSITION: [19, .3, -55, 0, 0, 180, 0],
         PROPERTIES: {
             COLOR: 5
-        }
-    }, {
-        POSITION: [1, 16, 1, 0, 0, 180, 2.5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.bit_less_reload, g.fake]),
-            TYPE: defExports.bullet,
-            ALT_FIRE: true,
-            ON_SHOOT: 'oxy'
         }
     }]
 };
@@ -194448,7 +193278,19 @@ defExports.neutronStarAI = {
     },
     HITS_OWN_TYPE: 'hard',
     SKILL: setSkill(0, 7, 9, 9, 9, 9, 9, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A Neutron Star has gone supernova!'
+    BROADCAST_MESSAGE: 'A Neutron Star has gone supernova!',
+	ON_DEAD: function({ sockets, ran, Entity }){
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 12; i++) {
+			let boss = new Entity({
+				x: x,
+				y: y
+			});
+			boss.team = this.team;
+			boss.define([Class.quasarAI, Class.quasarAI, Class.pulsarAI, Class.magnetarAI, Class.magnetarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI, Class.pulsarAI, Class.magnetarAI][i]);
+		}
+	}
 };
 defExports.bluestarAI = {
     PARENT: [defExports.bluestar],
@@ -194794,7 +193636,68 @@ defExports.moonAI = {
     },
     HITS_OWN_TYPE: 'hard',
     SKILL: setSkill(0, 5, 7, 6, 6, 6, 2, 1, 0, 0),
-    BROADCAST_MESSAGE: 'The Moon has been defeated, however...'
+    BROADCAST_MESSAGE: 'The Moon has been defeated, however...',
+	ON_DEAD: function({sockets, ran, Entity}){
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("The remnants of the Moon have activated!");
+			let core = new Entity({
+				x: x,
+				y: y
+			});
+			core.team = this.team;
+			core.define(Class.moonCoreAI);
+			let boss1 = new Entity({
+				x: x + 600,
+				y: y
+			});
+			boss1.team = this.team;
+			boss1.define(Class.moonShardAAI);
+			let boss2 = new Entity({
+				x: x - 600,
+				y: y
+			});
+			boss2.team = this.team;
+			boss2.define(Class.moonShardAAI);
+			let boss3 = new Entity({
+				x: x,
+				y: y + 600
+			});
+			boss3.team = this.team;
+			boss3.define(Class.moonShardAAI);
+			let boss4 = new Entity({
+				x: x,
+				y: y - 600
+			});
+			boss4.team = this.team;
+			boss4.define(Class.moonShardAAI);
+			let boss5 = new Entity({
+				x: x + 600,
+				y: y + 600
+			});
+			boss5.team = this.team;
+			boss5.define(Class.moonShardBAI);
+			let boss6 = new Entity({
+				x: x - 600,
+				y: y - 600
+			});
+			boss6.team = this.team;
+			boss6.define(Class.moonShardBAI);
+			let boss7 = new Entity({
+				x: x - 600,
+				y: y + 600
+			});
+			boss7.team = this.team;
+			boss7.define(Class.moonShardBAI);
+			let boss8 = new Entity({
+				x: x + 600,
+				y: y - 600
+			});
+			boss8.team = this.team;
+			boss8.define(Class.moonShardBAI);
+		}, 4900);
+	}
 };
 defExports.sunkingAI = {
     PARENT: [defExports.ultimateMothership],
@@ -194935,6 +193838,30 @@ defExports.polyamorousAI = {
     HITS_OWN_TYPE: 'hard',
     VALUE: 5e5,
     SKILL: setSkill(2, 9, 3, 6, 6, 5, 9, 1, 2, 2),
+	ON_DEAD: function({ sockets, ran, Entity }){
+		sockets.broadcast("It will stop at nothing to seek what it came for, not even its own grave...");
+		let x = this.x,
+			y = this.y;
+		setTimeout(() => {
+			sockets.broadcast("The Mysticals have arrived!");
+			let positions = [
+				[x + 110, y, -110, 0],
+				[x - 110, y, 110, 0],
+				[x, y + 110, 0, -110],
+				[x, y - 110, 0, 110]
+			];
+			for (let i = 0; i < 4; i++) {
+				let mystical = new Entity({
+					x: positions[i][0],
+					y: positions[i][1]
+				});
+				mystical.team = this.team;
+				mystical.control.target.x = positions[i][2];
+				mystical.control.target.y = positions[i][3];
+				mystical.define([Class.sorcererAI, Class.summonerAI, Class.enchantressAI, Class.exorcistorAI][i]);
+			}
+		}, 4000);
+	}
 };
 defExports.hexagonBossAI = {
     PARENT: [defExports.hexagonBoss],
@@ -195863,7 +194790,9 @@ branch("testbed_primes", "Tertia & Quartus", [
 ]);
 
 // Dominators
-defExports.testbed_dominator.UPGRADES_TIER_4 = [defExports.destroyerDominator, defExports.gunnerDominator, defExports.trapperDominator, defExports.droneDominator, defExports.autoDominator, defExports.steamrollDominator, defExports.crockettDominator, defExports.dominatormind, defExports.baseProtector, defExports.baseProtectorDestroyer, defExports.swarmerDominator, defExports.pliniDominator, defExports.fortifiedDominator, defExports.outpostGuardian];
+branch("testbed_dominator", "Dominators", [
+    defExports.destroyerDominator, defExports.gunnerDominator, defExports.trapperDominator, defExports.droneDominator, defExports.autoDominator, defExports.steamrollDominator, defExports.crockettDominator, defExports.dominatormind, defExports.baseProtector, defExports.baseProtectorDestroyer, defExports.swarmerDominator, defExports.pliniDominator, defExports.fortifiedDominator, defExports.outpostGuardian
+]);
 
 // Old tanks :D
 branch("testbed_oldShit", "Old Tanks", [
@@ -195910,31 +194839,43 @@ defExports.computer.UPGRADES_TIER_3 = [defExports.polygun];
 defExports.computer.UPGRADES_TIER_4 = [defExports.overload];
 
 // Sentries
-defExports.testbed_sentry.UPGRADES_TIER_4 = [defExports.sentrySwarm, defExports.sentryTrap, defExports.sentryGun, defExports.sentryRanger, defExports.flashSentry, defExports.semiCrushSentry, defExports.crushSentry, defExports.bladeSentry, defExports.skimSentry, defExports.squareSwarmer, defExports.squareGunSentryPlayable, defExports.crusaderCrashPlayable, defExports.greenSentrySwarm, defExports.awp39Sentry, defExports.flashGunnerSentry, defExports.varp];
+branch("testbed_sentry", "Sentries", [
+    defExports.sentrySwarm, defExports.sentryTrap, defExports.sentryGun, defExports.sentryRanger, defExports.flashSentry, defExports.semiCrushSentry, defExports.crushSentry, defExports.bladeSentry, defExports.skimSentry, defExports.squareSwarmer, defExports.squareGunSentryPlayable, defExports.crusaderCrashPlayable, defExports.greenSentrySwarm, defExports.awp39Sentry, defExports.flashGunnerSentry, defExports.varp
+]);
 
 // X-K-X Bosses
-defExports.testbed_X_K_X_bosses.UPGRADES_TIER_4 = [defExports.eggBossTier1, defExports.eggQueenTier1, defExports.eggSpiritTier1, defExports.squareBossTier1, defExports.triangleBossTier1, defExports.pentagonBossTier1, defExports.hexagonBossTier1, defExports.heptagonBossTier1, defExports.obp1, defExports.obt1, defExports.rocketBossTier1, defExports.chk1, defExports.greenBossTier1, defExports.nk1, defExports.soulless1, defExports.redStarTier1];
+branch("testbed_X_K_X_bosses", "K-X-K Bosses", [
+    defExports.eggBossTier1, defExports.eggQueenTier1, defExports.eggSpiritTier1, defExports.squareBossTier1, defExports.triangleBossTier1, defExports.pentagonBossTier1, defExports.hexagonBossTier1, defExports.heptagonBossTier1, defExports.obp1, defExports.obt1, defExports.rocketBossTier1, defExports.chk1, defExports.greenBossTier1, defExports.nk1, defExports.soulless1, defExports.redStarTier1
+]);
 
 // Overdone Tanks
-defExports.testbed_misc_laggy.UPGRADES_TIER_4 = [defExports.minigun100, defExports.streamstream, defExports.acStreamstream, defExports.anni360, defExports.streamstream2, defExports.streamstream3, defExports.aaaaa, defExports.engineer360, defExports.boomerEngineer360, defExports.streamstream4, defExports.streamstream5, defExports.alterEagle, defExports.autoAuto5, defExports.autoAutoAuto5, defExports.testbed_misc_laggy_2];
-defExports.testbed_misc_laggy_2.UPGRADES_TIER_4 = [defExports.fact360, defExports.zoomPredator360, defExports.infPred, defExports.glitch100, defExports.hewnPellet360, defExports.streamliner50, defExports.infinitePuntGunner, defExports.america0, defExports.auto222, defExports.auto222222, defExports.eightFlail, defExports.nailplex, defExports.eggplex, defExports.geargrindmindTest, defExports.testbed_misc_laggy_3];
-defExports.testbed_misc_laggy_3.UPGRADES_TIER_4 = [defExports.glitch, defExports.glitchception, defExports.autoGlitch, defExports.gunnerCruiserHybridAutoGlitch, defExports.longMinitrap, defExports.launch360, defExports.horocycle, defExports.redistributor360, defExports.autoRock, defExports.polyShotgun, defExports.quadFlail, defExports.rose, defExports.subduer360, defExports.betaCorpsButMoreOP, defExports.testbed_misc_laggy_4];
-defExports.testbed_misc_laggy_4.UPGRADES_TIER_4 = [defExports.eggBossTier6ception, defExports.solarEclipse, defExports.oganesson, defExports.invisAcidFuck, defExports.spiral, defExports.apothicanOld, defExports.trueTrueNecromancer, defExports.f150, defExports.viralPurge, defExports.ship22Boss, defExports.ultracomedyallergen, defExports.mothershipStack, defExports.thiccBackShield];
+branch("testbed_misc_laggy", "Overdone Tanks", [
+    defExports.minigun100, defExports.streamstream, defExports.acStreamstream, defExports.anni360, defExports.streamstream2, defExports.streamstream3, defExports.aaaaa, defExports.engineer360, defExports.boomerEngineer360, defExports.streamstream4, defExports.streamstream5, defExports.alterEagle, defExports.autoAuto5, defExports.autoAutoAuto5,
+    defExports.fact360, defExports.zoomPredator360, defExports.infPred, defExports.glitch100, defExports.hewnPellet360, defExports.streamliner50, defExports.infinitePuntGunner, defExports.america0, defExports.auto222, defExports.auto222222, defExports.eightFlail, defExports.nailplex, defExports.eggplex, defExports.geargrindmindTest,
+    defExports.glitch, defExports.glitchception, defExports.autoGlitch, defExports.gunnerCruiserHybridAutoGlitch, defExports.longMinitrap, defExports.launch360, defExports.horocycle, defExports.redistributor360, defExports.autoRock, defExports.polyShotgun, defExports.quadFlail, defExports.rose, defExports.subduer360, defExports.betaCorpsButMoreOP,
+    defExports.eggBossTier6ception, defExports.solarEclipse, defExports.oganesson, defExports.invisAcidFuck, defExports.spiral, defExports.apothicanOld, defExports.trueTrueNecromancer, defExports.f150, defExports.viralPurge, defExports.ship22Boss, defExports.ultracomedyallergen, defExports.mothershipStack, defExports.thiccBackShield
+]);
 
 // Custom Shapes
-defExports.testbed_custom_shapes.UPGRADES_TIER_4 = [defExports.schoolShooter, defExports.basicAkShooter, defExports.schoolPistol, defExports.basicShooterPistol, defExports.basicHeart, defExports.schoolSniper, defExports.basicShooterSniper, defExports.schoolShotgun, defExports.basicShooterShotgun, defExports.grenadeThrower, defExports.rocketLauncher, defExports.basicRocketLauncher, defExports.maresLegRifle, defExports.basicShooterMaresLegRifle, defExports.testbed_custom_shapes_2];
-defExports.testbed_custom_shapes_2.UPGRADES_TIER_4 = [defExports.magnumRifle, defExports.basicShooterMagnumRifle, defExports.sawedShotgun, defExports.basicShooterSawedShotgun, defExports.marksmanPistol, defExports.basicShooterMarksmanPistol, defExports.sawedShotgun2, defExports.basicShooterSawedShotgun2, defExports.microSMG, defExports.basicShooterMicroSMG, defExports.SMG, defExports.basicShooterSMG, defExports.fatManNukeLauncher, defExports.basicShooterFatMan, defExports.testbed_custom_shapes_3];
-defExports.testbed_custom_shapes_3.UPGRADES_TIER_4 = [defExports.TM9SMG, defExports.basicShooterTM9SMG, defExports.guy, defExports.spikedRunner, defExports.clutter, defExports.goldenRect, defExports.morpher, defExports.trircle, defExports.michigan, defExports.pencil, defExports.southAmerica, defExports.cancelSign, defExports.kText, defExports.curvy, defExports.testbed_custom_shapes_4];
-defExports.testbed_custom_shapes_4.UPGRADES_TIER_4 = [defExports.moleculeBoss, defExports.twentyFourPointStar, defExports.terminator, defExports.sun, defExports.uwu, defExports.clara, defExports.australia, defExports.no_u, defExports.ship22, defExports.puzzlePiece, defExports.tommyGun, defExports.basicShooterTommyGun, defExports.grenadeLauncher, defExports.basicShooterGrenadeLauncher, defExports.testbed_custom_shapes_5];
-defExports.testbed_custom_shapes_5.UPGRADES_TIER_4 = [defExports.tsarBombaLauncher, defExports.basicTsarBombaLauncher, defExports.namencoHead, defExports.helium, defExports.radium, defExports.tellurium, defExports.neptunium, defExports.plutonium, defExports.supercarrier, defExports.eShape];
+branch("testbed_custom_shapes", "Custom Shapes", [
+    defExports.schoolShooter, defExports.basicAkShooter, defExports.schoolPistol, defExports.basicShooterPistol, defExports.basicHeart, defExports.schoolSniper, defExports.basicShooterSniper, defExports.schoolShotgun, defExports.basicShooterShotgun, defExports.grenadeThrower, defExports.rocketLauncher, defExports.basicRocketLauncher, defExports.maresLegRifle, defExports.basicShooterMaresLegRifle,
+    defExports.magnumRifle, defExports.basicShooterMagnumRifle, defExports.sawedShotgun, defExports.basicShooterSawedShotgun, defExports.marksmanPistol, defExports.basicShooterMarksmanPistol, defExports.sawedShotgun2, defExports.basicShooterSawedShotgun2, defExports.microSMG, defExports.basicShooterMicroSMG, defExports.SMG, defExports.basicShooterSMG, defExports.fatManNukeLauncher, defExports.basicShooterFatMan,
+    defExports.TM9SMG, defExports.basicShooterTM9SMG, defExports.guy, defExports.spikedRunner, defExports.clutter, defExports.goldenRect, defExports.morpher, defExports.trircle, defExports.michigan, defExports.pencil, defExports.southAmerica, defExports.cancelSign, defExports.kText, defExports.curvy,
+    defExports.moleculeBoss, defExports.twentyFourPointStar, defExports.terminator, defExports.sun, defExports.uwu, defExports.clara, defExports.australia, defExports.no_u, defExports.ship22, defExports.puzzlePiece, defExports.tommyGun, defExports.basicShooterTommyGun, defExports.grenadeLauncher, defExports.basicShooterGrenadeLauncher,
+    defExports.tsarBombaLauncher, defExports.basicTsarBombaLauncher, defExports.namencoHead, defExports.helium, defExports.radium, defExports.tellurium, defExports.neptunium, defExports.plutonium, defExports.supercarrier, defExports.eShape
+]);
 
 // Arena Closers
-defExports.testbed_ac.UPGRADES_TIER_4 = [defExports.arenaCloser, defExports.arenaCloser5, defExports.machArenaCloser, defExports.boostArenaCloser, defExports.rediShotgun, defExports.bigChungus, defExports.arenaCloserWut, defExports.flooffloofin, defExports.closermind, defExports.sniperCloser, defExports.trapperCloser, defExports.hotwheels, defExports.absoluteCyanide, defExports.arenaSummoner, defExports.testbed_ac_2];
-defExports.testbed_ac_2.UPGRADES_TIER_4 = [defExports.borerCloser, defExports.hybridCloser, defExports.acCeption, defExports.octoArenaCloser, defExports.minishotCloser, defExports.machArenaCloser360, defExports.auto69closer, defExports.spreadCloser, defExports.closerCeptionist, defExports.ac3, defExports.f150];
+branch("testbed_ac", "Arena Closers", [
+    defExports.arenaCloser, defExports.arenaCloser5, defExports.machArenaCloser, defExports.boostArenaCloser, defExports.rediShotgun, defExports.bigChungus, defExports.arenaCloserWut, defExports.flooffloofin, defExports.closermind, defExports.sniperCloser, defExports.trapperCloser, defExports.hotwheels, defExports.absoluteCyanide, defExports.arenaSummoner,
+    defExports.borerCloser, defExports.hybridCloser, defExports.acCeption, defExports.octoArenaCloser, defExports.minishotCloser, defExports.machArenaCloser360, defExports.auto69closer, defExports.spreadCloser, defExports.closerCeptionist, defExports.ac3, defExports.f150
+]);
 
 // OP Ceptionists
-defExports.testbed_ceptionist.UPGRADES_TIER_4 = [defExports.snowstormShooter, defExports.pentaShooter, defExports.octoShooter, defExports.octoMiniGrowerShooter, defExports.octoPoundShooter, defExports.heptaBasicShooter, defExports.heptaShooter, defExports.gunScalerBasicShooter, defExports.gunScalerShooter, defExports.gunnerShooter, defExports.miniShooter, defExports.twinHotshotShooter, defExports.smotherShooter, defExports.tripletShooter, defExports.testbed_ceptionist_2];
-defExports.testbed_ceptionist_2.UPGRADES_TIER_4 = [defExports.doubleShooter, defExports.twinShooter, defExports.xPredatorShooter, defExports.twinClickerShooter, defExports.magmachShooter];
+branch("testbed_ceptionist", "OP Ceptionists", [
+    defExports.snowstormShooter, defExports.pentaShooter, defExports.octoShooter, defExports.octoMiniGrowerShooter, defExports.octoPoundShooter, defExports.heptaBasicShooter, defExports.heptaShooter, defExports.gunScalerBasicShooter, defExports.gunScalerShooter, defExports.gunnerShooter, defExports.miniShooter, defExports.twinHotshotShooter, defExports.smotherShooter, defExports.tripletShooter,
+    defExports.doubleShooter, defExports.twinShooter, defExports.xPredatorShooter, defExports.twinClickerShooter, defExports.magmachShooter
+]);
 
 // AWPs
 branch("testbed_awp", "AWPs", [
@@ -195942,7 +194883,9 @@ branch("testbed_awp", "AWPs", [
     defExports.awpOrchestra2, defExports.awpOrchestratan33, defExports.awpOrchestra3, defExports.awpOrchestra4, defExports.awpOrchestra5
 ]);
 // Sanctuaries
-defExports.testbed_sanctuaries.UPGRADES_TIER_4 = [defExports.eggSanctuary, defExports.squareSanctuary, defExports.triSanctuary, defExports.pentaSanctuary, defExports.sunKing, defExports.megaSanctuary, defExports.alphaCrasher, defExports.bowedSanc, defExports.snowballSanctuary];
+branch("testbed_sanctuaries", "Sanctuaries", [
+    defExports.eggSanctuary, defExports.squareSanctuary, defExports.triSanctuary, defExports.pentaSanctuary, defExports.sunKing, defExports.megaSanctuary, defExports.alphaCrasher, defExports.bowedSanc, defExports.snowballSanctuary
+]);
 
 
 // Infiltration
@@ -196134,7 +195077,7 @@ defExports.newAxolotl.UPGRADES_TIER_4 = [defExports.binaryAxolotl, defExports.am
 defExports.twinSniper.UPGRADES_TIER_4 = [defExports.snipewark, defExports.twinOsci];
 defExports.bulwark.UPGRADES_TIER_4 = [defExports.snipewark, defExports.newRampart, defExports.autoBulwark, defExports.buildwark, defExports.bulwarkFlankTrap, defExports.bulwarkTrapperang, defExports.bulwarkArsenal, defExports.bendwark];
 defExports.twinAssassin.UPGRADES_TIER_4 = [defExports.twinRanger, defExports.twinFlankAssassin, defExports.twinStalk, defExports.bentAssassin, defExports.assassinSounder, defExports.newTwinRailgun, defExports.siloTwin, defExports.twinFastGatling, defExports.hexaAssassin];
-defExports.triplet.UPGRADES_TIER_4 = [defExports.quintuplet, defExports.tripletTrapper, defExports.machTriplet, defExports.poundTriplet, defExports.flankTriplet, defExports.tripletHybrid, defExports.carpenter, defExports.autoTriplet, defExports.gradationx, defExports.triplet3, defExports.mini2, defExports.twinTwin, defExports.sniperGatlingTriplet, defExports.radiowave, defExports.tripletSingle, defExports.tripleDropship31, defExports.margarine, defExports.sniperTriplet, defExports.homingTriplet, defExports.tripleinferno];
+defExports.triplet.UPGRADES_TIER_4 = [defExports.quintuplet, defExports.tripletTrapper, defExports.machTriplet, defExports.poundTriplet, defExports.flankTriplet, defExports.tripletHybrid, defExports.carpenter, defExports.autoTriplet, defExports.gradationx, defExports.triplet3, defExports.mini2, defExports.twinTwin, defExports.sniperGatlingTriplet, defExports.radiowave, defExports.tripletSingle, defExports.tripleDropship31, defExports.margarine, defExports.sniperTriplet, defExports.homingTriplet, defExports.tripleinferno, defExports.ruse];
 defExports.tripleTwin.UPGRADES_TIER_4 = [defExports.pentaTwin, defExports.tripleTwinTrapper, defExports.tripleHeavyTwin, defExports.bentTripleTwin, defExports.autoTripleTwin, defExports.tripleTwinSniper, defExports.tripleTwinMach, defExports.triCruiser, defExports.tripleLittleHunter, defExports.twinAuto4, defExports.tripleGuard, defExports.tripleBoxer, defExports.tripleZoomSingle, defExports.swivelTwin, defExports.tripleGunner, defExports.triAres, defExports.twinBoost, defExports.twin5];
 defExports.doubleGuard.UPGRADES_TIER_4 = [defExports.flankGuardBoxer, defExports.doubleHewnDouble, defExports.hewnDoubleGuard, defExports.hybridDouble, defExports.tripleGuard, defExports.homingGuard, defExports.twinAngleFighter, defExports.bentGuard];
 defExports.autoDouble.UPGRADES_TIER_4 = [defExports.autoDoubleTrapper, defExports.autoHeavyDouble, defExports.autoTripleTwin, defExports.doubleception, defExports.autoTwinFlankSniper, defExports.autoDoubleMach, defExports.autoDoubleZoomSingle, defExports.autoBipartite, defExports.autoDoubleGunner, defExports.autoTwinTri, defExports.axolAuto, defExports.doubleSpawner];
@@ -196142,7 +195085,7 @@ defExports.doubleTrapper.UPGRADES_TIER_4 = [defExports.autoDoubleTrapper, defExp
 defExports.dual.UPGRADES_TIER_4 = [defExports.tripleDual, defExports.predatorDual, defExports.doubleDual, defExports.gunnerDual, defExports.dual2, defExports.dualAuto2, defExports.dualTrapper, defExports.swarmDual];
 defExports.heavyTwin.UPGRADES_TIER_4 = [defExports.heavyTwinFlail];
 defExports.heavyDouble.UPGRADES_TIER_4 = [defExports.autoHeavyDouble, defExports.tripleHeavyTwin, defExports.extraHeavyDouble, defExports.heavyDoubleSniper, defExports.doubleBlaster, defExports.bentHeavy, defExports.doubleRimfire, defExports.externalist];
-defExports.tripleShotSniper.UPGRADES_TIER_4 = [defExports.flankBentSniper, defExports.hybridBentSniper, defExports.autoBentSniper, defExports.bentAssassin, defExports.pentaSniper, defExports.bentRifle, defExports.tripleDual, defExports.mini2, defExports.inviSeek, defExports.snipeSpreadshot, defExports.sounderCarrier, defExports.bentMini];
+defExports.tripleShotSniper.UPGRADES_TIER_4 = [defExports.flankBentSniper, defExports.hybridBentSniper, defExports.autoBentSniper, defExports.bentAssassin, defExports.pentaSniper, defExports.bentRifle, defExports.tripleDual, defExports.mini2, defExports.inviSeek, defExports.snipeSpreadshot, defExports.sounderCarrier, defExports.bentMini, defExports.sniperTriplet];
 defExports.bentDouble.UPGRADES_TIER_4 = [defExports.bentTripleTwin, defExports.flankTriplet, defExports.flankBentSniper, defExports.flankPenta, defExports.newRampart, defExports.bentDoubleSingle, defExports.flankBentTrapper, defExports.bentTwinFighter, defExports.battlecarrier, defExports.bentGuard, defExports.bentHeavy];
 defExports.penta.UPGRADES_TIER_4 = [defExports.pentaSunburst, defExports.hepta, defExports.pentaMachine, defExports.pentaTrapper, defExports.pentaHybrid, defExports.flankPenta, defExports.pentaSniper, defExports.chain, defExports.wovenPenta, defExports.pentaCarrier, defExports.poundPenta, defExports.quintuplet, defExports.pentaSingle, defExports.kinesis, defExports.trendsetterPenta, defExports.newWideshot, defExports.pentaBoost0, defExports.conglomeration, defExports.pub];
 defExports.sunburst.UPGRADES_TIER_4 = [defExports.pentaSunburst, defExports.tripletSunburst, defExports.heavySunburst, defExports.radiowave];
@@ -196207,23 +195150,23 @@ defExports.poisonMini.UPGRADES_TIER_4 = [defExports.petawatt, defExports.chlorin
 defExports.invisAcid.UPGRADES_TIER_4 = [defExports.invisFrostbite];
 defExports.torch.UPGRADES_TIER_4 = [defExports.petawatt, defExports.fafnir, defExports.maurice, defExports.torchure, defExports.inflamer, defExports.fentanyl, defExports.butane];
 defExports.acid.UPGRADES_TIER_4 = [defExports.miniApplicus, defExports.toxicOwl, defExports.octoAcid, defExports.assidBlaster];
-defExports.minimach.UPGRADES_TIER_4 = [defExports.macromach, defExports.autoMinimach];
+defExports.minimach.UPGRADES_TIER_4 = [defExports.macromach, defExports.autoMinimach, defExports.hotshotArtillery];
 defExports.assin.UPGRADES_TIER_4 = [defExports.cagin];
 defExports.assinin.UPGRADES_TIER_4 = [defExports.ragner];
 defExports.crowbar.UPGRADES_TIER_4 = [defExports.autoCrowbar, defExports.wrench, defExports.crowbird0, defExports.halligan];
-defExports.clicker.UPGRADES_TIER_4 = [defExports.clickerNailgun, defExports.underClicker, defExports.clickerInvariant, defExports.clickerInferno, defExports.chelicera];
+defExports.clicker.UPGRADES_TIER_4 = [defExports.clickerNailgun, defExports.underClicker, defExports.clickerInvariant, defExports.clickerInferno, defExports.chelicera, defExports.crow];
 defExports.incognito.UPGRADES_TIER_4 = [defExports.vpn, defExports.blackout, defExports.blackWidow];
 defExports.noobTube.UPGRADES_TIER_4 = [defExports.roulette, defExports.joker, defExports.rummy, defExports.artyNoobTube, defExports.noobTubeScramjet];
 defExports.invisiMini.UPGRADES_TIER_4 = [defExports.invisStream, defExports.invisiSilo, defExports.accelInvisiMini, defExports.eluder];
 defExports.trapperHunter.UPGRADES_TIER_4 = [defExports.hybridContraband, defExports.dualTrapper, defExports.autoContraband, defExports.buildTrapperHunter, defExports.propContraband, defExports.illegal31, defExports.contriver, defExports.sprayTrapper];
 defExports.hybridSniper.UPGRADES_TIER_4 = [defExports.swarmSniper];
 defExports.assassin.UPGRADES_TIER_4 = [defExports.assassinTrapGuard, defExports.longOsci, defExports.contagionAssassin, defExports.castano48];
-defExports.ranger.UPGRADES_TIER_4 = [defExports.twinRanger, defExports.longRanger, defExports.stalkRanger, defExports.autoRanger, defExports.assassinSilo, defExports.rangerGatling, defExports.rangerHunter, defExports.rangerObliterator, defExports.hybridRanger, defExports.longSniperRifle, defExports.newImpactor, defExports.zoomRanger, defExports.flankRanger, defExports.assegai, defExports.broadsword, defExports.whirlyRanger, defExports.hybranger31, defExports.basicRanger0, defExports.ragner, defExports.navalRanger, defExports.armsman];
+defExports.ranger.UPGRADES_TIER_4 = [defExports.twinRanger, defExports.longRanger, defExports.stalkRanger, defExports.autoRanger, defExports.assassinSilo, defExports.rangerGatling, defExports.rangerHunter, defExports.rangerObliterator, defExports.hybridRanger, defExports.longSniperRifle, defExports.newImpactor, defExports.zoomRanger, defExports.flankRanger, defExports.assegai, defExports.broadsword, defExports.whirlyRanger, defExports.hybranger62, defExports.basicRanger0, defExports.ragner, defExports.navalRanger, defExports.armsman];
 defExports.stream.UPGRADES_TIER_4 = [defExports.streamTrap, defExports.hottershot, defExports.hybridStream, defExports.smother, defExports.siloStream, defExports.floodStream, defExports.puntStream, defExports.streamClicker, defExports.autoStream, defExports.streamRifle, defExports.autoMatonStream, defExports.streamLaser, defExports.streamHunter, defExports.twinStream, defExports.accelStream, defExports.flankStream, defExports.streamliner2, defExports.invisStream, defExports.chlorine];
 defExports.minitrap.UPGRADES_TIER_4 = [defExports.streamTrap, defExports.miniBuilder, defExports.megaBarricade, defExports.hybridBarricade, defExports.arsenalBarricade, defExports.flooderBarricade, defExports.spiker, defExports.avalanche];
 defExports.hotshot.UPGRADES_TIER_4 = [defExports.hottershot, defExports.longHotshot, defExports.destroyMini, defExports.hotshotArtillery, defExports.hybridHotshot, defExports.autoHotshot, defExports.twinHotshot, defExports.hotshotAutoMaton, defExports.miniBuilder, defExports.accelHotshot, defExports.flankHotshot, defExports.miniPuncher, defExports.hotshotLaser, defExports.miniMultishot, defExports.compound, defExports.megaBarricade];
 defExports.hybridMini.UPGRADES_TIER_4 = [defExports.hybridStream, defExports.hybridBarricade, defExports.hybridFlooder, defExports.hybridSilo, defExports.hybridLaser, defExports.hybridHotshot, defExports.miniSidekick, defExports.cropdust2, defExports.hybridAccelMini, defExports.cropdustDrive, defExports.apiculturist];
-defExports.silo.UPGRADES_TIER_4 = [defExports.siloStream, defExports.hybridSealer, defExports.hybridSilo, defExports.longHotshot, defExports.assassinSilo, defExports.autoSilo, defExports.flooderSilo, defExports.automatic, defExports.siloLaser, defExports.accelSilo, defExports.miniSilo, defExports.invisiSilo, defExports.siloTwin, defExports.siloFlankLance, defExports.newAdonis, defExports.miniClipper, defExports.whatever0, defExports.cryogenic, defExports.drillgun];
+defExports.silo.UPGRADES_TIER_4 = [defExports.siloStream, defExports.hybridSilo, defExports.longHotshot, defExports.assassinSilo, defExports.autoSilo, defExports.flooderSilo, defExports.automatic, defExports.siloLaser, defExports.accelSilo, defExports.miniSilo, defExports.invisiSilo, defExports.siloTwin, defExports.siloFlankLance, defExports.newAdonis, defExports.miniClipper, defExports.whatever0, defExports.cryogenic, defExports.drillgun];
 defExports.predator.UPGRADES_TIER_4 = [defExports.xPredator, defExports.predatorDual, defExports.xCarnivore, defExports.predaNightseeker, defExports.xSpreadHunter, defExports.hybridPredator, defExports.gunnerPredator, defExports.riflePreda, defExports.zoomPredator, defExports.predator2, defExports.ticktick, defExports.fatPredator, defExports.predatorStack, defExports.triPredator, defExports.misitor31, defExports.gunPredator, defExports.bounty0, defExports.compiler, defExports.pyramid];
 defExports.snipeGuard.UPGRADES_TIER_4 = [defExports.snipewark, defExports.assassinTrapGuard, defExports.huntguard, defExports.rifleTrap, defExports.swarmSnipeguard, defExports.stalkTrapGuard, defExports.accuator, defExports.adventurer, defExports.sniperNest];
 defExports.carnivore.UPGRADES_TIER_4 = [defExports.xCarnivore, defExports.zoomCarnivore, defExports.rangerHunter, defExports.swarmCarnivore, defExports.contagionAssassin, defExports.hybridCarnivore, defExports.miniSilo, defExports.contriver];
@@ -196236,7 +195179,7 @@ defExports.assaultRifle.UPGRADES_TIER_4 = [defExports.machPistol];
 defExports.pistol.UPGRADES_TIER_4 = [defExports.machPistol, defExports.hunterPistol, defExports.invisipistol, defExports.pistolTrap, defExports.mei, defExports.kitchenGun, defExports.fieryGunHand, defExports.akimbo];
 defExports.stalk.UPGRADES_TIER_4 = [defExports.stalkRanger, defExports.twinStalk, defExports.zoomStalk, defExports.hybridStalk, defExports.autoStalk, defExports.ninja, defExports.gunnerFlankStalker, defExports.vpn, defExports.inviSeek, defExports.stalkTrapGuard, defExports.newCoilgun, defExports.steyr0, defExports.ghillie];
 defExports.miniClicker.UPGRADES_TIER_4 = [defExports.streamClicker, defExports.miniPuncher, defExports.miniClipper, defExports.accelMiniClicker];
-defExports.autoMini.UPGRADES_TIER_4 = [defExports.autoStream, defExports.minigunception, defExports.autoHotshot, defExports.autoLaser, defExports.autoSilo, defExports.autoFlankMini, defExports.autoMisigun, defExports.autoAccelMini, defExports.autoStacker, defExports.autoFlamethrower, defExports.autoSword];
+defExports.autoMini.UPGRADES_TIER_4 = [defExports.autoStream, defExports.minigunception, defExports.autoHotshot, defExports.autoLaser, defExports.autoSilo, defExports.autoFlankMini, defExports.autoMisigun, defExports.autoAccelMini, defExports.autoStacker, defExports.autoFlamethrower, defExports.autoSword, defExports.autoMinimach];
 defExports.hybridRifle.UPGRADES_TIER_4 = [defExports.drivebridRifle, defExports.hybridSniperRifle, defExports.hybridCarbine, defExports.rifleSidekick, defExports.footsoldier];
 defExports.miniRifle.UPGRADES_TIER_4 = [defExports.streamRifle, defExports.accelMiniRifle, defExports.cantabrian, defExports.compound];
 defExports.longClicker.UPGRADES_TIER_4 = [defExports.miniClipper];
@@ -196263,7 +195206,6 @@ defExports.shift.UPGRADES_TIER_4 = [defExports.zoomShift, defExports.bufferer, d
 defExports.oldlaser.UPGRADES_TIER_4 = [defExports.streamLaser, defExports.laserFlooder, defExports.hybridLaser, defExports.twinLaser, defExports.autoLaser, defExports.accelLaser, defExports.siloLaser, defExports.laserAutomaton, defExports.flankLaser, defExports.laser3, defExports.hotshotLaser, defExports.freezeray, defExports.petawatt];
 defExports.hybridAssassin.UPGRADES_TIER_4 = [defExports.hybridRanger, defExports.newDischarger, defExports.hybridStalk, defExports.hybridSniperRifle, defExports.hybridCarnivore, defExports.assassinSidekick, defExports.shieldAssassinator, defExports.sent, defExports.freezebrid];
 defExports.sniperRifle.UPGRADES_TIER_4 = [defExports.longSniperRifle, defExports.hybridSniperRifle, defExports.trapperSniperRifle, defExports.val0, defExports.ghillie];
-defExports.clicker.UPGRADES_TIER_4 = [defExports.crow];
 defExports.spreadRifle.UPGRADES_TIER_4 = [defExports.blunderbuss, defExports.destiny];
 defExports.rifleClicker.UPGRADES_TIER_4 = [defExports.megaRifleClicker, defExports.invisBasher];
 defExports.heavyRifle.UPGRADES_TIER_4 = [defExports.megaRifleClicker, defExports.heavierRifle, defExports.hybridCarbine, defExports.compound];
@@ -196296,7 +195238,7 @@ defExports.foamGun.UPGRADES_TIER_3 = [defExports.bubbleGun, defExports.spark, de
 defExports.twinMachine.UPGRADES_TIER_3 = [defExports.twinGatling, defExports.twinBlaster, defExports.bentMachine, defExports.twinFlankMach, defExports.autoMachTwin, defExports.aresTank, defExports.twinNaturalist, defExports.twinSpray, defExports.miniTwin, defExports.twinferno, defExports.machineGunner, defExports.hexaMachine];
 defExports.triMachine.UPGRADES_TIER_3 = [defExports.hexaMachine, defExports.triSubMach, defExports.machine3, defExports.flankGatling, defExports.flankBlaster, defExports.machInsect, defExports.autoFlankMach, defExports.flankSpray, defExports.boomstick, defExports.flankMini, defExports.woodpeck2, defExports.flankNaturalist, defExports.culprit];
 defExports.newAssult.UPGRADES_TIER_3 = [defExports.invisiMini];
-defExports.machineMinishot.UPGRADES_TIER_3 = [defExports.autoMachineMinishot, defExports.bentMachine, defExports.howitzer, defExports.hewnGunner, defExports.machInsect, defExports.machinistMultishot, defExports.deadeye];
+defExports.machineMinishot.UPGRADES_TIER_3 = [defExports.autoMachineMinishot, defExports.bentMachine, defExports.howitzer, defExports.hewnGunner, defExports.machInsect, defExports.machinistMultishot, defExports.deadeye, defExports.minimach];
 defExports.donutBlaster.UPGRADES_TIER_4 = [defExports.assBackwards];
 defExports.coingun.UPGRADES_TIER_4 = [defExports.megaInferno, defExports.dimegun];
 defExports.autoMachineMinishot.UPGRADES_TIER_4 = [defExports.magmachception, defExports.trainee];
@@ -196311,12 +195253,12 @@ defExports.trapGunner.UPGRADES_TIER_4 = [defExports.trapMachGunner, defExports.t
 defExports.battery.UPGRADES_TIER_4 = [defExports.megaBattery, defExports.zoomBattery, defExports.mini2];
 defExports.gunnerHunter.UPGRADES_TIER_4 = [defExports.hewnFerreter, defExports.cruiserFerreter, defExports.gunnerPredator, defExports.gunnerDual, defExports.trapFerreter, defExports.radiowave, defExports.ferreterBallista, defExports.hybridFerreter, defExports.doubleFerreter];
 defExports.hewnGunner.UPGRADES_TIER_4 = [defExports.hewnFerreter, defExports.hewnGunCruiser, defExports.flankHewnGunner, defExports.superMinishotTwin];
-defExports.gunCruiser.UPGRADES_TIER_4 = [defExports.cruiserFerreter, defExports.hewnGunCruiser, defExports.array, defExports.gunnerCruiserBrid, defExports.westelans, defExports.arbitrator, defExports.doubleCruiser];
+defExports.gunCruiser.UPGRADES_TIER_4 = [defExports.cruiserFerreter, defExports.hewnGunCruiser, defExports.array, defExports.gunnerCruiserBrid, defExports.westelans, defExports.arbitrator, defExports.doubleCruiser, defExports.swarmMortar];
 defExports.charger.UPGRADES_TIER_4 = [defExports.chargerReloader, defExports.newGravityWell];
 defExports.machineAutoMachine.UPGRADES_TIER_4 = [defExports.gunnerception, defExports.minigunception, defExports.sprayerception, defExports.gatlingception, defExports.blasterception, defExports.miniVulcception, defExports.flankMachception, defExports.infernoception, defExports.multishotception];
 defExports.blasterSpray.UPGRADES_TIER_4 = [defExports.dualBlaster, defExports.pyroContagion, defExports.splasher2, defExports.crucible];
 defExports.gatlingSpray.UPGRADES_TIER_4 = [defExports.bufferer, defExports.xGatlingSpray, defExports.twinSearcher, defExports.searcher2, defExports.hybridSearcher, defExports.huntInferno, defExports.miniSilo, defExports.devourer, defExports.dualGatling];
-defExports.volcano.UPGRADES_TIER_4 = [defExports.megaBattery, defExports.muncher];
+defExports.volcano.UPGRADES_TIER_4 = [defExports.megaBattery, defExports.muncher, defExports.gunnerDual];
 defExports.bubbleGun.UPGRADES_TIER_4 = [defExports.corroder, defExports.rpgRocketLauncher, defExports.foamSpraygun, defExports.megaInferno];
 defExports.spraygun.UPGRADES_TIER_4 = [defExports.foamSpraygun];
 defExports.pyro.UPGRADES_TIER_4 = [defExports.pyroContagion];
@@ -196351,7 +195293,7 @@ defExports.updraft.UPGRADES_TIER_4 = [defExports.autoUpdraft, defExports.mesocyc
 defExports.spreadstorm.UPGRADES_TIER_4 = [defExports.circleshot];
 defExports.hiddenGunner.UPGRADES_TIER_4 = [defExports.hiddenGunnerFlank, defExports.shieldTri];
 defExports.rotaryShield.UPGRADES_TIER_4 = [defExports.doubleDefense, defExports.flakCannon, defExports.autoShields];
-defExports.miniHurricane.UPGRADES_TIER_4 = [defExports.invisStorm, defExports.invariantStorm, defExports.circleshot, defExports.bulletHell];
+defExports.miniHurricane.UPGRADES_TIER_4 = [defExports.invisStorm, defExports.invariantStorm, defExports.bulletHell];
 defExports.autoMiniHurricane.UPGRADES_TIER_4 = [defExports.miniHurricaneCeption, defExports.autoOcto, defExports.autoUpdraft];
 defExports.arachnidAuto3.UPGRADES_TIER_4 = [defExports.arachnidAuto4, defExports.arachnidTripletAuto3, defExports.cicadaAuto4, defExports.archaeaAuto4, defExports.infrared, defExports.toolshed];
 defExports.trapInsect.UPGRADES_TIER_4 = [defExports.megaTrapInsect, defExports.newSpider /*, defExports.rupertBunker*/];
@@ -196456,7 +195398,7 @@ defExports.clockwork.UPGRADES_TIER_4 = [defExports.geargrinder, defExports.pit, 
 defExports.megaColony.UPGRADES_TIER_4 = [defExports.megaStovepipe, defExports.multiplication, defExports.flankStovepipe];
 defExports.chimera.UPGRADES_TIER_4 = [defExports.gunovertrap];
 defExports.piston.UPGRADES_TIER_4 = [defExports.turbine, defExports.puttputt, defExports.pistonArsenal, defExports.bomberSwarm, defExports.driveshaft, defExports.autoPiston, defExports.radial];
-defExports.hybridCruiser.UPGRADES_TIER_4 = [defExports.hewnCruiser, defExports.hoinfodaCruiser, defExports.gunnerCruiserBrid, defExports.radial];
+defExports.hybridCruiser.UPGRADES_TIER_4 = [defExports.hewnCruiser, defExports.hoinfodaCruiser, defExports.gunnerCruiserBrid, defExports.radial, defExports.battlenaught];
 defExports.lancerDirector.UPGRADES_TIER_4 = [defExports.lancerOverseer, defExports.lancerUnderseer, defExports.autoSwitchblade, defExports.builderSwitchblade, defExports.spawnblade];
 defExports.hybridTwin.UPGRADES_TIER_4 = [defExports.doubleSwarm];
 defExports.fractionalizer.UPGRADES_TIER_4 = [defExports.divisor, defExports.numerator, defExports.mixedNumber, defExports.denominator, defExports.notation, defExports.antiderivative, defExports.tensorProduct, defExports.obtuse, defExports.multiplication, defExports.acute, defExports.angle, defExports.complexNumber, defExports.crossProduct];
@@ -196471,7 +195413,7 @@ defExports.kinetic.UPGRADES_TIER_3 = [defExports.shockRifle, defExports.blastMul
 defExports.blastMultishot.UPGRADES_TIER_4 = [defExports.clusterbomber]
 defExports.shockRifle.UPGRADES_TIER_4 = [defExports.antimatRifle, defExports.icbm, defExports.sprite]
 defExports.littleSkimmer.UPGRADES_TIER_3 = [defExports.skimmer, defExports.fatLittleSkimmer, defExports.autoLauncher, defExports.twister, defExports.fieldGun, defExports.rocketeer, defExports.trapLittleSkimmer, defExports.torpedoer, defExports.scythe, defExports.sidewind, defExports.miniTrebuchet, defExports.twinLauncher, defExports.miniNukeShooter, defExports.launcher2, defExports.fastLittleSkimmer, defExports.launcherShield, defExports.dustbowl, defExports.securityLauncher, defExports.flankLauncher, defExports.tankthing, defExports.harp, defExports.beretta, defExports.launchbrid, defExports.miniGuardianLauncher, defExports.surgeon, defExports.bombadier];
-defExports.obliterator.UPGRADES_TIER_3 = [defExports.bulldozer, defExports.crusher, defExports.heavyRifle, defExports.plow, defExports.steamroll, defExports.hotshot, defExports.snipeBuilder, defExports.flankObliterator, defExports.heavyTwinSniper, defExports.autoObliterator, defExports.nunchuck, defExports.buckshot, defExports.sidewind, defExports.devastator, defExports.aagun, defExports.scorpion, defExports.megaClicker, defExports.claymore, defExports.obliterator2, defExports.shatter, defExports.ouch, defExports.shockRifle];
+defExports.obliterator.UPGRADES_TIER_3 = [defExports.bulldozer, defExports.crusher, defExports.heavyRifle, defExports.plow, defExports.steamroll, defExports.hotshot, defExports.snipeBuilder, defExports.flankObliterator, defExports.heavyTwinSniper, defExports.autoObliterator, defExports.nunchuck, defExports.buckshot, defExports.sidewind, defExports.devastator, defExports.aagun, defExports.scorpion, defExports.megaClicker, defExports.claymore, defExports.obliterator2, defExports.shatter, defExports.ouch, defExports.shockRifle, defExports.snipehive];
 defExports.multishot.UPGRADES_TIER_3 = [defExports.shotgun, defExports.buckshot, defExports.machshot, defExports.musket, defExports.manyshot, defExports.autoMultishot, defExports.claymore, defExports.quarry, defExports.vibrancy, defExports.hybridMultishot, defExports.swarmShotgun, defExports.blastMultishot];
 defExports.hybridPound.UPGRADES_TIER_3 = [defExports.hybrid, defExports.hybridBuilder, defExports.crusher, defExports.hybridArtillery, defExports.hybridDiepSpreadling, defExports.poundOverdrive, defExports.underPounder, defExports.hybridMultishot, defExports.hybridHeavyTwin, defExports.ecchymosis, defExports.launchbrid, defExports.megaTrapbrid];
 defExports.gunnerPound.UPGRADES_TIER_3 = [defExports.blower, defExports.heavyTwinGunnerFlank, defExports.gunbuilder, defExports.beretta, defExports.plasterer];
@@ -196485,7 +195427,7 @@ defExports.ouch.UPGRADES_TIER_4 = [defExports.ow, defExports.moth];
 defExports.shatter.UPGRADES_TIER_4 = [defExports.omnivore, defExports.morbius, defExports.rupture, defExports.nuclearWinter, defExports.flatter];
 defExports.diepSpreadling.UPGRADES_TIER_4 = [defExports.angel];
 defExports.flankLauncher.UPGRADES_TIER_4 = [defExports.hookbill, defExports.triAngleShrapnel, defExports.hexaLauncher];
-defExports.littleSkimmer.UPGRADES_TIER_4 = [defExports.miniConquistador];
+defExports.littleSkimmer.UPGRADES_TIER_4 = [defExports.miniConquistador, defExports.microphone];
 defExports.securityDestroyer.UPGRADES_TIER_4 = [defExports.securityAnni];
 defExports.miniGuardianLauncher.UPGRADES_TIER_4 = [defExports.guardianLauncher, defExports.autoOxy, defExports.hybridOxy, defExports.metalOxy, defExports.alliance, defExports.donutGuardianLauncher, defExports.twinMiniGuardianLauncher];
 defExports.donutDestroyer.UPGRADES_TIER_4 = [defExports.donutbrid, defExports.donutAnni, defExports.donutSkimmer, defExports.donutIntercept, defExports.moreDonut, defExports.cubozoa, defExports.donutGuardianLauncher];
@@ -196500,12 +195442,12 @@ defExports.claymore.UPGRADES_TIER_4 = [defExports.claymoreContagion];
 defExports.quarry.UPGRADES_TIER_4 = [defExports.claymoreContagion];
 defExports.hybridPound.UPGRADES_TIER_4 = [defExports.cruisePound];
 defExports.blower.UPGRADES_TIER_4 = [defExports.anniCompressor, defExports.destroyerGunnerFlank, defExports.omnivore, defExports.drywaller];
-defExports.annihilator.UPGRADES_TIER_4 = [defExports.megaAnnihilator, defExports.flankAnni, defExports.anniSheller, defExports.anniHybrid, defExports.anniSteamroll, defExports.anniIntercept, defExports.invisianni, defExports.anniConq, defExports.redistributor, defExports.twinAnni, defExports.teraTrapper, defExports.adaptor, defExports.bentAnnihilator, defExports.annihilator2, defExports.singleAnni, defExports.anniCompressor, defExports.fatBumper, defExports.autoAnni, defExports.neonAnni, defExports.fatDevastator, defExports.overload, defExports.quester, defExports.auto4Shooter, defExports.guardianLauncher, defExports.megaConstruct, defExports.donutAnni, defExports.gigaGrower, defExports.anniPellet, defExports.ruse, defExports.securityAnni, defExports.champion];
+defExports.annihilator.UPGRADES_TIER_4 = [defExports.megaAnnihilator, defExports.flankAnni, defExports.anniSheller, defExports.anniHybrid, defExports.anniSteamroll, defExports.anniIntercept, defExports.invisianni, defExports.anniConq, defExports.redistributor, defExports.twinAnni, defExports.teraTrapper, defExports.adaptor, defExports.bentAnnihilator, defExports.annihilator2, defExports.singleAnni, defExports.anniCompressor, defExports.fatBumper, defExports.autoAnni, defExports.neonAnni, defExports.fatDevastator, defExports.overload, defExports.quester, defExports.auto4Shooter, defExports.guardianLauncher, defExports.megaConstruct, defExports.donutAnni, defExports.gigaGrower, defExports.anniPellet, defExports.ruse, defExports.securityAnni, defExports.champion, defExports.megaHiveShooter];
 defExports.skimmer.UPGRADES_TIER_4 = [defExports.hyperSkimmer, defExports.trebuchet, defExports.hybridSkimmer, defExports.skimmerHiveShooter, defExports.fatSkimmer, defExports.skimmer2, defExports.littleSpreadskimmer, defExports.trapSkimmer, defExports.alphaskimmer, defExports.vympel, defExports.skimThrower, defExports.donutSkimmer, defExports.glider, defExports.blockSkimmer];
 defExports.diepSpreadshot.UPGRADES_TIER_4 = [defExports.newWideshot, defExports.newMachshot, defExports.snipeSpreadshot, defExports.autoDiepSpread, defExports.circleshot, defExports.gunScaler, defExports.homingSpreadshot, defExports.unfurler];
 defExports.flankDestroy.UPGRADES_TIER_4 = [defExports.flankAnni, defExports.newDestroyerInsect, defExports.destAngle, defExports.hexaDestroy, defExports.giga3, defExports.triConstruct, defExports.hawk, defExports.flatter];
 defExports.hybrid.UPGRADES_TIER_4 = [defExports.anniHybrid, defExports.overdriveHybrid, defExports.moreHybrid, defExports.hybridSteamroll, defExports.sidekick, defExports.hybrid2, defExports.hybridTwinDestroyer, defExports.hybridMxgun, defExports.lightningDestroyer, defExports.donutbrid, defExports.overdestroyer, defExports.hybranger0, defExports.hybridConstruct, defExports.trundler, defExports.gigaTrapbrid];
-defExports.steamroll.UPGRADES_TIER_4 = [defExports.anniSteamroll, defExports.wreckingBall, defExports.fastSteamroll, defExports.heavierRifle, defExports.hybridSteamroll, defExports.steam2, defExports.fatDevastator, defExports.snipeConstruct, defExports.gigaClicker, defExports.literalPlaner, defExports.trafficLightGreen];
+defExports.steamroll.UPGRADES_TIER_4 = [defExports.anniSteamroll, defExports.wreckingBall, defExports.fastSteamroll, defExports.heavierRifle, defExports.hybridSteamroll, defExports.steam2, defExports.fatDevastator, defExports.snipeConstruct, defExports.gigaClicker, defExports.literalPlaner, defExports.trafficLightGreen, defExports.saber];
 defExports.bulldozer.UPGRADES_TIER_4 = [defExports.rangerObliterator, defExports.fastSteamroll, defExports.newColossus, defExports.assassinBuilder, defExports.hybridBulldozer, defExports.artyBulldozer, defExports.bulldozer2, defExports.longHotshot, defExports.blackout, defExports.carver, defExports.disposer, defExports.excavator, defExports.antimatRifle];
 defExports.trapLittleSkimmer.UPGRADES_TIER_4 = [defExports.rewinder, defExports.blockSkimmer, defExports.trapSkimmer, defExports.contagionLittleSkimmer, defExports.barbarossa, defExports.esplanade, defExports.trapColonist];
 defExports.griefer.UPGRADES_TIER_4 = [defExports.invisianni, defExports.anhalt, defExports.deposer, defExports.gravedigger];
@@ -196529,9 +195471,9 @@ defExports.scythe.UPGRADES_TIER_4 = [defExports.rotary, defExports.scythe2, defE
 defExports.miniTrebuchet.UPGRADES_TIER_4 = [defExports.trebuchet, defExports.inventory, defExports.rocketTrebuchet, defExports.IED, defExports.heaver];
 defExports.buckshot.UPGRADES_TIER_4 = [defExports.driveBuckshot, defExports.gunnerBuckshot, defExports.flankBuckshot, defExports.miniMultishot, defExports.miniSolarEclipse];
 defExports.machshot.UPGRADES_TIER_4 = [defExports.miniMultishot, defExports.homingMachshot, defExports.overpowerArty];
-defExports.torpedoer.UPGRADES_TIER_4 = [defExports.heatRocketeer, defExports.clickerMotolov, defExports.molotovAuto, defExports.autoMolotov, defExports.barbarossa, defExports.chelyabinsk, defExports.cocktail];
+defExports.torpedoer.UPGRADES_TIER_4 = [defExports.heatRocketeer, defExports.clickerMotolov, defExports.molotovAuto, defExports.autoMolotov, defExports.barbarossa, defExports.chelyabinsk, defExports.cocktail, defExports.machShrapnel];
 defExports.twister.UPGRADES_TIER_4 = [defExports.demoman, defExports.megaTwister, defExports.laserTwister, defExports.trapColonist, defExports.twister2, defExports.skimketster60, defExports.fireWhirl, defExports.twistbrid];
-defExports.mxgun.UPGRADES_TIER_4 = [defExports.cavalry, defExports.combustor, defExports.hybridMxgun, defExports.fatDevastator, defExports.gigaContagion, defExports.constructContagion, defExports.matulaTree6, defExports.bounty31, defExports.axgun];
+defExports.mxgun.UPGRADES_TIER_4 = [defExports.cavalry, defExports.combustor, defExports.hybridMxgun, defExports.fatDevastator, defExports.gigaContagion, defExports.constructContagion, defExports.matulaTree6, defExports.bounty31, defExports.axgun, defExports.ruse];
 defExports.spreadbow.UPGRADES_TIER_4 = [defExports.stackSpreadbow];
 defExports.refractor.UPGRADES_TIER_4 = [defExports.stackRefractor, defExports.securityRefractor];
 defExports.spreadTrap.UPGRADES_TIER_4 = [defExports.blockSpreadling, defExports.arsenalTrapling, defExports.contagionTrapling];
@@ -196542,7 +195484,7 @@ defExports.autoFlankPound.UPGRADES_TIER_4 = [defExports.autoPoundAngle, defExpor
 defExports.hexaPound.UPGRADES_TIER_4 = [defExports.hexaDestroy, defExports.octoPound, defExports.autoHexaPound, defExports.hexaObliterator, defExports.hexaBuilder, defExports.hexaBlaster, defExports.heavy5];
 defExports.flankObliterator.UPGRADES_TIER_4 = [defExports.hexaObliterator, defExports.obliteratorInsect, defExports.obliterator3, defExports.goose, defExports.flankBuckshot, defExports.disposer, defExports.flankPlow, defExports.flatter];
 defExports.hexaSniper.UPGRADES_TIER_4 = [defExports.hexaObliterator, defExports.hexaAssassin, defExports.autoHexaSniper, defExports.octoSniper, defExports.hexaGatling, defExports.hexaMini, defExports.hexaRifle, defExports.sniperHurricane, defExports.hexaHunter, defExports.sniper5];
-defExports.fatLittleSkimmer.UPGRADES_TIER_4 = [defExports.fatBumper, defExports.fatSkimmer, defExports.batteringRam, defExports.grudge, defExports.megaMiniNukeShooter, defExports.guardianLauncher, defExports.megaRocketeer, defExports.heaver, defExports.meganomiinae, defExports.shellshock, defExports.trundler, defExports.dustdevil];
+defExports.fatLittleSkimmer.UPGRADES_TIER_4 = [defExports.fatBumper, defExports.fatSkimmer, defExports.batteringRam, defExports.grudge, defExports.megaMiniNukeShooter, defExports.guardianLauncher, defExports.megaRocketeer, defExports.heaver, defExports.meganomiinae, defExports.shellshock, defExports.trundler, defExports.dustdevil, defExports.trepanner];
 defExports.heavyTwinSniper.UPGRADES_TIER_4 = [defExports.heavyDoubleSniper, defExports.twinHotshot, defExports.megaSounder, defExports.compactor, defExports.dilator];
 defExports.autoObliterator.UPGRADES_TIER_4 = [defExports.obliteratorception, defExports.autoSnipeBuilder, defExports.butcherMinishot, defExports.carver, defExports.dilator];
 defExports.autoArtillery.UPGRADES_TIER_4 = [defExports.artilleryception, defExports.autoHybridArtillery, defExports.autoDiepSpread, defExports.butcherMinishot, defExports.marshall];
@@ -196556,6 +195498,9 @@ defExports.destroyer2.UPGRADES_TIER_4 = [defExports.giga3, defExports.annihilato
 defExports.autoLauncher.UPGRADES_TIER_4 = [defExports.launchception, defExports.autoRocketeer, defExports.autoOxy];
 defExports.homingAutoPounder.UPGRADES_TIER_4 = [defExports.homingPounderCeption, defExports.homingBoomingPounder, defExports.homingAutoHomingPounder];
 defExports.obliterator2.UPGRADES_TIER_4 = [defExports.obliterator3, defExports.bulldozer2, defExports.steam2, defExports.devastator2];
+defExports.bombadier.UPGRADES_TIER_4 = [defExports.nukeShooter, defExports.sidewindBoom];
+defExports.kev0.UPGRADES_TIER_4 = [defExports.castano0, defExports.hybranger0];
+defExports.kev31.UPGRADES_TIER_4 = [defExports.castano48, defExports.hybranger62];
 // PELLETER
 defExports.pellet.UPGRADES_TIER_2 = [defExports.triPellet, defExports.sail, defExports.borer, defExports.punt, defExports.hewnPellet, defExports.autoPellet, defExports.hybridPellet, defExports.gunner, defExports.miniVulc, defExports.singlePellet, defExports.ballista, defExports.naturalist, defExports.pellet2, defExports.cruiser, defExports.miniHurricane, defExports.dropship];
 defExports.pellet.UPGRADES_TIER_3 = [defExports.guntrap, defExports.trapeze0];
@@ -196584,7 +195529,7 @@ defExports.autoDropship.UPGRADES_TIER_4 = [defExports.zeppelinShip, defExports.d
 defExports.piercer.UPGRADES_TIER_4 = [defExports.macroTurret];
 defExports.hybridBorer.UPGRADES_TIER_4 = [defExports.hybridBorerNaturalist, defExports.discoverer, defExports.canard];
 defExports.hybridHewnPellet.UPGRADES_TIER_4 = [defExports.autoHybridHewnPellet];
-defExports.newGunborer.UPGRADES_TIER_4 = [defExports.gatlingMachGunner, defExports.discoverer, defExports.bootlegger, defExports.doubleBorer, defExports.drillgun, defExports.gunnerClinker];
+defExports.newGunborer.UPGRADES_TIER_4 = [defExports.gatlingMachGunner, defExports.discoverer, defExports.bootlegger, defExports.doubleBorer, defExports.drillgun, defExports.gunnerClinker, defExports.sniperHurricane];
 defExports.hewnPunt.UPGRADES_TIER_4 = [defExports.hewnPuntUpg1, defExports.hewnPuntUpg2, defExports.hewnPuntUpg3];
 defExports.borerSail.UPGRADES_TIER_4 = [defExports.protectedCanoe, defExports.canard];
 defExports.wideSail.UPGRADES_TIER_4 = [defExports.widerSail];
@@ -196609,10 +195554,10 @@ defExports.pebbler.UPGRADES_TIER_4 = [defExports.longPebbler];
 defExports.sword.UPGRADES_TIER_4 = [defExports.bulwarkSword, defExports.patient, defExports.firetrap, defExports.eluder, defExports.buffer, defExports.illegal0, defExports.curtana, defExports.autoSword];
 defExports.triSubMach.UPGRADES_TIER_4 = [defExports.submachine3, defExports.hexaSubMach, defExports.autoTriSub, defExports.gunnermecha, defExports.coleoptile, defExports.triAres, defExports.opiliones];
 defExports.autoBallista.UPGRADES_TIER_4 = [defExports.hybridAutoBallista, defExports.trapBallista];
-defExports.scorpion.UPGRADES_TIER_4 = [defExports.saber, defExports.excavator];
+defExports.scorpion.UPGRADES_TIER_4 = [defExports.saber, defExports.excavator, defExports.megaSounder];
 defExports.hybridSail.UPGRADES_TIER_4 = [defExports.autoHybridSail, defExports.canard];
 defExports.autoSail.UPGRADES_TIER_4 = [defExports.autoHybridSail, defExports.sailorception];
-defExports.vulcan.UPGRADES_TIER_4 = [defExports.staplegun, defExports.snipeVulcan, defExports.vulcanMark2, defExports.autoVulcan, defExports.gunnermecha, defExports.dllcvXee];
+defExports.vulcan.UPGRADES_TIER_4 = [defExports.staplegun, defExports.snipeVulcan, defExports.vulcanMark2, defExports.autoVulcan, defExports.gunnermecha, defExports.dllcvXee, defExports.hephaestus];
 defExports.hybridPellet.UPGRADES_TIER_4 = [defExports.cruiserGunner];
 defExports.ballista.UPGRADES_TIER_4 = [defExports.cruiserGunner, defExports.ferreterBallista];
 defExports.punt.UPGRADES_TIER_4 = [defExports.puntTrapGuard];
@@ -196665,7 +195610,7 @@ defExports.gigaTrapper.UPGRADES_TIER_4 = [defExports.teraTrapper, defExports.meg
 defExports.triTrapper.UPGRADES_TIER_4 = [defExports.tripleTwinTrapper, defExports.miniDefender];
 defExports.triContagion.UPGRADES_TIER_4 = [defExports.hexaContagion, defExports.triArsenalContagion, defExports.expenditure];
 defExports.construct.UPGRADES_TIER_4 = [defExports.megaConstruct, defExports.megaEngineer, defExports.constructArtillery, defExports.autoConstruct, defExports.constructContagion, defExports.constructLayer, defExports.foghornConstruct, defExports.blockMusket, defExports.snipeConstruct, defExports.machConstruct, defExports.megaBoomer, defExports.triConstruct, defExports.flankConstruct, defExports.constructor2, defExports.evacuee, defExports.megaSplitBuilder, defExports.zoomConstruct, defExports.anniConq, defExports.castano0, defExports.hybridConstruct, defExports.drywaller, defExports.gravedigger];
-defExports.engineer.UPGRADES_TIER_4 = [defExports.twinEngineer, defExports.snipeEngineer, defExports.machEngineer, defExports.poundEngineer, defExports.megaEngineer, defExports.operator, defExports.boomerEngineer, defExports.engineerArtillery, defExports.engineerContagion, defExports.autoEngineer, defExports.machEngineer2, defExports.fastEngineer, defExports.flashbang, defExports.triEngineer, defExports.droneEngineer, defExports.engineer2, defExports.gps, defExports.splitEngineer, defExports.fogEngineer, defExports.singleEngineer, defExports.hybridEngineer, defExports.dualEngineer, defExports.warEngineer, defExports.flankEngineer];
+defExports.engineer.UPGRADES_TIER_4 = [defExports.twinEngineer, defExports.flankGuardEngineer, defExports.snipeEngineer, defExports.machEngineer, defExports.poundEngineer, defExports.megaEngineer, defExports.operator, defExports.boomerEngineer, defExports.engineerArtillery, defExports.engineerContagion, defExports.autoEngineer, defExports.machEngineer2, defExports.fastEngineer, defExports.flashbang, defExports.triEngineer, defExports.droneEngineer, defExports.engineer2, defExports.gps, defExports.splitEngineer, defExports.fogEngineer, defExports.singleEngineer, defExports.hybridEngineer, defExports.dualEngineer, defExports.warEngineer, defExports.flankEngineer];
 defExports.fortress.UPGRADES_TIER_4 = [defExports.moreFortress, defExports.fortressFrigate, defExports.donjon, defExports.invisiFortress, defExports.inoculist, defExports.overlordTrapper, defExports.stratofortress, defExports.pestilence, defExports.transfortress0];
 defExports.megaArsenal.UPGRADES_TIER_4 = [defExports.megaEngineer, defExports.gigaArsenal, defExports.machMegaArsenal, defExports.fisherman];
 defExports.machArsenal.UPGRADES_TIER_4 = [defExports.triMachArsenal, defExports.arsenalBarricade, defExports.arsenalGunner, defExports.machMegaArsenal, defExports.machEngineer2, defExports.autoArmory /*, defExports.machArsenalAuto3*/];
@@ -196706,6 +195651,7 @@ defExports.splitBuilder.UPGRADES_TIER_4 = [defExports.splitBuilder2, defExports.
 defExports.autoArsenal.UPGRADES_TIER_4 = [defExports.arsenalception, defExports.autoEngineer, defExports.entrencher];
 defExports.megaTrapper2.UPGRADES_TIER_4 = [defExports.megaTrapper3, defExports.logger2, defExports.contingent];
 defExports.autoTrapGuard.UPGRADES_TIER_4 = [defExports.guardception, defExports.miniVanguard, defExports.autoBomber, defExports.autoTriTrapGuard, defExports.autoPiston, defExports.autoConqueror, defExports.autoSword];
+defExports.twinTrapper.UPGRADES_TIER_4 = [defExports.twinGigaTrapper];
 // SPORULATOR
 defExports.sporulator.UPGRADES_TIER_4 = [defExports.chaga, defExports.woolymilkcap, defExports.twinSporulator, defExports.puffball, defExports.porcini, defExports.flyamanita, defExports.sheeppolypore]
 // PROPELLER
@@ -196731,7 +195677,7 @@ defExports.gunAngle.UPGRADES_TIER_4 = [defExports.gunBooster, defExports.autoGun
 defExports.autoTri.UPGRADES_TIER_4 = [defExports.autoGunAngle, defExports.autoBooster, defExports.autoFighter, defExports.autoPoundAngle, defExports.autoSurfer, defExports.autoRocketTri, defExports.autoTwinTri, defExports.autoFalcon2, defExports.triAngleception, defExports.skirm, defExports.autoSingleTri, defExports.auto2Fighter, defExports.miniComet, defExports.jukeNuke, defExports.autopilot, defExports.mayfly, defExports.airport, defExports.autoBomber];
 defExports.poundAngle.UPGRADES_TIER_4 = [defExports.autoPoundAngle, defExports.poundFighter, defExports.boostPoundAngle, defExports.destAngle, defExports.starship];
 defExports.marine.UPGRADES_TIER_4 = [defExports.invisibleTri, defExports.twinMarine, defExports.stealth];
-defExports.woodpeck2.UPGRADES_TIER_4 = [defExports.gatlingWoodpeck, defExports.blasterWoodpeck, defExports.stork];
+defExports.woodpeck2.UPGRADES_TIER_4 = [defExports.gatlingWoodpeck, defExports.blasterWoodpeck, defExports.stork, defExports.planterDiver];
 defExports.falcon2.UPGRADES_TIER_4 = [defExports.falcon, defExports.hunterEagle, defExports.swallow2, defExports.raven2, defExports.hummingbird2, defExports.autoFalcon2, defExports.goose, defExports.heron, defExports.crow, defExports.twinSnipeTri, defExports.shootistOwl, defExports.borerFalcon, defExports.crowbird0, defExports.toxicOwl];
 defExports.diver.UPGRADES_TIER_4 = [defExports.boosterDiver, defExports.buildDiver, defExports.planterDiver, defExports.trapFighter, defExports.divebomber];
 defExports.propellerception.UPGRADES_TIER_4 = [defExports.triAngleception];
@@ -196791,7 +195737,7 @@ defExports.littleArtillery.UPGRADES_TIER_2 = [defExports.artillery, defExports.l
 defExports.littleMortar.UPGRADES_TIER_3 = [defExports.mortar, defExports.diepSpreadshot, defExports.newScaler, defExports.penta, defExports.autoHarasser];
 defExports.artillery.UPGRADES_TIER_3 = [defExports.mortar, defExports.autoArtillery, defExports.cannon, defExports.sheller, defExports.howitzer, defExports.fieldGun, defExports.aagun, defExports.swarmArtillery, defExports.hybridArtillery, defExports.builderArtillery, defExports.insect, defExports.autillery, defExports.gunHunter, defExports.bentPounder, defExports.diepSpreadshot, defExports.dropshipPounder, defExports.megaDropship];
 defExports.littleCannon.UPGRADES_TIER_3 = [defExports.triplet, defExports.cannon, defExports.newScaler, defExports.recruitSniper, defExports.recruitHybrid, defExports.autoLittleCannon, defExports.zoomLittleCannon, defExports.asymmetricTriplet];
-defExports.minishotSniper.UPGRADES_TIER_3 = [defExports.recruitSniper, defExports.sniperInsect, defExports.tripleShotSniper, defExports.minishotAssassin, defExports.aagun, defExports.spreadHunter, defExports.gunHunter, defExports.lumberjackMinishot, defExports.deadeye];
+defExports.minishotSniper.UPGRADES_TIER_3 = [defExports.recruitSniper, defExports.sniperInsect, defExports.tripleShotSniper, defExports.minishotAssassin, defExports.aagun, defExports.spreadHunter, defExports.gunHunter, defExports.lumberjackMinishot, defExports.deadeye, defExports.minimach];
 defExports.hewnTwin.UPGRADES_TIER_3 = [defExports.newHewnDouble, defExports.megaHewnTwin, defExports.twinSpreadling, defExports.hewnGunner];
 defExports.hewnTwin.UPGRADES_TIER_4 = [defExports.odinTank];
 defExports.hybridMinishot.UPGRADES_TIER_3 = [defExports.autoHybridMinishot, defExports.recruitHybrid, defExports.hybridArtillery, defExports.hybridDiepSpreadling, defExports.bentHybrid, defExports.hybridDropship, defExports.knife];
@@ -196801,7 +195747,7 @@ defExports.littleMortar.UPGRADES_TIER_4 = [defExports.triHarasser, defExports.ma
 defExports.littleCannon.UPGRADES_TIER_4 = [defExports.surferRecruit];
 defExports.howitzer.UPGRADES_TIER_4 = [defExports.bazooka, defExports.howitzerHybrid, defExports.perfectRatio];
 defExports.hybridArtillery.UPGRADES_TIER_4 = [defExports.hybridLieutenant, defExports.artillerySidekick, defExports.autoHybridArtillery, defExports.swarmsmanHybrid, defExports.howitzerHybrid, defExports.fieldGunHybrid, defExports.cannonHybrid, defExports.scalerHybrid, defExports.escutcheon, defExports.arquebusier, defExports.aubridery];
-defExports.recruitSniper.UPGRADES_TIER_4 = [defExports.hybridShot, defExports.recruitAssassin];
+defExports.recruitSniper.UPGRADES_TIER_4 = [defExports.hybridShot, defExports.recruitAssassin, defExports.grappler, defExports.macromach];
 defExports.sheller.UPGRADES_TIER_4 = [defExports.wideCannon, defExports.shellerMortar, defExports.anniSheller, defExports.shellerAAGun, defExports.bigSheller, defExports.newDestroyerInsect, defExports.bentDestroyer, defExports.artilleryShotgun];
 defExports.cannon.UPGRADES_TIER_4 = [defExports.wideCannon, defExports.cannonLieutenant, defExports.cannonMortar, defExports.cannonHybrid, defExports.poundTriplet, defExports.kannon];
 defExports.mortar.UPGRADES_TIER_4 = [defExports.shellerMortar, defExports.builderMortar, defExports.wideMortar, defExports.swarmMortar, defExports.wideSpread, defExports.cannonMortar, defExports.mortar2, defExports.mortauto, defExports.snipeMortar, defExports.cannonry, defExports.poundPenta];
@@ -196833,12 +195779,12 @@ defExports.triJouster.UPGRADES_TIER_4 = [defExports.hexaJouster];
 defExports.dagger.UPGRADES_TIER_4 = [defExports.pinTank, defExports.goblin, defExports.variblade];
 defExports.smash.UPGRADES_TIER_3 = [defExports.megaSmash, defExports.spike, defExports.autoSmash, defExports.landmine, defExports.jumpSmash, defExports.auger, defExports.smasherCeption, defExports.minesweeper, defExports.glassSmash, defExports.bonk, defExports.rotoSmash, defExports.kami, defExports.iron, defExports.zoomSmasher];
 defExports.triLancer.UPGRADES_TIER_3 = [defExports.hexaLancer, defExports.slasher, defExports.triJouster];
-defExports.hybridLancer.UPGRADES_TIER_3 = [defExports.lancerDirector, defExports.guitarist];
+defExports.hybridLancer.UPGRADES_TIER_3 = [defExports.lancerDirector, defExports.guitarist, defExports.caravan];
 defExports.vestalance.UPGRADES_TIER_4 = [defExports.guitarist, defExports.campaigner, defExports.deceptivist, defExports.autoclave, defExports.outbreak, defExports.westelans];
 defExports.inject0.UPGRADES_TIER_4 = [defExports.atrophy0];
 defExports.iron.UPGRADES_TIER_4 = [defExports.kevlarSpike, defExports.boer, defExports.lead, defExports.gyroBall, defExports.cobalt, defExports.osmium, defExports.brass, defExports.muon, defExports.conductivity, defExports.caesium, defExports.autoIron, defExports.bigIron];
 defExports.kami.UPGRADES_TIER_4 = [defExports.caesium, defExports.kamiMine, defExports.border, defExports.bigCrunch, defExports.bigBang];
-defExports.aegis.UPGRADES_TIER_4 = [defExports.pentaegis, defExports.newAegis, defExports.pushmi_pullu, defExports.ledZeppelin0];
+defExports.aegis.UPGRADES_TIER_4 = [defExports.pentaegis, defExports.newAegis, defExports.pushmi_pullu, defExports.ledZeppelin0, defExports.megaegis];
 defExports.slasher.UPGRADES_TIER_4 = [defExports.newKnight, defExports.ledZeppelin0, defExports.newAegis];
 defExports.aka0.UPGRADES_TIER_4 = [defExports.sab31, defExports.nok30, defExports.tam31, defExports.bite31, defExports.mar0, defExports.par30, defExports.grievous0, defExports.shove31, defExports.vore30, defExports.derringer31, defExports.vomiter0];
 defExports.trendsetter.UPGRADES_TIER_4 = [defExports.reposter, defExports.stingray];
@@ -196930,6 +195876,8 @@ defExports.corkscrew.UPGRADES_TIER_4 = [defExports.zoomSounder, defExports.corru
 defExports.hybridBasic.UPGRADES_TIER_2 = [defExports.hybridTwin, defExports.hybridSniper, defExports.hybridPound, defExports.hybridPellet, defExports.hybridTrapper, defExports.hybridZoomSingle, defExports.flankCruiser, defExports.hybridLancer, defExports.hybridMinishot, defExports.autoBasebrid, defExports.basekick];
 defExports.autoBasebrid.UPGRADES_TIER_3 = [defExports.autoHybridMinishot, defExports.lestion, defExports.revolutionbrid];
 defExports.revolutionbrid.UPGRADES_TIER_4 = [defExports.revelation, defExports.audiobrid];
+defExports.basekick.UPGRADES_TIER_3 = [defExports.appurtenance];
+defExports.basekick.UPGRADES_TIER_4 = [defExports.sidekick, defExports.gunnerSidekick, defExports.assassinSidekick, defExports.bentSidekick, defExports.hunterSidekick, defExports.artillerySidekick, defExports.builderSidekick, defExports.rifleSidekick, defExports.miniSidekick, defExports.sidekickMultishot, defExports.sidekickSpreadling, defExports.sidekickDropship, defExports.kindred, defExports.revelation];
 // SUBDUER
 defExports.littleHunter.UPGRADES_TIER_2 = [defExports.mini, defExports.twinLittleHunter, defExports.hunter, defExports.spray, defExports.directorContagion, defExports.contagion, defExports.bigSubduer, defExports.littleShifter, defExports.zoomLittleHunter, defExports.subduer2, defExports.flankSubduer];
 defExports.twinLittleHunter.UPGRADES_TIER_3 = [defExports.dual, defExports.bentLittleHunter, defExports.twinContagion, defExports.twinSpray, defExports.doubleLittleHunter, defExports.gunnerHunter, defExports.hexaSubduer, defExports.bicondro];
@@ -196949,7 +195897,7 @@ defExports.doubleLittleHunter.UPGRADES_TIER_4 = [defExports.doubleDual, defExpor
 defExports.xDirectorContagion.UPGRADES_TIER_4 = [defExports.xContagionOverseer, defExports.bacterialColony];
 defExports.bicondro.UPGRADES_TIER_4 = [defExports.bicameral, defExports.exocytose];
 // MINI GROWER
-defExports.miniGrower.UPGRADES_TIER_2 = [defExports.grower, defExports.autoMiniGrower, defExports.inferno, defExports.flankMiniGrower, defExports.twinMiniGrower];
+defExports.miniGrower.UPGRADES_TIER_2 = [defExports.grower, defExports.autoMiniGrower, defExports.inferno, defExports.flankMiniGrower, defExports.twinMiniGrower, defExports.kinetic];
 defExports.inferno.UPGRADES_TIER_3 = [defExports.firenado, defExports.backburner, defExports.flaregun, defExports.boomstick, defExports.pyro, defExports.autoInferno, defExports.twinferno, defExports.hybridInferno, defExports.dropferno, defExports.fume, defExports.gasLine];
 defExports.grower.UPGRADES_TIER_3 = [defExports.megaGrower, defExports.flamethrow, defExports.miniNukeShooter];
 defExports.autoMiniGrower.UPGRADES_TIER_3 = [defExports.minigrowerception, defExports.autoInferno, defExports.autoTwiniGrower];
