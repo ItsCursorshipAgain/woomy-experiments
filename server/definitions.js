@@ -120605,15 +120605,74 @@ defExports.pistonArsenal = {
         }
     }]
 };
-defExports.soulless1Minion = makeAuto(makeAutoN(defExports.stream, 6), 'Minion');
-defExports.soulless1Minion.COLOR = 34;
-defExports.soulless1Minion.SHAPE = 6;
-defExports.soulless1Minion.CONTROLLERS = ['nearestDifferentMaster', 'mapAltToFire', 'minion', 'canRepel', 'hangOutNearMaster'];
-defExports.soulless1Minion.TYPE = 'minion';
-defExports.soulless1Minion.CLEAR_ON_MASTER_UPGRADE = true;
-defExports.soulless1Minion.GIVE_KILL_MESSAGE = false;
-defExports.soulless1Minion.CAN_BE_ON_LEADERBOARD = false;
-defExports.soulless1Minion.SPEED = 3;
+defExports.soulless1MinionStream = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Streamliner',
+    BODY: {
+        FOV: 1.3
+    },
+    GUNS: [{
+        POSITION: [23, 8, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, g.minion]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [21, 8, 1, 0, 0, 0, .2],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, g.minion]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [19, 8, 1, 0, 0, 0, .4],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, g.minion]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [17, 8, 1, 0, 0, 0, .6],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, g.minion]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [15, 8, 1, 0, 0, 0, .8],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, g.minion]),
+            TYPE: defExports.bullet
+        }
+    }]
+};
+defExports.soulless1Minion = makeAuto({
+    PARENT: [defExports.minion],
+    COLOR: 34,
+    SHAPE: 6,
+    BODY: {
+        SPEED: 3
+    },
+    GUNS: [],
+    TURRETS: [{
+        POSITION: [7, 9, 0, 0, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }, {
+        POSITION: [7, 9, 0, 60, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }, {
+        POSITION: [7, 9, 0, 120, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }, {
+        POSITION: [7, 9, 0, 180, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }, {
+        POSITION: [7, 9, 0, 240, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }, {
+        POSITION: [7, 9, 0, 300, 71, 0],
+        TYPE: defExports.soulless1MinionStream
+    }]
+}, 'Minion', {
+    type: defExports.autoTurret2
+});
 defExports.soulless1 = {
     PARENT: [defExports.genericTank],
     LABEL: 'SOULLESS-1',
