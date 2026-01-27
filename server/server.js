@@ -9854,6 +9854,9 @@ function flatten(data, out, playerContext = null) {
                                 case 0: { // Broadcast
                                     sockets.broadcast(m[1], m[2]);
                                 } break;
+                                case 1: { // Set color
+                                    body.color = m[1];
+                                } break;
                                 case 2: { // Set skill points
                                     body.skill.points = m[1];
                                 } break;
