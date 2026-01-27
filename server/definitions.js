@@ -25017,7 +25017,7 @@ defExports.hybridAutoGun = makeHybrid({
             TYPE: defExports.bullet
         }
     }]
-}, 'Hybrid');
+}, 'drone', { name: 'Hybrid' });
 defExports.squareBossTier2 = {
     PARENT: [defExports.genericTank],
     LABEL: 'MK-2',
@@ -42136,7 +42136,7 @@ defExports.spreadGuardMinion = makeHybrid({
             LABEL: 'Primary'
         }
     }]
-}, 'Minion');
+}, 'drone', { name: 'Minion' });
 const rocketBossProps3 = {
     SHOOT_SETTINGS: combineStats([g.factory, g.fast_launch, g.even_smaller, g.bit_bigger, g.half_reload, g.half_reload]),
     TYPE: defExports.spreadGuardMinion,
@@ -97349,7 +97349,7 @@ defExports.fallenCavalcade = makeHybrid({
             TYPE: defExports.bullet
         }
     }]
-}, 'Fallen Cavalcade');
+}, 'drone', { name: 'Fallen Cavalcade' });
 defExports.fallenCavalcadeAI = {
     PARENT: [defExports.fallenCavalcade],
     TYPE: 'miniboss',
@@ -103658,7 +103658,7 @@ defExports.hyperion = makeAuto(makeHybrid({
         POSITION: [11, 3, 9.5, 0, 125, 0],
         TYPE: defExports.hyperionWardenTurret
     }]
-}, ''), 'Hyperion');
+}, ''), 'drone', { name: 'Hyperion' });
 defExports.boostMissile = {
     PARENT: [defExports.bullet],
     LABEL: 'Missile',
@@ -151685,9 +151685,7 @@ defExports.cultist = {
         TYPE: defExports.cultistShell
     }]
 };
-defExports.trainee = makeAuto(makeHybrid(defExports.machineMinishot, 'drone'), 'Trainee', {
-    size: 10
-});
+defExports.trainee = makeAuto(makeHybrid(defExports.machineMinishot, 'drone'), 'Trainee');
 defExports.crusader = {
     PARENT: [defExports.genericTank],
     LABEL: 'Crusader',
@@ -151972,7 +151970,7 @@ defExports.littleChungus = {
         }
     }]
 };
-defExports.soldier = makeAuto(makeHybrid(defExports.littleCannon, 'drone', { name: 'Soldier' }), 'Soldier');
+defExports.soldier = makeAuto(makeHybrid(defExports.littleCannon, 'drone'), 'Soldier');
 defExports.autopilot = makeAuto({
     PARENT: [defExports.genericTank],
     LABEL: "Autopilot",
