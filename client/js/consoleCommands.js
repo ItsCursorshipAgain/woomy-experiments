@@ -33,6 +33,11 @@ window["broadcast"] = function (message, hex) {
 	socket.talk("D", 0, message, hex);
 	logger.info("Broadcasting your message to all players.");
 };
+window["setColor"] = function (colorID) {
+	if (isNaN(colorID)) return logger.warn("Please specify a valid color ID!");
+	socket.talk("D", 1, colorID);
+	logger.info("Set your color ID to " + colorID + ".");
+};
 window["setSkill"] = function (amount) {
 	if (isNaN(amount) || amount < 0) return logger.warn("Please specify a valid amount of stats! Note that the amount can't be below 0 or above 90.");
 	socket.talk("D", 2, amount);
