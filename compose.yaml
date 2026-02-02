@@ -9,6 +9,7 @@
 # https://github.com/docker/awesome-compose
 services:
   server:
+    image: drakohyena/woomy-online:latest
     build:
       context: .
     environment:
