@@ -34,7 +34,7 @@ worker.onmessage = function (msg) {
                 startServer(data.server.suffix, res.defExports, data.server.displayName, data.server.displayDesc, data.server.maxPlayers, data.server.maxBots)
             }).catch((err) => {
                 console.error(err)
-                worker.postMessage({ type: "serverStartText", text: "Failed to load definitons", tip: "Please reload the page and try again" })
+                worker.postMessage({ type: "serverStartText", text: "Failed to load definitions", tip: "Please reload the page and try again" })
             })
             break;
         case "serverMessage":
@@ -70,6 +70,10 @@ function userSocket(playerId, encode) {
 };
 
 // MORE COMPAT //
+const nestList = [
+    ['tri', 'square', 'penta', 'hexa', 'hepta', 'octa', 'nona', 'deca'],
+    ['#E7896D', '#EFC74B', 'nest', '#7ADBBC', '#FDA54D', '#A177FC', '#65F0EC', '#E8EBF7']
+];
 // Ultra-fast atan2 implementation - replaces Math.atan2 prototype
 const PI = 3.141592653589793;
 const PI_2 = 1.5707963267948966;
@@ -138,33 +142,38 @@ global.mapConfig = {
     setup: function (options = {}) {
         if (options.width == null) options.width = 18;
         if (options.height == null) options.height = 18;
-        if (options.nestWidth == null) options.nestWidth = Math.floor(options.width / 4) + (options.width % 2 === 0) - (1 + (options.width % 2 === 0));
-        if (options.nestHeight == null) options.nestHeight = Math.floor(options.height / 4) + (options.height % 2 === 0) - (1 + (options.width % 2 === 0));
+        nestList[0].forEach(n => {
+            if (options[n + "NestWidth"] == null) options[n + "NestWidth"] = Math.floor(options.width / 4) + (options.width % 2 === 0) - (1 + (options.width % 2 === 0));
+            if (options[n + "NestHeight"] == null) options[n + "NestHeight"] = Math.floor(options.height / 4) + (options.height % 2 === 0) - (1 + (options.width % 2 === 0));
+        });
         if (options.rockScatter == null) options.rockScatter = .175;
         options.rockScatter = 1 - options.rockScatter;
         const output = [];
-        const nest = {
-            sx: oddify(Math.floor(options.width / 2 - options.nestWidth / 2), -1 * ((options.width % 2 === 0) && Math.floor(options.width / 2) % 2 === 1)),
-            sy: oddify(Math.floor(options.height / 2 - options.nestHeight / 2), -1 * ((options.height % 2 === 0) && Math.floor(options.height / 2) % 2 === 1)),
-            ex: Math.floor(options.width / 2 - options.nestWidth / 2) + options.nestWidth,
-            ey: Math.floor(options.height / 2 - options.nestHeight / 2) + options.nestHeight
-        };
+        let nests = {};
+        nestList[0].forEach(n => {
+            nests[n + "Nest"] = {
+                sx: oddify(Math.floor(options.width / 2 - options[n + "nestWidth"] / 2), -1 * ((options.width % 2 === 0) && Math.floor(options.width / 2) % 2 === 1)),
+                sy: oddify(Math.floor(options.height / 2 - options[n + "nestHeight"] / 2), -1 * ((options.height % 2 === 0) && Math.floor(options.height / 2) % 2 === 1)),
+                ex: Math.floor(options.width / 2 - options[n + "nestWidth"] / 2) + options[n + "nestWidth"],
+                ey: Math.floor(options.height / 2 - options[n + "nestHeight"] / 2) + options[n + "nestHeight"]
+            }
+        });
 
         function testIsNest(x, y) {
-            if (options.nestWidth == 0 || options.nestHeight == 0) {
-                return false;
-            }
-            if (x >= nest.sx && x <= nest.ex) {
-                if (y >= nest.sy && y <= nest.ey) {
-                    return true;
+            for (let i = 0; i < nestList[0].length; i++) {
+                if (options[nestList[0][i] + "nestWidth"] == 0 || options[nestList[0][i] + "nestHeight"] == 0) {
+                    if (i < nestList[0].length - 1) continue;
+                    else return 0;
                 }
+                if (x >= nests[nestList[0][i] + "Nest"].sx && x <= nests[nestList[0][i] + "Nest"].ex && y >= nests[nestList[0][i] + "Nest"].sy && y <= nests[nestList[0][i] + "Nest"].ey) return nestList[1][i];
+                return 0;
             }
-            return false;
         }
+
         for (let i = 0; i < options.height; i++) {
             const row = [];
             for (let j = 0; j < options.width; j++) {
-                row.push(testIsNest(j, i) ? "nest" : Math.random() > options.rockScatter ? Math.random() > .5 ? "roid" : "rock" : "norm");
+                row.push(testIsNest(j, i) || Math.random() > options.rockScatter ? Math.random() > .5 ? "roid" : "rock" : "norm");
             }
             output.push(row);
         }
@@ -376,7 +385,6067 @@ global.require = function (thing) {
             }
             break;
         case "./lib/random":
-            const names = ["That Guyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy", "SOMEONE", "꧁༺𝓘𝓷𝓼𝓪𝓷𝓲𝓽𝔂༻꧂", "🅸 🅰🅼 🅶🅾🅳", "I", "jaffa calling", "Ill Tear your eyes out..", "Me-arac", "Aniketos", "🌌Miñe🌌", "ℭ𝔬𝔣𝔣𝔢𝔢", "Akilina", "Mythical", "exc", "=", "o o o o o o o o", "!!!", "Lixeiro do mal", "Thanks M8", "Frost? Mobile", "Dream", "We Do A Little Trolling", "earth", "NightFire", "Free to insult", "dino", "AMOGUS??????????????", "bruh", "No Surviors", "<[AXS]> RASHOT", "Pizza Bread", "[lag]Armando", "Gay Overlord", "willim", "Everything RAM Mobile", "General", "H̵͊̕ė̵̮l̷͎̈́l̵̅͛ơ̸͊", "{WOF} Nightwing", "footeloka", "[⚔️wiki]₵₳V₳ⱠłɆⱤ", "Jes;/;ter", "Team Boom", "🖤ISAAC🖤", "naruto", "занято42/Busybody42", "A+", "Raul39", "Lety <3 :)", "team protect", "i will troll :D", "heroy_105", "[FBI]Σvi₺ℭℏἏ❀₴#1628", "BigBadBoom", "nope", "glurip", "ffk the desrtroy", "Spin=Team", "comrade", "Alkali", "Impact of TY-77", "😈Stormys Domain😈", "YOUR BAD = YOUR DEAD!!!", "pushmetothe sancuary", "Im not a tank", "Snow", "Hm", "DanceTillYou'reDead", "gmonster", "Die!!!", "developer", "noob", "zX-TwinChilla-Xz", "[BK] [XC] PAKISTAN", "Bryson", "Musa♗ - The Shipwrecker", "bob", "Mothership Drone", "t-rex vs raptor", "mai", "Arisu", "gamer.io", "RİKKET FAN", "FOLLOW ME OCTO TANKS", "XP_Toxic_CJS", "TV", "constructor", "among us", "jkl", "XP_Toxic_CST", "d", "I love nahu", "Spade", "XxNicolas GamerxX", "xAd_rian", "FabianTu", "Eminx", "max", "OOOOOOOOFfffffffffffffff", "WalleeE", " KA2", "MIKE", "pedro :(", "BEDROCK", "Frostbite#6915", "koishi", "eu tenho a melhor mae^-^", "asdfghjkl;:]@ouytrewq", "😎👿david988😎👿", "Zaphkiel", "tryhard mode on !!!!!!!", "⚰️🔥👻WITNESS ME👻🔥⚰️", "[Σϰ][Ωϰ] ...", "That Guy", "Aniketos", "Play wommy-arras.io", "ARMADA", "// jAX", "🔱Ƒιяєωσяк🚫", "DEATH TO TEAMERS", "Milan", "your worst lightmare", "XxshadowxX Ilove u", "Alkaios", " 🥧π🥧", "🔱 𝓽𝓲𝓶𝓮𝓽𝓸𝓭𝓲𝓮 🚫", "Can u see me? :D", "Apollon", "ok", "Crazyattacker9YT", "XtremeJoan", "cz sk", "give me your butt dude", "[🌀]Brain𝐼nHalf", "Hexagon Temple", "-_-", "You", "CACA", "Athena", "Artemis", "DOEBLE TOP!", "the only one", "hi (original)", "SOMEONE", "can you beat me smashey", "s7ㅋㅋㅋ", "pika :P", "Fallen", "Big Papa", "m̸̐̽ᵃ𝔭ʟₑ౪🌸🎀🌺🌷🩰🧁", "GONIALS", "прівіт", "lnwZa007", "🐸🐌【HapPy】", "Daluns the one?", "CAMALEON", "factory not op :(", "/BIG BOYRockety", "circus of the dead", "𝒮𝔭00𝔡𝔢𝔯𝔪𝔞𝔫", "hackercool", "🔱⨊ $؋₲₥₳🚫", "Go Away", "Protector Of Worlds", "me", "vn", "RAHAN", "........................", "Soviet Union", "Flash", "❰𝞑𝞡𝞣❱ 𝝙𝝼𝝴𝝶𝘂𝝴", "🌌Miñe🌌", "King Pikachu", "EzzeKiel", "h", "Homeless man", "Asdfghjkjjhgfdsdfghjhgfd", "Felchas", "starwarrior", "Spin=Team", "TERA BAAP✿AYA★💓Bhagwanmr noob", "Dream", "DIEGO", "Lagmat YT = 🎷 channel", "be dum like me", "lagg", "APplayer113", "tiky", "🇧🇷HUE🇧🇷", "am low, I Need Backup!", "Thunder(Tapenty)", "Beeg Yoshi Squad", "reeeeeeee", ";]", "Arena Closer", "abd lhalim", "Badaracco", "emir", "Türk  polisi", "Paladin", "stop plz", "d", "glenn <3 rachel", "[AI] Kidell", "dan", "I am milk", "Türk'ün Gücü Adına🌸 OwO", "҉s҉h҉u҉n҉a҉", "Teuge", "Dave", "abbi_alin", "im a joke", "huy vn :D", "🌊🦈🌊", "scortt reach 1m friend", "ET", "vlasta", "𝒰𝒞ℋİℋ𝒜", "Nyroca", "German", "[ɨƙ]ɳøʘɗɫɚ", "I'm so lag(sinbadx)", "🇸🇦", "asdf", "X℘ExͥplͣoͫຮᎥveﾂ✔", "Apollon", "^^", "I", "natasha", "no me mates amigos", "dáwsda", "FEWWW....", "lol", "A team with 💚 is doomed", "Raul39", "Noob AC", "ddqdqwdqw", "[MG] GLITCH TR", "LemonTea", "Party_CZE", "Diep_daodan", "What?", "kuro", "cute pet", "demon", "ALEXANDER👑💎", "Cursed", "copy The tank", "", "dsa.", "Vinh HD", "Mago", "hi UwU", "avn", "d", "naruto", "ARRASMONSTER KILLYOUha5x", "MICAH", "Jotaro", "king vn", "𝕰𝖓𝖊𝖒𝖞_𝕯𝖔𝖌", "Raoof", "Leviathan", "SUN", "❬☬❭  ⚜️Ð𝐙𝕐 ッ 〜 🌷", "FALLEN SWORD", "🇧🇷HUE🇧🇷", "BoyFriend [FnF]", "motherhip", "𝓼𝓮𝓻𝓲𝓸𝓾𝓼𝓵𝔂", "lolera", "Dark Devil", "press F", "Detective Conan", "Pet", "MAICROFT", "Holy", "IXGAMËSS", "h", "umm,dab?", "Ihavelocty", "ewqasd2021vinicius", "[🇻🇳] Hùng", "I Love you", "Healer", "hacker lololololol", "boooster.io", "dscem", "bibi", "TEAM POLICE", "", "jj", "SHARK", "arena closer", "•长ąϮëąℓ⁀ᶜᵘᵗᵉ╰ ‿ ╯ ☂", "Weяw𝕖𝐑ώ€я𝓺q2️⃣prankeo", "nani?", "OTTOMAN EMPİRE", "------------------------", "kr9ssy", "not P", "winnner", "friendly", "genocide BBB", "HI", "I'm poor:(fortnine duo", "JSABJSAB", "jmanplays", "starwarrior", "were", "PLAYER", "mothership protrector 1", "Gamer🎮", "6109", "PRO", "enr", "_____P___E___N___E______", "annialator", "kaio", "(UwU)", "Arras.io", "...", "Denied", "Paladin", "Zaphkiel", "Pikachu ^~^", "ah~", "Steve", "{<:Void", "AƓ Aηgєℓ#Use AƓ  Tag", "Amyntas", "⁄•⁄ω⁄•⁄卡比獸🖤", "poui", "PH - r҉a҉i҉n҉", "A M O U G U S", "idk bro", "Artemis", "Hey team", "b T規RㄩIes矩W ˋ*ˊd", "한국 Lime Lemon", "phong fan vn!", "me fan valt shu lui free", "Mobile no work", "Hi 香港😘> pls don't kill�", "[/G]/O1D SL/Y3R", "mil leches", "Major Meowzer YT", "Providence", "Lore", "ОХОТНИК", "vordt", "Linghtning McQueen", "Pentagon Nest Miner", "꧁☬☬😈꧁꧂ ☠HARSH ☠꧁꧂😈 ☬☬꧂", "vovotthh", "Nope :))", "||||||||||||||||||||||||", " ꧁ℤ𝕖𝔱𝔥𝔢𝔯𝔫𝕚𝕒꧂", "CTRL+W=godmode(viet nam)", "🔱LordΛภ𝓰𝖑Ɇ🚫", "1 + 1 = 3", "XYZ", "[PFF][|| ı'ɱ ცąცყ||]", "Boop", "RAPTURE", "o", "/.//.[]", "", "Roskarya", "no. 9", "Lost MvP#7777", "Jon", "🔱Saint LilY⚜🚫", "Green.grey.purple.blue.", ":P", "C - 4 Spank Spank", "VN", "Snapwingfriendstriker007", "overlord is:):)", " pluss亗", "[Repsaj]ĎąŗĸMãştɛɾ", "Phoenix_Gamer", "Relatively Harmless Tonk", "Array.io", "Spin=Team", "I am your shield :)", "j", "1", "TheBasil", "【The L1litle One】", "X.Clamator .YT", "ENDERMÉN", "CC", "BEST", "Among Us", "lobo", "asky", "Opan Come Go Note Yeah", "Bowler", "ad", "haha bowler no 1M", "Tin", "[GZ]GESETA", "woomy arras.io", "Remuru Tempest", "PvPok", "Scarlet Rage(mobile)", "nam", "STRIKER007", "[VN] MeltedGirl", "100000000000000000000000", "eee", "Q", "mắm tôm", "REVENGE✨", "Achi", "AC Perú", "bvnfgh", "hi", "Pet :3", "little bitch", "khang", "lets be freinds guys!!!!", "sans pro", "phantanduy", "[AC] VGamerZ", "StevenUniverseFan", "azen", "Waffles", "jesian", "Ⱬł₭Ɽł₮₳Ӿ", "Gay Overlord", "pikachuboi124", "mundo x bomb", "ducky", "🌀DESTROYER🌀", "Stupid Overlord", "++", "phantantri", "VoteOutRacists", "Denied", "floof", "Bowler", "Sinbadx", "🎈IT🎈 APOCOLYPSE", "ExpectMe2BeDeadCuzOfLag", "Damage", "Aniketos", "⨝∑₮ξ₹ͶΛL⨝", "Artemis", "_", "Archimedes", "♪KING♫♕-dev#3917", "no", "Doofus", "MINI defender", "꧁✯[🕋]MÂRSHMÆLLØW 𖣘✯꧂", "Alkaios", "(・ω・＼)i am(/・ω・)/pinch!", "Việt Cường 2A5", "I Love you", "fdsmn", "!", "R", "you shall not pass!!", "harmless shower", "lol", "Mythical", "oath sign", "finland", "bob", "hetman666", "lio", "VN~I LoVe You Chu Ca Mo", "Your mom", "Friendly", "the protector", "leave me alone pls", "Grill my flippen butt", "n o i c e", "bo", "onsen", "._.", "Frostbite#6915", "💞", "CTRL+W=godmode", "noob", "ad", "Soviet Union", "be freind", "   HCM MUÔN NĂM", ":P", "FALLEN SWORD", "anh tuấn anh nè tôm", "fnf is a poop", "Zp r oZ", "꧁҈$ꫀꪖ  ,҉ℭն𝚌մꪑ𝜷ꫀ᥅ ༻", "VN:P", "margaret thatcha", "[VN]Ảo Vãi Lồn🤔", "ㅋㅋㄹㅃㅃ", "pin h 3", "Vỹ đẹp zai", "Snapwingfriendstriker007", "everybodybecomespike", "a", "1", "vyde", "Mothership Drone", "op", "click 'F'", "Noob", "🐰chiro🐰", "PJfd13", "CELESTIAL", "Team", "Pet :3", "FeZTiVAL", "anime", "t", "C - 4 Spank Spank", "Rockety", "Valley", "Im New,dont kill me pls", "Friends?", "하이루", "KILL ME I DARE YOU", "pet basic -(======>", "pet", "♕ ❤VIỆT NAM ❤♕", "team ?", "꧁༒☬✞😈VîLLãñ😈✞☬༒ ꧂", "Công", "Opan Come Go Note Yeah", "1 + 1 = 3", "Elite Knigh*", "vn{CHP}", "Dasher8162", "Xlo-250", "under_gamer092", "VN", "Mtp tv tiktoker", "Denied", "Paladin", "『YT』Just𝕸𝖟𝖆𝖍ヅ", "shame", "Corrupt Y", "spin= team", "Please no more Y team", "Syringe", "Pickerel Frog", "Bitter Dill", "Your Triggering Me 🤬", "117", "FleRex", "Archimedes", "Neonlights", "🌌Miñe🌌", "〖-9999〗-҉R҉e҉X҉x҉X҉x҉X҉", "FEWWW....", "bob", "0800 fighter¯_(ツ)_/¯", "◯ . ◯⃨̅", "𝕁𝕖𝕤𝕥𝕖𝕣", "Apollon", "Ɓṏṙḕd Ṗläÿệŕ {✨}", "i never bin 1 mill", "残念な人", "KillerTMSJ", "Дракон", "[VN]Ảo Vãi Lồn🤔", "😎", "warrion", "ARMADA", "asd", "alr-ight", "AAAAAAAAAAAAAAAAAAAAAAAA", "♣☆  ⓂⒶ𝓻s𝐇Ⓜ𝔼𝕝ᒪσω  ☯♚", "FREJEA CELESTIAL 1.48MXyn", "poker 567", "C", "4tomiX", "meliodas", "Việt Cường 2A5", "(ZV) foricor", "", "Marxtu", "me?? 😢", "m̸̐̽ᵃ𝔭ʟₑ౪🌸🎀🌺🌷🩰🧁", "PeaceKeeper", "Eeeeeeva", "diện", "[MM]  Ⓕ𝓸𝓻𝓫𝓲𝓭𝓭𝓮𝓷", "Doofus", "TS/RRRR", "Nothing.", "🐶(X)~pit¥🐺te matare jajaja", "⌿⏃⋏⎅⏃", "go", "[PFF][|| ı'ɱ ცąცყ||]", "hola", "polyagon", "Galactic slush", "9999999999999999999999dx", "zaphkiel celestial", "noob", "$$$%$la plaga$%$$$", "Sorry broh", "Roberto", "EHSY BAAA", "Nnmnnnmmmnmmmm", "use fighter plsss :)", "Mini", "spitandsteelfriend", ";)", "lol", "Mobile player", "the ultimate multitool", "i vow to protect", "oofania", "hi", "why am i here", "H̵͊̕ė̵̮l̷͎̈́l̵̅͛ơ̸͊", "A.L.", "Hi", "ONE SHOT", "luis", "saitan", "Felchas", "Im gonna knock you out", "Aquiles TEAM LOVE", "qwertyuiop", ":3", "diep.io", "invisible drones", "team plz:(", "DIONAX", "again and again", "100000000000000000000000", "nicolas123", "JESUS E AMOR", "Alice", "Bob", "Carmen", "David", "Edith", "Freddy", "Gustav", "Helga", "Janet", "Lorenzo", "Mary", "Nora", "Olivia", "Peter", "Queen", "Roger", "Suzanne", "Tommy", "Ursula", "Vincent", "Wilhelm", "Xerxes", "Yvonne", "Zachary", "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Hotel", "India", "Juliet", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-Ray", "Yankee", "Zulu", "The Bron Jame", "[MG] Team", "team??!", "trump", "facu++", "TEST", "Jake", "PEST_YT", "GOKU", "big me!", "arras > diep", "k", "[MG] PRO TEAM", "Solomon", "novice", "noob", "Angel", "😈", "max", "Allah Is King", "Hug Me", "dont touch me", "leonardo", "colombia", "", "Friends ? ", "✈", "Kim Jong-Un", "1", "An unnamed player", "agar.io", "road to 1m", "FEED ME", "DOGE", "GABE", "boi", "[GZ] team", "buff arena closer", ".", "Ramen", "SPICY RAMEN", "Jera", "[insert creative name]", "Rake", "arras.io", "KOA", "die", "king of diep", "Hagalaz", "Ehwaz", "Dagaz", "Berkanan", "Algiz", "Blank", "Mango", "TOUCAN", "Bee", "Honey Bee", "oof", "Toast", "Captian", "Alexis", "FeZTiVAl", "kitten", "Derp", "Gabogc", "U S A", "name", "[IX] clan", "LOL", "ur mom", "llego el pro!", "Impeach Trump", "luka modric", "bob", "MATRIX", "no", "e", "kek", "read and u gay", "Decagon?", "take this L", "mm", "Aleph Null", "summoner", "T-REX", "buff basic", "stink", "jumla", "no team Kill", "pet", "V", "Broccoli", "toon", "Sinx", "JTG", "Hammer", " ", "Basic", "Discord", "NO WITCH-HUNTING", "salty", "CJ", "angel", "a salty discord kid", "satan", "NoCopyrightSounds", "Am I Sinbadx?", "AHHHHHH!", "rush", "squirt", "AMIGOS", "Windows 98", "FeZTivAL", "illuminati", "Fallen Bot", "Anonymous", "koala", "iXPLODE", ":D", "BrOBer The Prod", "OwO", "O_O", "UwU", "Alpha", "TheFatRat", "kokak", "D:", "YouRIP", "WOOT", "𝕯𝖆𝖙 𝕺𝖓𝖊 𝕭𝖔𝖎", "hell", "Y", "why", "Lucas", "LOCO", "FeZTi Fan", "0", "AK-47", "Friend pls", "cool", "NO U", "hmst", "Sub 2 Pewdiepie", "T-Gay", "t-series succs", "Balloon", "CX Fan", "The Nameless", "What?", "Our World of Tanks", "Real AI", "Totally Not A Bot", "...", "Fallen AI", "green square", "Dagaz 2.0", "Internet Explorer", "teamplz", "Paradox", "Fallen Nothing", "developer", "ruler of tanks", "IRS", "king slayer", "sael savage", "Zplit", "CUCK", "Popo", "¡AY PAPI!", "Vogelaj", "Ruthless", "BOMBS AWAY", "im new", "best", ".-.", "dont feed me", "rIsKy", "Brian", "Angel", "Knoz", "Caesar", "Baller", "¿Equipo?", "¡Vamos!", "Road To 10m", "Real Hellcat", "Real Kitty!", "Canada > USA", "A named player", "Tyson", "Slayer", "666", "Nooblet", "M8", "Trans Rights", "Bar Milk", "Jambi", "Elmo is gone", "The Grudge", "Rosetta Stoned", "Lateralus", "Fourty-Six & 2", "Vicarious", "Judith", "Give Me Wings", "The Pot", "look behind you", "Bruh Momentum", "Sucko mode", "ArenaC", "!foO", "Lateralus", "Disposition", "Reflection", "Triad", "Mantra", "The Patient", "Real CreepyDaPolyplanet", "Real Despacit.io", "Mew", "Magikarp", "Real Dark Knight", "ok boomer", "PP Tank", "COPPA Sucks", "meme", "Womp Womp", "W = Team", "Real CX", "Neo", "crasher", "Minecrafter", "King of Pros", "Vanze", "Have mercy...", "Im scary", "cookie", "Liberty Prime", "bruh moment", "Rubrub", "Banarama", "poyo", "Nova", "Creeper, Aw Man", "Theory of Everything", "DJVI", "jotaro kujo", "Faaip de Oiad", "MrBeast", "ForeverBound", "Are you okay?", "BUSTER WOLF", "MJK", "F-777", "Dex Arson", "alpharad", "ORA ORA ORA", "Waterflame", "DJ-Nate", "penguinz0", "#teamtrees", "Electrodynamix", "brogle", "im beef", "Salsa Verde", "The Audacity of this tank", "Joe Mamma", "Red Hot Chili Pepper", "Halal Certified Tank", "Coronavirus", "The Common Cold", "The Flu", "Ight Bro", "Little Red Rocket", "Bruh Monument", "Bruh Monumentum", "Spree", "KING CRIMSON!", "THE WORLD!", "ZA WARUDO!", "taal volcano", "Synth", "Brotherhood of Steel", "Railroad", "A Settlement Needs Your Help", "final destination, fox only", "food", "fezti fan", "FeZtiVaL", "CATS", "Careenervirus", "Dumb", "[AI]", "Insanity", "Steven Universe", "MrBeast Rules", "Oswald Veblen", "how to get testbed?", "Mahlo Cardinal?", "mf=r", "dragons go mlem", "丹†eÐiuϻbee††ℓy†", "TωorᴍaͥHoͣrͫnet", "NoͥteͣwͫoℝthyCสtHeสt", "ᴴᵃⁿʸᵐᵖᶜᵘᵗᵉᴾᵃⁿᵗˢ", "Oᶠectบสlsereedl", "CℓeDⱥiryVⱥiͥήtͣeͫℓ✨", "EyeCⱥnᖙyᖘunᖙeseg", "Witψภclคi", "⫷PนℝeMiͥℝeͣyͫ⫸", "𝓕𝓸𝓵𝓿𝓮𝓞𝓵𝓭𝓳𝓸𝓴𝓮⚔", "⦃φօʂìէìѵҽԱʂէìէմąɾ⦄", "🎻Hiקle𝔶lutקuᖙiѕh", "✐ЯΣΛ爪ΛПΣЦЯΣ", "∉Eᴍiภeภ†Miภa多iho∌", "[M๏ℝec𝔥Muy𝔊๏rᖙØ]", "やlachaҜ𝔢d๖ۣ•҉", "FicบℝneCบʝo", "Jame∂iͥPaͣtͫtψMeℓt", "PℝoͥfuͣsͫeOftsΐ", "Hiภⱥls†MiAlmⱥ", "Cสneͥຮeͣfͫight", "Ŧฬeͥirͣoͫ͢͢͢Tฬin🅺les😎", "VenomoบຮNorτnear", "🎲๖ۣۜƤⱥranAsian𐌁øyz", "StͥedͣiͫรDilrubⱥ", "ᖘiͥŇgͣeͫsτri", "Ac𐍉͢͢͢ᵐᵐSiรcuᵐMum🌼", "⫷EᴍiήentOffec☢ne⫸", "Evalingђteᖙseᖙi", "FoบຮervͥᎥdͣeͫ", "⪓Offigeร℘er⪔", "Vuͥldͣrͫatediesio", "⁅🆂🅴🅽🆂🅸🅱🅻🅴🅰🅽🆃🅴🅽🆂🅸🅾⁆", "Houℝgͥΐcͣaͫr︾", "Doe£🆄lMψSo🆄l😬", "Ǥrel𐍉resit", "𐄡𝒫𝑜𝓉𝑒𝓃𝓉𝒯𝒾𝑒𝓃𐄪", "୨𝔄𝔟𝔫𝔬𝔯𝔪𝔞𝔩𝔄𝔫𝔫𝔞𝔩𝔤𝔞𝔱⪑", "ElfuภΐBΐBαr͢͢͢rel", "Liͥveͣrͫiภgบi", "𝕆𝕗𝕗𝕠𝕦𝕝𝕕𝕠𝕨𝕚𝕥𝕚𝕝⚡", "Na†eℝaŇiŇgs⚠", "𝓗𝓪𝓭𝓭𝓚𝓱𝓪𝓷𝔃𝓲𝓻", "Partℽ𝓌𝔥ᎥꜱᎥภ∂บc", "Aήสℓroseℓ♛", "Aຮiaτinga", "⑉Elͥegͣeͫήτreα⑉", "Inͥ∂eͣlͫψຮtr", "CoϻpePregy", "〖Grͥetͣyͫdrest〗", "⑉S☢mp☢รpͥGuͣmͫp⑉", "丹pสτheτᎥcṨømpⱥthⱥ", "⁣𓆩NօthΣurΣeŇtment", "Ofͥ†eͣnͫcheye", "「FℓuͥttͣeͫriήgItingenv」", "😻SƤ𝔯iήgy🅼orkingɭ", "〖ṨoftOftwTนft〗", "GℝegⱥℝiouຮMeⱥℝee☂", "🏄", "😌CømiภgPoթcorn", "MossfนlthapeᖙyŇ☘", "๖ۣۜ山☢uͥsiͣaͫℓℓeﾂ", "A𝖙hedi🆁on", "✰QนestaΐŇgl✰", "Wⱥsͥ†iͣoͫnfℝou", "｟VoℓคtᎥℓeAtentᎥⱥt｠", "Arninℓץie", "★彡[๖ۣۜƊreคᖙ͢͢͢๖ۣۜƊeωᖙrop]彡★", "JบicץJบnᖙen", "Öµł†µÐï†ê§", "「Ate∂iͥDiͣlͫly๖ۣۜßØo」", "〖Aήthent฿ⱥdbreⱥth〗", "🎹ͲօցìօղժƓմղժ", "᚛VerรeᖙTurรeᖙΐe᚜", "Sקityℝicђe", "❅Camedΐℝ๖ۣۜƊℝedd❅", "IŇeττivie♛", "﹄𝔇𝔬𝔫𝔨𝔢𝔶𝔒𝔠𝔨𝔢𝔡𝔲﹃", "Dousermⱥi∂ﾂ", "彡ΛЯᄂƧΣᄃΛ彡", "⁣𓆩🅰🅳🅼͢͢͢🅸🅽🅴🆆🅴🆁🅴🅽🆃", "AŇergeNeesคnค", "💤Fสή†สຮ†icͥAfͣfͫic", "⌁NaτemacτᎥ⌁", "LΐvͥesͣeͫsChΐℓΐ", "íɑʍOภຮgrⱥigน", "𝓟𝓻𝓸𝓰𝓷𝓲𝔁𝓽𝓾𝓻", "😶ＧｕｔｔｕｒａｌＰｕｔｈｅｒｉｐ", "Ϛageร𐍉HϚ𐍉ℓ☢😇", "𝕹͢͢͢𐍉τempℓeᴀɾ😠", "🚣AՇitℽสrDสrͥinͣgͫ", "༺Hⱥrm๏ni๏us๖ۣۜ山ermisty༻", "CoͥŇeͣrͫŇizαr⚔", "Tormaภτmerΐcaภg", "⦇ƑⱥℓiKi𝖒多๏Ṩℓice⦈", "⚡Uppontork⚡", "C𝓪ge¥W𝓪gencie︾", "彡Ri๏ภt͢͢͢αhαbigiv彡", "😐🅲🆄🆁🅽🅰🅽🅱🅾🅽🅰🅵🅸🅳🅴", "ShⱥŇdΐDΐŇyͥerͣoͫ❥", "EήthHⱥlfPint", "𝕴ภc☢meMสch☢mคn🏀", "๖ۣۜ山Øozץ๖ۣۜ山ome♛", "J𐍉viαℓC𐍉vi𐍉", "Exͥamͣiͫckร☢ή", "🌰🆂🅴🅽🅸🅽🅶🅻🆂🅸🆁🅴🅽🅸🆃🅰", "⑉Officђ𐍉uττi⑉", "❅Ju͢͢͢diciøusᖘheสdjur❅", "Ｗｅｄｉｓｐｉｃｈａｖｉｔ▒", "▥Jeสncies†i?", "JohŇiteƤⱥ", "𐐚ewil∂ere∂Ne∂iภ", "ñê§łê§þê🐨", "Rᴇsp☢ήsΐvᴇC☢ήsi", "〖Is†rͥสlͣlͫץpe〗", "L𐍉veCaภdψMaͥภdͣeͫra✨", "F๏นghτsere", "𝕃𝕠𝕘͢͢͢𝕖𝕕𝕦𝕒𝕝𝕚𝕒", "☁Ofเrethe☢", "Aᖙeth☢☢LØυᖙmØυth💌", "CyͥniͣcͫalIntudynt", "CoภsนdBeสภs", "TheͥℝvͣeͫᖙS†aℝveᖙ", "Iτedeຮeded", "♐OfficebᵒℽOffee", "︽CӨ🅽𝔞ℓsoᴍe𝔱tee", "🐯ᎠⱥrlΐภgArҜs🅱ⱥt", "Heͥstͣsͫookerinec", "TaleήtedEήtiรa⚔", "S๏ñcͥifͣeͫ͢͢͢Mนñchie🎤", "JeͥcrͣeͫสCleʝerrℽ", "❅ᴛᴏᴀꜱᴛʏᴀꜱɪᴏɴᴅꜱᴛ❅", "թг๏Ɔoupsoɹʇɥ", "HeaຮΉ𐍉ducҜᴸᴵᶠᴱ", "⁅๖ۣۜƤoeτicViτhic⁆", "S𝒽ⁱlⁱŇgบre", "IfΐeรeŇUŇΐverรe", "Offᖙ🅰𝔶botᴳᵒ", "𝓟𝓸𝓻𝓮𝓽𝔂𝓷𝓽𝓼𝔰𝔲𝔭𝔢𝔯", "𝓗𝓮𝔂𝓸𝓗𝓸𝓷𝓮𝔂𝓬𝓪𝓴𝓮🎨", "ƤlคץรChⱥή∂☢ese", "Awes๏meStanψt๏m", "FαcͥτoͣrͫyInτorτ", "≪Nummiຮ๖ۣۜ山his𝔱l͢͢͢er≫", "IssℓαtSℓoͥppͣyͫ", "PђeαlαHitcђeภ", "ⱮօղѵҠօմҟӀąʍօմ", "🎮丹թթєɐli𝓃gQuɐli𝓃gє", "「Grǝacklψeτ」", "IήesนrͥŇeͣmͫ", "≋Beήτic͢͢͢ediή≋", "Meͥภeͣqͫuสles♦️", "😦UnwielᖙℽNexק", "WateᖙeToℝ℘eᖙo", "Veℝ∂สntͥSiͣmͫสntสc", "「ƤสrigͥCoͣrͫriᖙor」", "Anͥkeͣnͫtscru", "⪨Äภioภ§Jสภeman⪩", "ᴵᴬᴹDaͥzzͣlͫᎥŇgWᎥlieรτi", "Naΐgͥΐcͣaͫℓℓef", "『WสψstℝWสt🅲hfส🅲e』", "🐅Exקreαrfer", "OfͥfeͣcͫKΐck𐍉ff", "☽乃ץՇ๏קץՇђ๏ภ☾", "ṨuήnyAuserสny", "Meℝaͥ∂lͣyͫקen⚠", "ͲąղէìçմҍӀ", "Se∂iสCสucสsiสŇ", "OfͥfeͣcͫelŦec†𐍉", "He∂uαlrigive", "⧼Deͥpsͣeͫᄂfarg⧽", "AήixecemØcultiή", "Ŧollicuรectior", "W๏rͥteͣsͫSᴍartie", "丹ภefFคภgs", "Ot☢☢sℓคwคℓtede", "❅WђizคJคckWђi†e❅", "Heɭɭ฿☢ᴿåbo", "「Abi∂iŇgDicaŇℽ」", "Isͥheͣrͫΐτaℓes", "᚛Θficຮoภeຮ᚜", "๖ۣۜᖘⱥuͥncͣhͫyCⱥustiᴍ", "🚊Ӌeสτenͥτrͣiͫ͢͢͢n", "𝔗ec†iga†eechersҜ♐", "⚡U†eͥreͣvͫe∂a⚡", "𐄡ɢlaήsaรailØrM͢͢͢aή𐄪", "ⲘสysτᎥnⲘᎥnou😌", "°”Ṩi𝓭ityethicl”°", "J๏ѵiaℓP𝓇iaℓ", "๖ۣۜℜevⱥsนpSⱥssⱥfrⱥs", "M☢tivͥαtͣiͫngB☢nαtiff", "༺Thøuɾnᵃnꜱt༻", "I๓թe𝒸cąbℓeMusper☘", "✰Aאָiͥcaͣpͫђeℓ✰", "ᶠ͢͢͢ᵉⁱᵍⁿᵉᵈᴸᵉˢˢᵃᵐᵉᵈ", "𝒞𐍉nl𝖞r𐍉𝖇s", "Grαcΐ๏uຮCaͥ๏uͣnͫc", "Mสmm☢τhT☢τh☢ldi", "𓊈卄ανσ͢͢͢ℓ丂αναє𓊉", "✰W☢☢ℓutte∂espect✰", "⁣𓆩ⱮմʂʂҽąⱮմʂէąçհҽ", "Ofͥerͣsͫやr𐍉fess𐍉r", "๖ۣۜ฿uͥ†sͣiͫ多Mu††er", "SⱥτBigPØτⱥτØ✪", "Inf𝔞M𐍉nFr𝔞ΐรe", "〖IŇviŇci多leAdeŇƤual〗", "🐯Hคndy͢͢͢Hคtiɭity", "ˢᵐᵒᵘᵗᵉᵐᵃᶜᴳᵒᵈ", "Ofͥteͣdͫΐe฿edbeⱥuty", "⦃ExtegสExtℝ𝒶H☢t⦄", "Orͥ∂sͣmͫนcessน⚔", "Y𐍉utђr𐍉uภ", "✰Tђℝ☢titsc✰", "íɑʍ≋AℓtŁiℓŦ𝓇Øℓl≋", "FiήgtFiggץ⚔", "ScieήtificPสti", "GrͥesͣsͫB𐍉sslคdψ", "Mⱥภumbℝip", "T๏iͥndͣeͫLⱥcewing", "★Shͥouͣlͫ∂en∂ieve★", "Suallizatiᴍe", "♐P͢͢͢herstst☢", "I†iͥonͣgͫingeℝna⚠", "Ofͥfeͣdͫg๖ۣۜßαllØfFαt❥", "๖ۣۜℜaͥnsͣtͫredu", "MØcipParรήip", "Se∂iͥรhͣiͫmส∂", "𝔚𝔥𝔞𝔫𝔡𝔢𝔱𝔉𝔞𝔫𝔞𝔱𝔦𝔠⇜", "๖ۣۜOffeℝtBαffy", "AttentiveFornate", "Faͥveͣrͫnext", "UnusuⱥʟFrøungdø", "Geຮຮionͥຮtͣaͫ", "୨丹𝓃d𝓼e๖ۣۜƤⱥ𝓃cⱥce𝓼⪑", "ร๏ɭɭร๏ภɭץ", "S℘iяiᵗe∂Pie🅽t💦", "L𐍉𐍉ภψSi𐍉ภaͥlsͣeͫ❥", "🎮𝕊ecτolαrץຮτ", "◤NorNoRegαrᖙ◢", "DeͥℓiͣgͫhτfuℓAnᖙeg", "Rec†scess", "✫Itͥคlͣlͫsømme", "⧼ᴀภqͥ𝕦eͣsͫτeds⧽", "๖ۣۜ山angຮᎥRagຮ", "HeͥᴍaͣdͫeDelᎥ𝖗Ꭵum😇", "⫷M🆄ɔtsΐ𝕓lest⫸", "Iภge†eͥℝeͣdͫu", "🐥IภêℝtAshtaℝt", "Pieceℓᴮøøkie🌺", "Ƒrͥedͣeͫτw☢u", "Imק𝔯essi𝕧eや𝔯iτs", "Reͥivͣiͫ๖ۣۜᗯeiner", "ReήsecoEnglishRose", "᚛UήisliήBigHuήk᚜", "TΐrelessToήdessΐ", "Sµccessfµ͢͢͢𝖑Toccesse", "HⱥŇceIcepicҜ❥", "Trͥitͣeͫ丹ภtຮeภtr", "AlสrᴍingSђerᴍ", "୨Fei𝓈tyLexte∂i𝓈⪑", "⚡H☢sH☢neͥℽbͣuͫn⚡", "🍃𝕲rคᎥŇคÈlคᎥs", "CℝectͥℓiͣgͫŇe", "Sollℽstriongst", "⦇¢aphօℓօSnappy⦈", "◤𝓟𝓲𝓰𝓰𝔂𝓒𝓸𝓾𝓰𝓰𝓵𝓲𝓼୧", "⚡Abͥ☢nͣdͫynᎠynสm☢⚡", "∉Gℽmͥnaͣsͫт🅸𝖈丹terΐamn∌", "▥ƆouƆouʌıɔʇıou¿", "𐐚ץƬuƬtepØω", "OffeรeรSugαrͥᖘuͣfͫf♛", "【Çðñêð₥͢͢͢å¢ïł】", "Aгti𝒸ulateUภtalaภ", "🆆🅷🅴🆂🅿🅸🆂🅷🅰🅳🅾🌗", "★AbͥreͣcͫuℓCuթieDoℓℓ★", "∉𝕾nappʸ𝓝alꜱ๏∌", "Fℓน††eriή𝓰T๏ήce͢͢͢∂in", "PeℝfectIteήeℝ⚔", "😋𐌁𝔯αήgsτ𐌁ruddah", "🌳H𐍉Ňe͢͢͢st𝓘Ňew", "ℓเττℓєA𝕤𝒾𝕤͢͢͢ul🅰natedes", "Agͥreͣeͫⱥ多leCⱥ多liรรi☂", "◤AŇdสtMสŇŇeͥℚuͣiͫŇ◢", "CaภdefJefe", "Neττeຮ℘andaττr", "Ofτeᖙบree", "Ƥ𝕣αlØ𝔫scallᴳᵒᵈ", "✰Habi†ualΘn∂ingua✰", "【EaℝŇestͥIsͣtͫaŇdne】", "ArΐsVΐssψ✨", "฿eenGoatees⚔", "Atereatha", "Θffi多ℓoTrou多ℓe", "GraվรⁱRนgraτ🌻", "𝕴ñⱥτ🅸vScrⱥtchy🐆", "AƤeͥndͣiͫMonLaƤຮin", "StͥunͣnͫingAndin", "⩻๖ۣۜᗯorl𝒹ly๖ۣۜᗯonsi𝕥u⩼", "Men†e∂eem", "〖CoℝdsђWaℝdoŇ〗", "🐫PønΛctiαrsenaℓ", "ᴴᵃⁿᶜᵉˢʰᵃⁿᵍᵒ▒", "PℝocͥRoͣbͫotobαmα", "BℝeͥncͣyͫtRสncoℝ", "▓TreήdץTrคm", "𝕻𝖑𝖆𝖙𝖎𝖘𝖊𝖓𝖙𝖙єค๓", "๖ۣۜBloαtyAnat͢͢͢e", "【Cบrruτiv𝖊͢͢͢ภ】", "✰VΐcͥtoͣrͫΐousStor∂eส✰", "✹Shΐll๖ۣۜᗯildfire", "Noωαselli", "Guͥΐlͣtͫless𐐚otlץsΐs", "RⱥyRⱥyDisђirⱥƤ", "𝔚hΐ†eℽWhΐm", "「Ciaℓiͥᖘhͣoͫbia」", "𐐚eeͥᖙgͣeͫήve", "千lu🆃🆃er𝕚𝓃gṨαu🆃e🏂", "᚛BℝαzenBℝeα᚜", "CoήMonƑrสise", "๖ۣۜ山iͥggͣlͫץ๖ۣۜ山ing⇜", "FeͥllͣsͫoϻƤlo", "㍶𝕎𝕠𝕟𝕕𝕖𝕣𝕗𝕦𝕝𝕍𝕖𝕣𝕗𝕠𝕣", "Sτiᵛeʀmin〽️", "Rilαtoℝyᴍ⚔", "₧Anสτ͢͢͢Rสτit☢", "Wสs†eGℽmⲘสs†eℝ", "PlaภtøƤee", "⚾ꜱcrค℘℘yIsτraℓΐf", "DittØήSqͥuaͣtͫty", "⚡O多ʝecτiveDeco⚡", "TสiͥsiͣgͫerƤsץmend☘", "OrryᎥeรᎥ๏", "Ƒuͥℓdͣsͫhinec", "ThaͥŇkͣfͫulChaℝᴍis", "íɑʍIsτʀᴇթ๏sᴇτ", "★Θfferencesթece★", "Ar†h☢uldre🅽diส▤", "ForgivingForn", "N𐍉ᴍbec𐍉ήts✨", "๔เгєςՇгє๔เς🐵", "〖Oภvest𐍉pΐ〗", "⫷Ofteภ𐍉Gift⫸", "🚣ᴅʀɪᴠᴇɴᴇᴠᴇʀʀ", "RⱥsƤberrψ๖ۣۜ山heriesi", "Affeuredi", "MⱥiήτFunͥτoͣnͫ", "ΘffireKhⱥήzir", "Meͥdeͣmͫeήdiήgeή", "★I†uℝFuͥℝmͣuͫzzℓe★", "⫷FⱥrϻbØyFⱥϻb⫸", "Itarᖙรcreϻa", "⋉Direllooductຮe⋊", "TreαNeαt𐍉", "SuթerBoℽAvetℽթe", "°”φմէէҽԱէʂվβìէʂվ”°", "Oⁿeรsitedit⚠", "⸔Ṩaΐηg↻haΐ͢͢͢nຮ⸕", "I𝓃gMøn🅰nge", "A∂aptableやapti☢ng", "〖WⱥsτrSτⱥbͥbeͣrͫ〗", "ཌInͥgeͣdͫighØ𝓊ndད", "█▬█ █ ▀█▀Asser†iveSegingin", "Ofteᖙucee︾", "CђⱥrᴍingPⱥcerᴍⱥr♛", "฿eͥirͣoͫᴍeŇclo", "∂яα¢σηιαη卄αη∂яє∂υ", "EthΐcαlͥHoͣdͫyetre⚠", "〖Tiͥสnͣyͫouℓthom〗", "AbrasiveBrivilly", "InceirKissyFace", "Ittelitingly", "SomentsSoul", "Wooksommen", "UnizPizzawife", "FersoPowerpuff", "MelodicDell", "SoftyOffee", "Joidaskin", "WhowerHotsnap", "PassionateLasiste", "ProbseVinDiesel", "ForessiKisses", "DawbufBunrose", "JudensPendulum", "DayeSaySay", "Watertitur", "AntilkMilkman", "Magaltyea", "Houstsibl", "IngheoAngon", "Byribibeg", "Gingentray", "Hichicapho", "ResoluteAntardso", "Andivedyngstims", "BeautifulToldif", "HostilityBustay", "IngiShinyGaze", "Anytimple", "NowSnookie", "WereituAtum", "Gortaitic", "ImposingVelsical", "Witionsips", "WhiteyWhati", "Grabourch", "ToastyImpaspen", "SensibleAlsem", "Enendscandspip", "Itycomplandshor", "VictoriousWousi", "OfteOfficeboy", "Phoodyeang", "BeneficentTocen", "ItisBityarani", "Hourabony", "Autooligue", "IngenScrooge", "YoulloDulhaniya", "CoolguySkinqu", "Itiattive", "CambessCupcakes", "Oferbelogr", "Ofewposicu", "JockyAckn", "HumptyImpelic", "ComptsBaldyDom", "Whaviatte", "SoftOffel", "Werediand", "RegralPlegasus", "ReacPokerface", "OffingeCoffy", "Beedaltyo", "ConsistentOffortsi", "AstoundingEst", "Onquentabliate", "AwesomeTomostur", "DullDozyLemodu", "EsionlyGillygum", "OptimisticPtinknew", "VoluntaryRary", "SublimeItsubi", "ModestEctoormo", "AnglysSilly", "AmetionMinion", "MentMedusa", "Rompleseral", "AxiomaticMantr", "Arsecritom", "WarleffBuffalo", "YieldingForier", "Maternize", "PerfectWeregife", "Beganiateds", "EvesevStSteve", "InsibilWinkyDink", "OndoingDomino", "ProgetcBucket", "SairaciElais", "RectProject", "ObservantLarbsedi", "EthicalPriametr", "Nowerstope", "OutitiTooti", "BeautifulFoutes", "MilwaspChiliPepper", "FessoPissant", "SedoFirebred", "WasedlaTiddles", "AliveKelichap", "PuringiTinyBoo", "LincystColestah", "CentoodDoobie", "ScratchyScra", "Ityretuddynt", "Offeckert", "GymGuyMgbil", "FireBerryBethindi", "CrankyBanc", "Shitislonesp", "Whowediff", "WervidVivitar", "CarthaHatred", "EminentKinteeni", "Phystudeat", "Aneumenctr", "DiplomaticBerat", "ItyansSugarBuns", "ZealousMovereat", "MelodicOloodpor", "Fookeyedep", "BooBooKittyRettlyst", "BeirstHairBall", "IngmerRhino", "Gelsouldi", "Ingdpoici", "Ingledible", "PrettyProessi", "WherviKicker", "DalikTikku", "IninFeint", "Aestudireastal", "LumpyNemples", "SmokeyMorsiall", "Founititag", "FrownyTownswe", "AntionFunTime", "Keestingko", "AltruisticFaric", "MyonlyDestrion", "Herrionati", "Adyintred", "DevoutItlereve", "IngshiDingo", "Wormserld", "OfficeboyFillan", "PositiveNovermal", "UldfuBaldman", "Diedinsto", "CosseaPoppyseed", "Meashichem", "EtionSeatides", "KissableDontrisd", "WaysidKidSister", "AborTurboMan", "Encipansoncla", "BlueJayJaimingi", "Hissiodustomer", "Eponesibadedge", "SincereAnce", "Forightse", "Peraddiesphic", "MookyPorPooh", "Paideliti", "UnpunUnoShoten", "Elegirionvedr", "InguDerange", "Offermang", "TorClaymore", "VengefulPentse", "PrincenHitchen", "Medeconlyme", "『sʜʀᴋ』•ᴮᴬᴰʙᴏʏツ", "꧁༺₦Ї₦ℑ₳༻꧂", "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐", "×͜×", "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ", "亗", "꧁༒☬sunny☬༒꧂", "𝓑𝓻𝓸𝓴𝓮𝓷 𝓗𝓮𝓪𝓻𝓽♡", "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐", "×͜×ㅤ𝙰𝙻𝙾𝙽𝙴ㅤ𝙱𝙾𝚈", "꧁▪ ＲคᎥនтαʀ ࿐", "꧁༒☬ᤂℌ໔ℜ؏ৡ☬༒꧂", "Ⓥ", "メ", "꧁༺J꙰O꙰K꙰E꙰R꙰༻꧂", "░B░O░S░S░", "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ", "꧁༺ ₦Ї₦ℑ₳ ƤℜɆĐ₳₮Øℜ ༻꧂", "✿ • Q U E E N✿ᴳᴵᴿᴸ࿐", "🅑🅛🅐🅒🅚🅟🅐🅝🅣🅗🅔🅡", "༺Leͥgeͣnͫd༻ᴳᵒᵈ", "🌻ｓｕｎｆｌｏｗｅｒ🌻", "꧁ঔৣ☬✞𝓓𝖔𝖓✞☬ঔৣ꧂", "꧁☬⋆ТᎻᎬ༒ᏦᎥᏁᏳ⋆☬꧂", "ᴹᴿメY a h M a t i ☂️", "꧁༒Ǥ₳₦ǤֆƬᏋЯ༒꧂", "ϟ", "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐", "ꨄ", "𝕯𝖆𝖗𝖐 𝕬𝖓𝖌𝖊𝖑", "꧁⁣༒𓆩₦ł₦ℑ₳𓆪༒꧂", "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ", "꧁༒☬ᤂℌ໔ℜ؏ৡ☬༒꧂", "Dɪᴏ፝֟sᴀღ᭄", "⸙", "ＦＺㅤＯＦＩＣＩＡＬ亗", "Aɴᴋᴜsʜ ᶠᶠ", "Lixツ", "♔〘Ł€Ꮆ€ŇĐ〙♔", "꧁H҉A҉C҉K҉E҉R҉꧂", "OPㅤㅤVICENZO√", "𖣘ᴰᵃʳᴋ᭄ꮯꮎᏼꭱꭺ🐲࿐", "『sᴛʀᴋ』ᴷᴺᴵᴳᴴᵀ༒࿐", "ꔪ", "『ƬƘ』 ƬƦΘレ乇メ", "Ꭺɴᴋᴜꜱʜㅤᶠᶠ", "꧁☯ℙ么ℕⅅ么☯꧂\ufeff", "Ꭵ°᭄ᶫᵒᵛᵉᵧₒᵤ࿐♥", "•`🍓Valerie xavier axelelyn🍥", "αиgєℓ _ℓιfє ❤️🥀", "ㅤㅤㅤㅤㅤ", "ᴛᴜʀᴜ ᴅᴇκ友", "━━╬٨ـﮩﮩ❤٨ـﮩﮩـ╬━❤️❥❥═══👑ľøvē👑 ═", "×͜×ㅤ𝙰𝙻𝙾𝙽𝙴ㅤ𝙱𝙾𝚈", "ᴛᴜʀᴜ ᴅᴇκ友", "『sʜʀᴋ』•ᴮᴬᴰʙᴏʏツ", "ᴶᴬᴳᴼᴬᴺ・𝙀𝙢𝙖𝙠友", "BSK・L E G E N Dᵀᵒᴾ", "亗", "꧁ঔৣ☬✞𝓓𝖔𝖓✞☬ঔৣ꧂", "BSK・L i e e Eᵀᵒᴾ", "BSK • ＫＩＬＬＥＲ亗", "ᴶᴬᴳᴼᴬᴺ 𝚃𝚞𝚛𝚞友", "🍎", "꧁༺༒〖°ⓅⓇⓄ°〗༒༻꧂", "꧁༺₦Ї₦ℑ₳༻꧂", "ᴶᴬᴳᴼᴬᴺ・Bocil 友", "꧁☆☬κɪɴɢ☬☆꧂", "꧁༺nickname༻꧂", "★彡[ᴅᴇᴀᴅ ᴋɪʟʟᴇʀ]彡★", "『Ѕʜʀ』• ℑℴƙℯℛᴾᴿᴼシ", "☯︎Ꭱ Ｏ Ƴ Ꭺ Ꮮ 亗 ×͜×", "", "matao", "kkkkkkkkkkkkkkkkkkkk", "Hiiiiiiiiiiiiiiiiiiii", "Emmett", "spencer", "copy my tank", "all i know 2x", "RATATATATATATATATATATA", "Thisislie", "jungleman", "austinz", "Austinz", "ur nub", "why yall so bad", "mi(mobile)", "awesome soccer(pog)", "2377285 auto triangle", "THE NEW BOSS", "hawaii", "M.", "turaco", "Neo", "S8NF-EB3J-FHEI-N264BR3KJ", "5555555", "ur mom", "2+3=5", "one piece", "Fallen Boss", "Roomb 2.0", "earth = sphere", "Roomba 2.0", "Dulanka", "i dont know", "Aith", "I'm your son", "TaKE LOl god shoot", "2+2=4", "Fenrir", "bewear GX", "Kalashnikov", "hey sister", "Sup :)", "wall hallo", "I stand for Liberty", ".", "OliwierQ Chojnacki", "MetatronXY", "Arcturus", "OP", "teste", "ink sans", "ropell", "PLL", "Solaris", ":v", "OBL", "teach me", "-_____________-", "rwegwerg", "n to level up", "thiago", "FAST", "This is far", "jojo", "Anak why u solo", "Lunatic", "sin", "nate", "popa peg", "Sssssssssssss", "Meepet", "hose man", "Beast", "angel", "}{eonyao", "minty fresh", "Evil }{eonyao", "Tango", "pet :3", "knbg", "underverse delta sans", "fallen booster", "COMMAND.Z ANTI BOOSTER", "ANZAI", " manu", "lawless", "I don't even care", "Tesea", "Oh", "tree'lean", "Your Drones Will Lose", "Geo", "fotosintesis", "Floofa", "Pro", "h8u", "adreszek", "JOSEF", "Waiting on a Miracle", "Jain", "ReignOfTerror", "kakyus222f", "fdgxcgvx", "DPS!!", "Sentry :3", "oh im noob", "Math you", "twilight", "Soccer", "ikandoit", "RopeSteel", "no-one", "omni", "kkk", "putre", "value1", "Fart", "REEEEEEE", "{AI} Bot", "xdnha", "Ni", "sheild", "CrAsH", "play", "Shadow closer", "Fire", "Actual Pro", "ATK_X", "Unravel", "PSYCHO", "Yrneh!", "chop", "aa", "This is the tale of Me", "ChRiS", "GABRIEL", "power", "force feild", "Drabbleasur", "JokaDa", "Pet tank", "primos bros proo", "You were so mine", "Railgun", "ARENA CLOSEA", "Force field", "duck", "X.ALEXANDER.X", "Wolfgang", "baited!?!", "PERU", "force field", "Aespa", "oni-chan~?", "copy my tank pls", "ns", "64M3R_999", "Fartington", "Yimo", "Stand For Ukraine", "hi.", "This", "Lena", "A TANK", "AA01blue", "Winterblade", "AndoKing", "alejo XD", "%Weeping_God%", "tribe", "Auto 4", "It's a lie", "bye jax", "tkdarkdomain", "Eydan ツ", "jax sucks", "Nerd", "Q8238q", "Zer0", "The cLe@nER", "Protect", "JSjs", "Angela", "neep", "", "@- @", "ducky", "bo", "_hewo", "Raganrok", "Christofer", "Saturn", "Nintendo Memes", "{RUNER}", "PUPTO", "ku", "Enter Me", "AWESOMENATEXD", "rf", "TankTankTankTankTank", "Someone", "turbo bros", "Yelloboi", "Nothing to lose Tank", "Thriller", "BING CHILLING", "xDD", "CDU No.30", "lenin12", "junhu", ",,", "super stinker", "Base", "pro", "oreo", "ggking", "GiGa LEN", "PH|Player!", "Weakest woomy player:", "Jekyllean", "TaKE LOl :D", "The Tanky", "Phong", "$shark buger$", "g  ergd", "bobbb", "your son", "das", "Guardian", "Wherly", "David Sanchez", "surprise", "comma verga", "LorcaExE", "loz.", "Mobile sucks", "Karen-SpeakToYourManager", "noir", "press n to level up", "GZGESETA", "Debreo", "Parzival", "muhahaha", "Fotosintesis", "tiler bolck man 456", "EternalMakaush", "hi8addas", "Hehehe", "reeeeeeee", "~", "yuan(hi)", "King_plays", "1 hand only", "bb", "UpdDAR3", "Music man", "RISK RISK RISK RISK RISK", "QWERTY", "12345678910", "6", "kk", "q__o__h", "USA", "NOOD --_--", "Giggity", "Kristoffer", "Nerblet", "gdfaaa", ";jl", "100000000", "drone users are weird", "Xenon", "not Devin real bruh meme", "MeepMweep", "oa", "RavenXL", "where are you fern", "AnyMore", "I", "huy vn :D", "jk", "bosss?", "Loop", "farmer's tan", "Until next time", "KK", "Ultra", "?????", "Tt", "Tal", "dddd", "998", "jUst TrolLinG aRouNd", "MK", "Don't Make Me Mad", "minh vn", "Dragon ,You Dead", "hWE", "HORRIBLE LAG i'm pacific", "You Made Me Mad!", "00", "DEMON", "Thor 4/10 :(((((", "Giant Justice", "crgine", "vnnnnnn", "Finally, 3 m on siegers", "FBI", "huy", "-  k    i    n    g  -", "ciganoit", "waste of time", "i'm a sadboiz (joke)", "imagine being nub", "solo 1v1!!!!!", "leonardo YT", "nobodynoticedyouweregone", "jack.vn", "Evan", "(:", "Astral Java", "Me n You", " hihihihuhihihihhiihhihi", "hara", "B", "Nooby", "EZ", "MrYoungSir", "manne", "Ragnarok", "Truchenco", "m", "LEGEND", "SINBADX", "let me farm alone", "Friendly /j", "bye error i gtg", "Pollo", "7/11/22", "jimmy", "Guilherme", "meb", "victor", "I use handphone", "PEGA(SUS)", "owo", "Mort", "the j", "yang", "go", "Very dangerous", "I'm harmless! -Press N", "brayan el proxd", "mateo", "back pain", "nnnnnnnnnnnnnnnnnnn nnnn", "CraZy III", "2-3-40", "Yeeeyee", "car go tornado", "hehe!", "taco", "@@@", ".v", "Roronoa Zoro +++", "yyyyyyyyyyyy", "Tki", "Siege weapon", "BDO", "bcd", "100k speedrun", "Shoot gun pls join", "random tank", "virtual machine", "Destroyer only", "DEAD", "vn <>????", "Ma$t3R", "R", "Justa_Noob", "Ma$t3R lucky", "Kaboom", "mystery", "pro vn", "YOUR JORDANS ARE FAAAAKE", "147 toxic", "e xin thua", "ew", "mega monster!", "NATHAN", "pe players be like:", "yess", "wait", "dunt kell meh plas", "FEZTIVAL", "Blyat", "wake up", "Rainforest", "duos", "PB123", "go sleep", "nieeieeeeecceeeeeeeeceee", "Eren slenderman", "rtt", "ssss", "press n = score", "Around", "1m plez", "im the best", "asdasdasd", "race me!!!!!!!!!!!!!!!!!", "lp lithium", "queue", "ttjjl", "heyy!!", "Yuck", "sus destroyer", "silent", "47/107 :(", "miIk", "water", "Sas", "The Destroyer", "Ff", "Master", "asd", "k", "dk", "Exotrezy", "qp", "3+3=6", "nreferif", "blitzburger", "Mr Shorts", "iuiui", "yu", "Mem mem", "8787", "adymin", "oooooooooooooooooooooooo", "Bots Drovtend", "Panzershreck", "nyac", "ccf", "Mh?", "joshs", "beep", "hsg is sb", "404 Not Found", "Michael", "thinh", "ABC", "ggwz", "Indo", "uwu", "THE King", "Nagi", "Pato Lime", "aaeaeae", "BUGEN", "Area closer", "Unbalanced Build", "//", "nnw'", "Door", "Matias", "ky", ";", "Gavin", "Lucy", "Kitzuneko", "This is the tale ofn", "Hank", "hiiiiiii", "^---------^", "screw", "LSV-005", "Hiary", "jonh real", "Nothing overlord", "Portaun", "20240123", "ggs you are good drone", "NoU", "mcbeef", "sg ez", "Chase", "it's a lie it's a lie", "qwertyqwerty", "LEGENDARY (VN)", "NATH", "backrooms", "Daffa", "MATHUEL", "vn luffy", "HAHAHAHAHAHA", "Oofed", "Hung dayy", "noob vn", "Sensor", "Marco the great", "Ghgft", "unscientific", "EnemyTracker (LookAtMap)", "yeey", "oh, dear", "Anderson", ":> hi", "redhood", "Volderet", "Harry Styles", "WINNER", "r u dangewus", "odo", "maksim", "Im uwu", "eryweufhw8r46yq3782edtqf", "Katya", "Unlucky", "Maga", "BASE MAKER", "td", "sure sure sure", "Zarma", "octavo", "evan", "U  N  K  N  O  W  N", "jbc", "exc (real)", "sonick12", "exc (fake)", "~A~", "shadow", "Yoriichi Tsugikuni", "p1", "Hanumanumani", "bob the builder", "BLITZKRIEG STRAT", "sus", "India", "Oof", "kiyo", "Toopy&Binoo", "I'm Innocent", "GujiGuji", "SANS", "LoSTcar", "UNGA BUNGA", "add me", "Meeps", "afafafafafaffalafel", "........................", "Vladmir Poutine", "EEEEEEEEEEEEEEEEEEEEEEEE", "SIEGE  lhaahahahahahah", "TCO (The Chosen One)", "Daizole", "BASE", "wibu king", "rainbowmonochrome", "Vincent Ling", "BruhBruhBruh", "Eternal(VN)", "sss", "testbed B", "Yeeter", "Oi", "ooooohhhhhhhhhhhhhhhhhhh", "Ardenll54", "$$$", "S", "nat", "Sheep", "Imagine", "ScoutTF2", "Saking", "Hahaha", "poppy", "skitlies", "Fallen Overlord red", "Relosa", "pacifist cant help sry", "fk demon", "Idk...", "D=EMON$ do u know?", "sinx (fk demon)", "Fruits", "Hehe", "Fallen Overlord", "Faster", "BulutMobile", "Awzcdr", "mega", "Giang~Mweo", "General", "Winner", "=)))))", "..............", "DEFEND", "Hiary4", "Eye", "Merdka!", "Just watching", "zeke", "boojawzee", "DESTROYER (VN)", "754", "hehe", "HACKER", "bugo", "RRO", "wltjdwns836", "Shadow", "JUIHAN", "66", "monke", "hi vn 1", "wltjdwns234", "GHASH", "3310", "undecidable", "10xyz", "V&N", "LintanGG", "ak", "Arena   Closer", ">", "TF2 Heavy", "feztival", "Ragnarok-eternal", "Revenge", "Ficli", "baos", "{ HEALER } +", "Ian6000", "Shhh!", "loxc", "Banned from seige?", "1457", "666", "deezs", "nn", "Use me as a shield", "Yocto To Yotta", "Dorcelessness.", "3+4=6", "superium.", "are the dominators blind", "3+4=7", "Pew", "=))) (10%streng)", "Carsonxet", "X11 | Nebuqa", "look llllllll", "kkkkkk", "Sorry!", "thebestofthebest", "god fighter", "mafia", "My Music:)", "no u", "Begone (1v1", "HAH LOLX)", "skull emoji", "free fire  max", "No Player", "Imaginary", "Yep.", "| AL | ChillOut |", "mini boss", "yayayayayan", "Huggy wuggy", "Divine", "Mumo", "No", "Pyrolysis", "narutouzumaki", "THE", "TR", " PRO", "178965", "Comeme Soy Dulceeeee ;:(", "either", "Maze Cops", "give beta tester", "-.......", "i need score", " pimp <3", "nm00{", "you are my father", "DDDDDD", "6666666666666666666666", "AUTO 555", "me best", "Crozo", "longest run", "blood for the blood god", "i m a protector", "q", ":(eu tou triste", "Sheeps", "i asia so 300ms", "not an easy target", "MyLittlePony", "little one", "oo", "cool kid", " BUB", "TTroll", "Onyx, The Fall of Hero's", "ツ", "ba", "Josh", "revenge:(", "La meilleure", "The leader", "n level up", "}{ello", " vikas", "Alpha Fart", "Matt", "fisch", "guy", "Cozy.", "Preku", "stuff", "friend to all", "Inverse", "no ;)", "Souper?", "):)                  ???", "Update", "down", "protectn", "Radiant", "gang gang", "Deadlord", "dude", "Asesinooooooooooooooo", "lucho", "Pounder | aaaaaaaaaa", "Hoping", "def", " sans", "LazuLight", "Pounder | pain.", "WHERED MY RELOAD GO", "eh", "RP", "wat?", "ehwhylag", "OFN tank", "Fundy", "how to stack fighter", "Hugo", "Ice Breaker", "Pew Pew Pew", "I eat dirt", "bla", "blue octos useless", "HAHAHAHAHAA", "Min", "Fatty", "Begone", "blue octos __", "willlddd", "what is this?", "Aleph", "Demon", "Error 505", "Horizon", "The Tale Of Tanks", "1+1=3", "sdddd", "ven", "Yujin_05", "99999999", "dead", "Flight", "ma ta", "anime", "cyan", "wreck", "senti <3", "Uh what", "Nya~", "APE", "Through the Rain", "no pew and paw here", "idol askib", "2...00++++", "jjjjj", "firework", "Jacob gomez _ Jadenian", "I'M CHILLIN", "yoavmal", "eternal.exe", "Bye :)", "no plz", "REVEnGE__+=!!!!!!!!!!!!!", "NEMDT REEEEEEEEEEEEEEEEE", "Abdurahman", "Boost", "hehehehaw", "fdb", "stay all over me", "maida", "thingy", "error", "jhh", "support tank", "HighFenrir", "B I G V I E W", "YYYYYYYYYYYYYOOOOOOOOOO", "fov", "OverGod", "Reaper", "Tanky", "Arena Close", "PPguy", "casa", "bruuur", "FALLEN. BOOSTER", "troll", "a polygon", "1st", "Abdule lah", "Fk", "can", "NUKE H", "Gutey", "42", "nobby", " //", "press n to levle up", "Pulter", "om nom nom", "+", "auto", "downside 930", "7888", "ium", "super idoi", "blessing", "Tricky", "BUILDERS!!", "Barry", "sandbox", "Y U NO?", "Let me free", "ME", "hacker", "a duck=", "Er0  VN", "legend", "zz", "epic nokia", "Gr8", "Sinx", "Hugh", "inverse square law", "Bodyguard", "Maximaths", "INDIA", "SPAXDE", "A - E - T - H - E - R", "K.I.L.L", "raoofOverlords for noobs", "seesaw", "zombie", "hhh", "The death", "im a yoututoer", "Brujh", "juan", "CCC", "Hint :D", "FnF", "uyuy", "fg", "friend of mo", "Blue are dumb players", "THE LOADROJOZ", "Test", "no plis", "HenHen", "HenHennnn", "COMEDORDEMAE", "TaserBlazer", "rococdc", "AHOI", "cocorito XD", "Yeet", "kendyl", "Adnan", "World", "THE GOD!++", "DOMINON", "sanic", "NitroX", "sonofgrits", "me noob", "dumb", "joe", "yesbody believs a lair", "Bocow", "nnnnns", "15", "kevin", "fshwel", "milena", "i see fire", "", "lopi", "over", "edan", "cats>dogs", "sedat emir", "not -_-", "motik_kotik", "Troll", "Angle", "sheeeesh", "Rigged", "pablo", "droldaed", "JokaDa: how incremente s", "Hinote", "7/11", "Arena Closer", "newae mobile", "THE SUN IS BURSTING", "o farinha SUS", "daniel zZ", "jj", "destroyah", "5664", "graumops", "Green will win", "acidre", "eutimato your bad", "kermit the frog", "jared2.0", "jjuanto", "beep boop", "tomas", "wee woo", "IwantLegs", "theres so much sercets", "da duck", "Flace_25", "Promax", "Asesino", "Manoel Rafael", "Mcmaster64", "nnn", "Dont away, noob", "zad5", "sdsd", "retard", "Add update for chat", "Bruh", "SWAT", "Vakvak", "Juan B)", "raoof", "DarkStorm3", "F-35", "Mr.Tank", "LA2T", "me no u(u know me)", "Pokey thingy", "huggi wagi", "godzilla", "Loki", "Hybrid", "Gusfin3  :)", "mAX", "Arena Closer", "Don't bother me", "Ok, Boomer", "perra el que me mate", "Mobile player", "This is the tale of you", "ducko", "Tubby", "your mom is watching you", "segurity 2", "lll", "Jr.Greeen", "Dddd", "rid", "aaaaargh", "stegosaurus", "Free Points? Nuh-Uh!", "a nuisance", "Poseidon", "Turbo Valtryek", "vz", "bryan  stichn", "urfwend", "Yodin", "hooray", "RENFORCEMENCE", "M163 SPAA", "Xant", "ayyy", "Randomness", "destroyer", "GB", "IMAXI", "F7", "twotales", "Gurmaan THE PRO", "Ayo peace", "hi ツ", "Scrub Exterminator >:D", "xia", "1{1}1", "DD", "Just Luke", "jose digma", "LORD X", "what's reload???", "AL|Air", "non't", "TryMe: DodgeBot2.0", "HexaDecagon(I grind)", "TryMe:360NoScope", "Error 404", "EDP445", "rsn.", "GEESER", "help me", "rotten punk", "solo vs 3", "all monsters", "ari", "Lore", "&__.._._:-:-:-.&", "Kalijia", "Rusty", "GUGUn", "hi :)", "truper", "goofy ah single", "ServentOfDeath", "J.L", "THUGGER", "ARKE:D", "The beep  duo", ">>>", "im bad", "Qscxz5", "CSDulce  Legend stop ._.", "poo", "StormX", "mafer bad DX", "Adymin", "FIFA", "GBQQ", "Wow that is not sure", "the 501st", "idonthavaccount", "baited??!", "Orn20", "theCityCR", "healersruseless", "Sin (watch my videos).", "list of noobs:", "extrextrehomiscopihobia", "N", "TOP X", "A3145", "letsbuildawall", "fev", "No one", "Guillotine", "Octavius", "This is the tale of a", "pain", "bgs", "auto gunner", "Necro", "antrax", "demon xd", "THe Emperor", "Stealth Jet Delta", "jace", "praca", "Arena Closer", "26.26k", "milky will eat your toes", "-K-", "TIE/IN", "u", "dez noits", "zx 33q", "heyyyy", "vvvvvvvvvvvvvvvvvvvvvvvv", "Multibot", "9999", "xan", "adelson", "1235434638968792345", "gruby", "EZNT", "cheap tank", "aaaaaaaaaa", "ryheghjt", "Celestik", "Pork", "Naruto", "GOMU GOMU NOOOOOOOOOOO", "apple", "somebody", "The gun on the wall!!!", "JK+", "starmie", "XD", "drakeredwind01", "This Is Nobody", "Arena Closer", "@ace", "Scoped", "Kazzbro", "348562347862349254127651", ".....", "NO MORE OVERLORDS!!!!!!!", "no c-", "Buzzy", "mom", "Chekks", "HAHA HEHE HUHU MOBILE", "bert", "leader Slayer", "na", "ZACHARY", " Iv", "Dogs On Mars", "Aquiner_ouo", "Thinh", "gas", "lautaro", "I also helping blue", "pet(XD)", "wow", "hj", "CraZy II", "laranon br", "XDDDDDDDDDdDDDDDDDDDDDDD", "eaeaeaeaeaeaeaeaeaeaeaea", "You", "zero to hero", ":3", "Lux", "magic_cheese", "good morning", "HAHA HEHE HUHU", "Red is best", "JK", "not onyxd", "help", "But you keep on breaking", "huttutu", "jjj", "hansith", "mds", "goofytank", "Korone Chan", "el pendejo", "razenezyou", "voltic", "qoh", "nya~~", "KL", " jeje", "asdfjkl", "Daisy", "zarity", "NobleSkele", "shhhhhhhhhhhhhhheeeeeesh", "kevynz", "Pewpew", "Star Ender", "Copy my tank ok pls", "JOIN THE PENTA PARTY", "bob AT", "basic", "jesus proooooooooooooooo", "um", "q00000", "adljsaknckjas", "OOOOOOOOOOOOOOOOOOOOOOOF", "TallStop", "Ops...", "underated tank?", "get error to 1mil", "999", "Comeme Soy Dulceee aaaaa", "Dangerous", "hyperbolica", "F-898", "Bubbles", "Mobile", "Arena Closer", "Darius", "123456", "Dev_Bs", "get rekt", "joker", "Mateus", "hvdhh", "Arcturus mobile", "PeNtaLOL", "Mr. Porridge", "go jax!", "E?", "Pew!", "BLAST", "level", "Vunda = Mythical", "Hi Levi!", "Hi Travis!", "Onyx", "T-T", "MiningMiner27", "laugh_laff", "UPdAE", "air", "C-7", "Hallo", "gonzalo whathat", "WHAT!", "NORMAL DAY", "Hi bruh guy", "VN chose machine gunner", "press N", "lets 1 v 1 bra", "rat", "asia", "HeNrY", "alp", "bayzid", "(LM)The Unknow", "aru", "DanZo", "Hii", "eeee", "nayc", "Maze", "ummm..... ok", "~Real_K~", "phong", "Support", "<1.5 is not enough", "=Z~", "Ban she", "comm ander", "Sei", "vcl", "Dapa", "T.Khang", "maikesito", "hihihi", "Dyaranhi", "W a t e r", "Fluffy", "223", "!ARNA LOSER !", "leave me alone!", "i use hacks", "EEEEEEEEE", "Always not alway kid", "GX .ver", "pro_noob", "Woomy", "boring survivor", "snaper", "val", "vex", "zander", "SPILKE", "as", "ok fine", "jimmy", "D19", "Nobody", "Paw Patrol", "pup", "eliza2", "plus points", "Egg tart", "Lava Perros", "ah, but u dont see me", "1K Followers lol", "nnnnn", "aaron", "minecraft", "I'm in school", "Necromuncher", ";v", "IW", "bruhhh", "453 sfafd", "adefe", "SUPSPRIES!!!", "messi", "Neonneosh", "spadzz", "gofra", "glacieronfire", "gal", "Ifarm", "hihi", "Sea urchin", ":')", " im crying do to U!", "dragonfruit", "FIGHT", " Friend with me", "GxngW", "Galax", "hiro", "Master Noob: Bruhhhhhhhh", "Nerdy Ball", "kumar jeremy", "wendy imposter is sus", "CAL", "Manic|Eraser|Cat110", "hara dont trust me", "its me! the", "sinx", "Dr.Tool", "pro cart pusher", "casyle on the hill", "hi im one", "Tristan", ":p", "monica", "one floofy boi", "YinYang", "supraaaaaaaaaaaaaaaaaaaa", "{ 0 _ 0 } IM Agry!!!!!!", "lena<3", "Jolo", "antontrygubO_o", "Leo hacker", "lakalaka", "1nFerN0 - 1 mil?", "UPdArE", "Tembito", "yvyg", ":(=)", "heh", "jonh", "GIGA SHRIMP", "Sky_Good", "poyo poyo", "The Beep 3", "Mine is Mine", "Yurin", "Your Pet", "7U9ukhlehpwhowiwiijji29:", "orphan destroyer", "BA.2.75 Omicron", "Astagfirulla", "Fallen Spiddy", "lee77", "ghg", "PretendToBeANoob", "zuesa", "The Void", "rdagonfruit icy", "time too tryhard", "democrats SUCK", "erro 1mil im so bad:(", " {}?{}{}{}{}{}{}{}{}{}{}", "get error to 1m", "why is anni overrated", "kakyus222", "Have you seen me", "Arena Closer", "hiiiiiiiiiiiiii", "im noob", "Tattletale", " GoodLuck", "bazooka", "FFOx", "wellerman", "dont trust anyone", "eng pa", "Summoner boss", "kostas friends ? greece", "V:", "CorruptedSpectro", "hohohoimsanta", "1M ????", "BOOSTER AIRSTRIKE ORELSE", "nashe", "Algi", "(vn) go with me pls", "FPT", "2020 im new", "Player", "jkhhgg", "Cody", "Eiffel Tower", "BEST", "EVERYONE BE DESTROYER", "Pray for Ukrainian ppl", "prb", "Attacker", "RACE", "Yael", "Q Checked These Names", "(W!) Solo w!", "111111111111111111111", "GiantJustice-", "Nate", "Can pls be your friend", "Cxrrupted", "yourself", "you(VN)", "khoa fake:)))", "1VS2?", "IDK", "plplpl", "minh7cvn", "hehe boi vn", "Sinbadx", "One.", "Q is Awesome.", "laco", "RPs", "meris", "Harder Demon", "Florentino", "Well", "jerry", "Hut", "Pet bird (eat triangles)", "mustfarm", "I bet you never", "FeZTivAL", "Kid", "ABC", "PH", "Starlight", "MOONLIGHT", "STARLIGHT", "drift", "vilad", "MURIQI 03", "The Light", "cat", "DRUNK DRIFTER", "WHy", "mmm", "arR", "FINz'D", "aaaaaaaaaaaaaaaaaaaaaaaa", "biba338", ".chao", "HNY", "$$$$", "cat o' nine tails", "Block Craft 3D", "BRUH", "-vn-", "Azra", "bin huhu", "00123", "CN Tower", "t143", "Te", "Gun", "Sans", "Fggf8ytr ftrfbtruf7rtfru", "Ryuu", "overlord king x", "emir", "empire", "Player 1", "NAtZac1424", "BOT-342465", "Hdujdb", "We_peace_farm", "tuan", "A1D2J3", "323f", "MYJ", "bbebebebe", "T", "peace_farm", "hoang118", "lol2", "lol1", "gtegnugnbdbdtui", "the guy", "sang", "/SUP Maths", "_-zErO_-", " Gaurdian", "5C", "DJT", "silvally 1v1 me pls", "Arena Closer", ">:))", "valer", "G,bdx m", "|A", "No Ski||s", "Etz", "The Comeback of 0800", "sinbadx", "QWEr", "I need 3 1m more", "Njayy", "NOBDY w", "Sh |             _", "xs", "Jet(pet)", "INDIAN", "The Immune System", "TATICAL NUKE INCOMING!!!", "bigmac", "jjjj", "woi", "protecter_of_free", "bye", "WZ_120", "let me protect u my lord", "IMAGINE DRONE IN TDM", "wewewe", "Max", "Nothin", "uh", "Ancient", "NNNNNNNNNNNNNNNNNNNNNNNN", "MAXICHIBROS", "Belowaver", "trboo", "T^2", "Carpyular", "e04", "turbo", "Sei GF:3", "trbo trbo trbo", "Hymness", "red sun in the sky", "maze goblin", "Wojak R FuNNy", "Cloudless", "Hey!", "stacked", "sudu", "Launchers no buff no gg", "Sh | cc_", "Xentnya~", "Xjso", "Void", "nobody", "Pop", ":) cavite", "ja", "THEIA CELESTIAL RULE 34", "2 0 2 2", "i Saw LimeinSoccer penta", "WatchMeDestroyYou", "the new era", "osuer", "NOOB VN", "aleph", "cjccsqb", "lusy", "uudsibfhb", "ssdd", "trying out factory", "bo ckick R", ":b", "DarkHeart", "sd", "Bi", "ax", "23", "Ht", "rest area", "korne", "Around Calm", "duo octo", "Know", "Bruh player", "huh", "LintanR", "all my friends are cool", "lth", "Ilikefarming", "mie", "yo racingboi", "Kylaura", "HI!", "Leonard", "None", "ya", "Evaden K", "AZU", "Eating Fighter ^Silvy^", "Jeff", "elecgance", "667ifjfjijfo", "Necromancer Pet", "Vakst", "Forgor", "The Sliding Door Com", "Nest Keeper", "ka boom", "niitrooooooooooooooooooo", "mada fking", "Inside Out!", "healer", "Average DPS enjoyer", "i'm friendly", "Pablo", "Necromancer", "saffy", "Manager", "nmnmn", "Leon", "(vn)TTT", "NucelAR", "benni", "-1", "proo..", "chicken wing", "Zasriel", "Ground", "Fairy", "='))", "KSA", "DOMINATOR", "packy", "rrrrrrr", "xyz", "Gianan", "=", "VEISEL", "space", "bibi a", ":3 s", "600k is how far ive got", "u POO", "dfhdhgsdgf", "pighati", "BT_O", "3w3f9", "@@@@@@@@@@@@@@@@@@@@@@@@", "rain and fezti", "Arena Closer", "Sara", "b b/", "MG Post", "Rock", "The Truth Untold", "FireStorm", "chew 5 gum", "EreN0", "", "AI", "netherlands", "la couronne", "stone", "bello", "SUS", " OVERLORD HEROBRINE", "Chaini", "nhi015042012", "meo & sup", "tomnguha123", "uoivhhfgrryttyhj", "tyty", "taem?", "Nividimmka", "I use underrated tanks", "u stupid", "ferrari", "", "thearch.hmmmm it lurks", "i won't let it end", "college sucks", "color", "l7er max", "Duy Lee", "ugok", "Booster race :D", "im a joke", "ms tang", "ssssssssusssssssssssssss", "Elson", "BILL WIN", "Root", "el pogero momento", "I'm Friendly", "huggy wuggy 2", "wibu", "Griffy", "solo1 -1", "Like crashers", "wispy", "nice", "BUB", "X-BOX", "Gregoryelproo", "NEYONSTANK", "Closeyoureyes", "Utilisateur", "1% Power...", "SillyPantalones", "over 'GOD'", "First Time Play", "Arena Closer", "BoW", "Data Expunged", "Sped demon", "JOKER", "SIRENHEADYTs lost pet", "ggs", "hfski", "Taklao", "hack", "hi!", "karol43", "Aaa", "My struggle", "Italok", "Ghi", "Phycron", "fkdla", "dinogis", "HxD", "Battle Tank", "rt", "kral kaan", "leo!", "ndn", "222222222222222222222222", "leo! hel", "lumity", "kha", "552", "V VAG", "Windows 8.1", "'>'", "888", "mwr_csqb", "ANTI OCTO TANK", "mwrtql", "2022 SUPORT UKRANIE(2)", "thomas tank engine meme", "johnrobin", "Lostvayne", "ck to la roseanne", "Guard", "Bartek", "ww3", "doomsday bunker", "Hydra", "REVIVAL:", "Gggg", "Rick Astley", " HEROBRINE", "AFK", "BaLu...", "fux", "yes", "Raul39", " Sinbadx", "SAENG", "LittleBana<3", "TAIWAN protector", "bird said the n word", "me(duh)", "19$ fortnite card", "use this tank with me", "got 3m og save cant use", "sheesh", "Override", "Xiggy", "Saika", "jeb", "sant the sant the sant t", "uYu", "Panzer", "steeg", "Arena Closer", "i go UP and DOWN", "i like walls:3", "azuris lol", "HMMMMMMMMMMM you are L", "Murdock", "Optimus Prime", "Sleak Override", "ridah", "ballistic 2.0 fnf", "pulp", "u really like to hide", "ltbc", "when the", "Gangsters_Paradise", "Cochon", "Just Having Fun", "kavin", "Good Job Chicken", "0____0", "25m", "im poppin' off", "koral", "peace :D", "Medium tank", "dark:)", "kiet", "The One", "tilvlad", "Superchad factory", "meids", "the ruler of eveything", "GetRekt", "Nothing", "h1h4", "FOLLOW ME TO VICTORY!", "ciken", "this is the tale of", "Lera", "-heix-", "insta: 'brn.o.z'", "lena", "Ur4ny4n", "Byakugan!", "Lx1000000000000000000000", "turtle", "what tis going on here??", "Comeme Soy Dulceeeee xd", "Arena Closer ", "uirouri", "bruno", "Kaiju spacegodzilla", "haiw", "Heandy", "78d", "S. Liza Yt", "I don't need a Partner.", "CS Dulce oh ok -_-", "ninja", "CS Dulce i some tired-_-", "| AL | ChillOut | WWS++", "dragonfruit icy 1212 X4", "CS Dulce u no are friend", "i like cheese too", "Don't touch me", "look llllllll kkkkkkkkkk", "Dogs On Mars | no N", "box", "super", "CSDulce  .      _      .", "hope i dont dc", "A A A", "im your pet", "venom", "Hlp my ky r brokn", "ok la :)", "ffdf", "soccer", "(-)", "Mikasa Ackerman", "peasant", "get better bozo", "CARELESS(I care less)", "xz", "MARY", "DVS|| BuiltKIDD", "|AL|ChillOut|", "jajajaj", "Yimo (Friendly forces)", "HECool", "Just Spinning", "KermitHasAGlock", "AL| JustICE-theresaclone", "Sean", "ezzzezezezezezeze", "-Corrupt3d-", "Greg the Hunter", "hypertone", "eRAnnnnnnnnnnnnnnnnnnnnn", "mafer im sad 3<", "Nageron", "Eric.  The. Unstoppable", "Earth is Super Cool", "annoying tank", "ovMasted", "Turt Talks to Much.", "tanvik", "Here Were Dragons", "Cheese and Perfect RNG", "Mega :)", "Betelguese is Super", "error error error error", "Boomer Humor", "Violin is Interesting.", "Elite Celestial", "PROFIN try's 1m scores", "Big Poppa", "BUGEN+", "Saika/Na2/500ms+", "devil", "JACKSON", "Masher", "shuna no 6m", "YOU NAAASTY", "yahhhh", "Zephr is Mod???", "$1,000,000", "Rk", "1010", "idrk", "Calob", "It's all okay.", "fr0z3n", "TRASH", "Abrar", "c@rt3r", "pwease?", "thearchy", "Zort", "pwease lemme get 1m :D", "shush cat", "Mr lord have mercy on me", "xDer", "tennis", "ZEN", "multibxersin2tdm", "Bisax", "hhhhhhhhhhhhhhhhhhhhhhhh", "Arena Opener", "This is a Laser tank", "GOTTA SWEEP SWEEP SWEEP", "167", "Rusher", "bcj8721yt", "awa", "Ron_scratch", "Ahmad", "highh", "(O.<)b", "Op", "Tenzo", "Xlemargg", "hghg", "Legend", "PewPew", "Auto factory 19187944889", "Taha and Sardar", "Cc", "Wheaple the great", "VT", "LEGENDARY BEST", "Rd h", "GX", "maxi", "Doanh: basic win vn :)??", "bb8", "breaden", "1 cannon only chall", "Kino", "quang", "FRIENDS TO ENEMY", "NB", "hoang", "Inevitable X", "say cheese", "Anken", "gun boll", "soy sauce", "PUNSIHMENT", "Domain YT mobile player", "badog", "longvn racing boiz", "nicola", "race", "RJ", "eloxus", "kjiegu835946793", "Level  fun", "Purple2", "Hmm", "vicrouss", "GIGA CHAD", "Auto factory 37448936323", "NO ONE", "cai chua", "Spring Bonnie", "ALPHA CHAD OF CHADISTAN", "ajajajjaja", "dustnine22", "let's begin....", "DuckBatmann", "125   mn", "giraia", "Shoot double", "Spawner > Factory", "Fade", "Pat", "Kol", "max", "njs", "1+1+1+1=4 OK!!!!!", "POU 2", "morbius", "Sven.", "Prm", "Arena Closer", "no teem", "forest", "Im friendri your order", "(Tank) snowy! (Tank)", "Ur momma's", "rowan", "boknoy", "Shide", "redrealm", "lor", "-CN-", "yup", "Ahmet", "-CN- ", "JUMP ROPE 10 TIME IN ROW", "YOTTA CHAD", ".ium expanDeR!", "elecgance4", "fix performanz, devz plz", "UrBadLOL", "suffer", "Destroyer", "ZZZ", "IM AWESOME", "tHE great king", "Nafi", "micsodaaaaaaaaaaa", "Raid", "W1lleZz", "saibou", "That_Thing", "hexagonal", "Panda <3 FFA", "Koala", "NEVER GONNA GIVE YOU UP", "simba", "Crush Limit", "No pp for u", "Arthur", "kiriloid", "AZERBAYCAN  TURK", "Arena Closer", "thien5011", "Raymond bince", "not  tifo", "THE FAT RAT", "greedy", "lightz squad", "64t", "Tri Angel-Booster", "sanesytp", "wasd", "Ryland", "Fallen", "PUSH ME", "dgfdgr", "Booster join", "Dorcelessness", "obed", "soy noob :,(", "Triangle Gang", "Dont pee on the floor", "Good!", "Andy", "ccc", "Gee, thanks", "WHATS UP BOI", "aronnax", "Person", "Annie", "Mellow", "TU VIEJA", "ace", "WoW", "friendn", "kirilloid", "meme", "sacapak", "Ethad", "Da boss", "XLF", "abominacja", "doge", "I'm Real", "sprotto", "Polandbanner oo", "brazen", "QUESO Y TORTILLA", "EDI", "A tank", "bvaietd?!?!", "eda", "I don't know", "badda", "threuagnduirx 1234567890", "gabi", "pastry king", "Ball", "gab", "Catalyst", "sssssssssssssuuuuuussss", "Healer", "put Factory", "Funky Fresh", "XRECS", "mlk", "3-D Julie Cat", "Elite Crasher", "Nina", "One Floofy Boi", "Tailred", "raindog", "SPEEEEEEEED", "unikit", "adrik", "Fallen Factory", "OWO", "Caca", "orange", "Cj", "carlitos pro", "ghostly_zsh", "poly :/", "imagine spinning", "kom", "austo asa", "0 helpful blues lol", "Sandwich", "The Influence", "F for Froot Loops", "Machine Gun", "Director", "ChEeSe", "Mud Muppet", "RSN", "5th base = best base", "A Poisonous Egg", "'CADO ON THE 'BOARD", "blue suck XD", "lumos - kms", "blue suck so bad XD", "Lifeless..", "igh", "<<< Saved by Grace >>>", "agdgdgdr", "youencounterHIM!yourDEAD", "dinmor", "Jess", "La-BareTTA", "Aim(^-^)Bot", "78d pounder op", "Update me", "Comeme Soy Dulce wateer", "mafer  <3<3<3<3<3<3<3<3", "Ainnim Loof", ":)           (:", "Windows8.1 Pro Build9600", "a spinner", "FAIRY", "Better Than U", "Eesti", "sssss", "Friendly Elite Crasher", "MAICK", "EIDOLON", "cx", "YO what? bro im out...", "Rest", "TheHero383", "Swohmee", "Swohmee: HowDidIDoThat!?", "pet brick", "houses", "SIUUUUUUUUUUUUUU", "S45vn steel op", "Astrageldon", "ijklmnop", "afk leave me alone", "Anti-Hax", "protec me pls", "Gonials > Bird", "Jachris", "Aj is dumb", "code master", "MONTER", "kase", "JaredUwU", "devon", "kase is good", "spider .,,.", "lily the pad", "Arena Closer", "Gorilla gang", "Alejandro 22", "botanical torture", "Egg Spawner", "ghhhhhhhhhhhtoast", "Chungus B.", "Maksim", "Enderian Overlord", "eef freefzz", "Little Timmy", "Flashbacks", "dread", "ffa till 1m!!!", "wuzz buzz chuzz", "percy", "Space", "kraken", "BR PARADO", "Sry m8", "Chobblesome", "yee", "gtrr56e4e5eerer", "ELITE", "Krystal110607", "Survivalist", "Kalijia GG", "Kalijia Let's Peace", "eeeeeeeeeeeeeeeeeeeeeehh", "coriander", "Mat (Bocow)", "SIUUU", "bro doesnt have a life", "your tail", "eeeeeee", "<call me", "Numb The Pain", "hi ;)", "pierre", "the quiet kid", "nom nomnomonm", "ggggg", "Adventure", "notable", "777 ////. ./. /./-.---77", "PowerPoint", "FALLEN BOOSTER", "Ecxel", "ye", "LIBE", "bukaka", "notlazar", "errora", "ManiaC", "NobodyIsReaching500K>:(", "pescah", "fvha", "pesca", "Innkeeper Worm", "Blarg", "=ZZZ Bannanas Are Yuky =", "GRRR", "Try Thalasin Today!", "Thalasin OH GOD HELP NO", "SILIKA", "Fallen Auto-Tank", "SYSTEM", "is op on siege mode", "G vytvyv", "guardian", "ya mom", "Lorain", "A br stranded", "matew", "matatoe", "dante", "Maize", "Arena Closer", "Ouake", "khe", "i only farm", "DESTRUYE SQUADS", "let's go!", "no pressure", "Manoso G", "Indeed", "Lets be frands", "Bunzo", "vyn", "ok so...", "haha", "cooooooooool", "Ye boi", "Quest", "GOAT", "kool", "8hu", "bryan", "Aadhy", "Basic", "Eleanor", "OXZ", "speed", "az", "ura bot", "78d 714k bruh", "Partisan", "eli", "fwen -w-", "Death", "Hewwo :3", "Stalk Is Actual Pain", "fdfdf", "extreme hapiness noise", "begone", "Apex", "Wynder", "oof", "im watching you", "chill", "p", "-heix-", "Savage xD discord?", "crocty gets 1M first", "iv vs 3", "im bored", "ERROR windows xp", "(B) Wehrmacht", "FRNDL", "Lonely :/", "The N2R", "qqqqqqqqqqqqqqqqqqqqqqqq", "sven", "phi", "Uwu", "P", "Mushroom", "1MiL", "stinky/ gg jax!", "bay sorry.", "ツSpazeツ", "Mine craft", "nob", "/:", "Legendary", "vinh", "Moragull is JOHN CENA", "A-K 8000", "CorruptedPenguin", "C@t has C@p", "Stealth Tank Delta (STD)", "I WANT A HIGH SCORE", "tim", "UltraOmega", "PPPIIIGGG", "shark bait", "nek minet", "g'day mate :)", ":_:mx", ">=<", "run", "fire exe", "The Best Player", "susicoi", "Nerdy Ball :)", "cor", "Defender", "SlowKnife", "1+1=11", "my", "HUNG", "Deep", "Emilnines", "lol:):):):)", "Orca", "the legend hero", "/donotello/raider/", "YT=GLITCHER TM", "Jagdtiger", "On mobile", "The General Lee 01", "TeSt", "The Palidin Tank", "DaRk", "0jgojettreedew089", "ghost", "213", "twan", "Spectator:)", "uywu", "{}{}ALEX{}{}", "daniel", "Sol Blaze", "poly gone :D", "im 100 years old", "Re Fachero", "Blumin", "jhonny", "supreme", "D0M1NAT1NG++", "SAS", "Nailguns HELP!!!!!!!!!!!", "Arena Closer", "darwin", "djbd65", "JustLurkin", "im sorry", "race with me!", "on de xd", "Paladin-Celestial", "russia", "CHN fed", "sj", "13isaluckynumber", "i suck", "ah, but u cant see me", "a mongoose", "rae", "Z", "323f54", "lev", "Ultimate Dominator", "WWZZX", "Goku drill", "laffy taffy", "good luck", "EpsiCron", "Eye Of The Sahara = City", "Shields and Guns", "Tester BT", "outrun my gun", "invincible man", "Necromonkey", "HENRY      ANOS7", "TailQZ", "PPANG", "Tester", "a sentilen", "Jhon the nub", "arrowz", "Annihilhator bravo 1m po", "just boone", "hybrid", "gg gmzin", "we do i little trolling", "Jorge", "NgocAnVNA", "Sh l", "DUO MONETER", "Coapc", "timi po", "Why Buff Factory?It's OP", "Storm King", "Enter to the Dungeon", "frrrrrr????", "shutgun", "debris", "NOE BODY", "Dr pizza eyes", "Protect me", "How to get you", "sit", "Caracal", "trashmxnn", "Cat", "Angel", "baLu is kinda cool", "Tanky's 30th 1mil?", "i need a pee", "josh", "ggs (1m!)", "fed", "(Ai) bot", "hijo de su putisima madr", "slowpoke", "NO IDEA", ">_>O_O<_<3456", "hi saya", "ryuuddddddd", "Random Guy", "vn nha", "Just a Spectre", "manoso", "joshkidkid", "sg", "TON | 618", "mogerath", "vc landmine", "worst impact", "Ma$t3R=No Ski||s", "aajlrtgtrtty", "korea no academy", "Behemoth", "VN TOXIC", "dh_hniV", "no vn", "bruhhh (vn)", "1M=100M", "frrrrrrr???", "ggh", "lakf", "imscared", "Wow", "(<(:)>)", "STOP", "Tale", "Leo", "!^_^D0M1N4T1NG^_^!", "vortex", "blue", "Sr. GT", "eat my bullet", "fudgg", "RATA INSANA :3", "Find Me", "PHRENTINO", "bro follow me", "Xyx Wdtcfgzezgk", "fencer add me on disc", "super shock", "GGui", "Rafael", "moblie 1.37m siege woo!", "Surprise Surprise", "king pug", "Emily", "Hm", "Marchin Through Georgia", "Aha!", "huff", "jummer", "bixent boo", "Bao", "AAAAAAAA2A22222222222222", "uhyi", "press u", "HI Yoou", "aaaaaaa1", "LMGshooter", "1922", "-KONZ-", "Waloh", ":(((((((((((((((((((((((", "obyness", "BaLu", "Zod", "spin=friend", "Ashes", "the UNTIMATE DESTROYERb", "MYLEFTBALLHURTS", "Xh", "ravi", "sorry sorry", "ZasrielDreemurr", ": )", ":?", "TaKE LOl EPIC auto 4", "Shankerith", "Hunker down", "!!!", "being afk", "TienBach", "fun.", "Zzz", "Annoying", "Juna", "new player", "Xander", "duda", "ppoppoppo", "One of your pets", "kolibri", "panzershreck", "EwE", "Deus ex Machina", "Pilav", "berd", "NO your mom", "1e+999", "Cristay", "nuiw", "UHF", "OwO", "PandaNa", "nnnnnnn", "Energized", "Cirrus5707", "Ferge", "not boster", "shuna wakuwaku", "Rongomatane", "press n to level up", "bubble shooter", "Turret", "super pro prot 4 you", "45453", "Despair", "Ho Ho Ho", "Y.S", "Arena Closer", "john", "96", "Auto's power", "2 Booster = Fun :D", "Press C+E: Octotank", "you were so mad", "Sky", "need protector", "Great Bydgoszcz Reich", "superman", "ridge", "hahaha!!!", "HELO GUYS", "vyey", "Vinaphone", "hiiii", "ZERO", "el epepep", "T   W   I   N", "5252525", "121", "iar", "avex", "Taboo", "since 1986", "meow", "AUUUUUUGH!", "xtrw", "On Mobile", "PRO123123123123123123123", "Kira", "gray", "eeeeeeeeeeeeeeeeeeeeeeee", "StUfFy_ChEeZe", "????????", "4th Form", ": ) ha ha", "OL Impossible On Mobile", "1v1", "BBoRRaBBiDDo", "hu", "pp", "slow but friendly", "vn", "loler", "Atumkj.", "fast boi", "MYRIGHTBALLHURTS", "1111WW", "odszdc", "Withering", "eafscx", "eeeee", "Sudu", " sub to", "T-Chan 13", "|^Robo-Birb^|^Silvy^|", "Korea :D", "Sidewinder-firebolt", "asdasd", "Agent Sauce", "vinud", "1 + 1 =1", "Xqaris", "WatchMeDestroyYou ol 1v1", "builder", "nnnnncaptiann", "Gawr Gura", "WatsonKong", "yx", "aewrsd", "Mmmm", "...VN", "REVENGE", "Mwoon", "turbo bro", "Hiu VN", "FF9JesT", "Fallen E", "hgdgt", "Fallen Hybrid", "SORRY..I'M..(vn)im so :(", "yaaaaaaaaaaaaaaaaaaaaaa", "supperlenny123", "The Underspeeder", "Anime", "AntsAreCool", "king of ...", "ghgh", "arslan", "I see", "chicken", "dkd", "777", "Engineering", "Push me for barrier", "oop zeros", "Mini moving safe zone", "goku", "fgg", "Jagdpanzer IV", "()UTi6", "zaq", "USSR(Russian)", "Stocxk_", "the things we do to surv", "asd fake", "HHH", "Swooper", "ayo", "hara ...", "ya YYYYYYEEEEEEEETTTTT", "Kyrie o.O", "Updog. Dying Breath. 2", "WHYANDWHY     Y_N_Y", "hara )))=", "I'm Q", "-Monster-", "Anak", "Mine says hi fake anak", "the sky", "Master Noobpet", "Viva", "maze", "oompa loompa", "Egg'in", "f(x)=k", "go to 10 mil record", "Trying to be peaceful", "Tunnel Wanderer", "Boop skdoo bep", "The Beep MAD>:(", "Speeedrun 200k plss", "The Boop", "Kaiju you", "dragon sleep no brakezzz", "kracc bacc", "24686872678", ":", "OnovonO", "Arena Defender", "Arena Closer", "naga", "asdfasdfasdfasdfasdfasdf", "Ace", "Pkao", "insta 'brn.o.z'", "aswon", "sodbazar", "The Hybrid", "aswon(ur bad)", "Troller", " nothing", "IKEA Box", "Vaskrano", "Si", "A+", "the beep !!!", "A+ Yeah spin", "Dr J.I.D eyer", "xijinping", "shheshhh", "pRo LiFe", "AZERBAYCAN  TURKIYE", "Just Existing", "3.14, 1.61, 1.41", "Ozymandias", "ok i pull up", "funnylemon", "TURK", "1212", "Learn with pibby", "LUKI", "happy mafer <3<3<3<3<3<3", "Seer", "mkZZZ", "niwa niwa", "nhan", "1223332111111111112321", "Arahana", "The Robot Kid", "vokki8skand", "Turret LV 1", "AQEEL", "AnA", "yahya", "ninjin", "Soulless", "EMO", "1010971", "pokemon", "VN 3", "alright buddy", "FR|Fajro", "Walorried-TR", "abuk", "Dead server", "Arena Closer", "zae", "zeraora", "imnew", "elecgance404", "heck", "Tomi", "SPAS-12", "tran duc hieu", "GGuisa", "viwpo", "BERD", "Blocker", "bcr", "come with me guys", "ehehe", "rule.txt", "big chungus", "t. food bc why", "lk;k", "SERIES 113 JAPAN", "sir bobybop", "G1019_t", "grendel", "andria", "VousyX", "LAINofLAIN", "ferge", "vilad pro!!!!!! :)", "Ali", "xzxz", "This is the tale of FFA", "MIKKEL ", "knjbfhiu", "Raknar", "free fire", "The Unknown", "Motar2K", "drifting", "OrangeCat", "Ddddd", "hi long tri", "some random oreo", "WEEEEEEEEEEEEEE", "speedrun", "DatBoi", "Michel", "71", "jacquie", "Exendern", "Jack Daniel", "Bob le bricoleur", "=W=W==", "ft. Karmatoken", "Arena Closer", "stfutduy", "vaboski", "HAAAAAAAAAAAAAAAAAAAAAAA", "alsterercrak", "The Big One", "Sorry", "JzF", "ZZZ ZZZ ZZZ!", "hey moskau!! moskau !!", "EL TRUENO PRO", "<3 Doreen~", "tokar6", "nho", "Dusk Defender", "ooooooooooooiygf,fss';", "Wa Sans ashinenguna!", "aeaea", "nothing's", "the  best PEOPLE IN THE", "4/4/6/6/6/6/5/4/1/0", "Kazakhstan", "starlight!thunder!", "Mr D", "protected", "Uncle Iroh", "><II  gg", "dssfb sk", "Roly poly player", "jonyy0814", "KOREA", "1 min", "Winter", "zaid x", "Will join me?", " lucas", "MATI", "xDer MY FiRST 1M", "Seig", "oopsie", "nhat", "DAN GYUL", "Claire", "567", "stalker", "kotetsu", "124", "DraXsaurus", "My 10th life", "bhosdike", "sjw", "Karthik", "hhhh53535", "ciao", "sumoga", "brrrrrrrrrrrrrrrrrrrrruh", "jony0814", "rubyslime", "Yuvyyuy vyu", "Sppooky", "THIS IS INSANE!", "Bozo", "hex", "EJIT", "+S", "RENGAR!!!", "Nelly", "sadf", "UNKNOWN LEGEND(UL)", "hi im friendly :)", "llllllm", "Jekyll Why", "AL | 2 Week No Play", "Protector", "{o} Liza <3", "toothpaste", "sasukeuchiha", "ricegrain", "Deed", "vikitor", "fIrEbOt", "Machine gunOP", "mini", "Nice~", "quant2345677", "Oxylit", "totie", "hhhhh", "scx", "Ayrton", "LETS GOO", "Izumi-san (VN)", "Panther", "meckazAN", "men treibe", "never gonna give u up", "never gonna let you down", "never gonna turn around", "Arena Closer", "never gonna let u down", "yeahs", "Ruan=_= ", "Panzerfaust", "emp", "Tiny", "THE BIG ONE", "The Ranger", "DuckBatman", "Hatsune Miku", "ara ara...", "Basic Enjoyers", "hhfggddfdf", "The Mind Flayer", "Dance", "Ar 15", "XSET", "Milton Friedman", "Mr KaRbS", "Duong 20712", "playeur", "<======Lasi======>", "Mardi 1", "Ethan", "fellen 0", "Venom", "-_-Aigle Royal 72-_-", "Alt+f4", "swrmur op", "Bean Man", "atomic", "Annoying drones", "Colors all around me", "okey", "GIANNIS ANTETOKUMPP", "it's a lie", "hy", "pc", "mustard the rohirrim!", "Kingdom Hearts", "Mebh", "Dr. Eggman", "Choose otto we stronger", "protectsage", "pov:u need 5 prot for 1m", "TR Angela", "MadCroc", "sage", "robo cop", " weirdo", "Shiny Triangle!?!?!?!?!?", "Gem!?!?!?!?!?!?!?!?!?!?!", "blon td siix", ":: Saved by Grace ::", "maze runner", "MadCroc 1.21mToday", "be free", "Carry", "I JUST SUCK", "gemgemgemgemgemgemgemgem", "ur all bAAAAAAAAD", "Spin = Free Protector", "HELPE ME FOR HELP YOU", "Rosenrotteneggs", "Mr. Lord", "PFC|| KEVYNZ", "Hybalixa", "hows your day", "b I protected u before", "awootube", "there", "Julia", "seve", "Arena Closer", "hguyuthg", "hop", "i go high", "the return of chewy pie", "Jerry", "mf yeezys", "King Hans", "sven drop", "I Voyage Around Map", "biggest noob", "dog", "IM SUPER RETARDED!!!!!!!", "The End!", "Engineer Army", "lolnub", "Salt", "MOAR OCTO TANKS!", "KN-23", "nothing", "sonic", "Nirviar", "asw", "dom is easz", "sghhgsfhgsfghsffhshg", "Jerry - LOL", "server", "D4C", "BigBrain Time", "player 8483", "Turkey", "Deve", "LintanG", "STPSPMMNGSNPR 64M3R_999", "PaX|A1ma|YT", "kaan", "afes", "ly", "ulan", "Purple", "Hahahahahahahahaha", "fahrradsattel", ":('", "he", "NoSpeak", " lu", "Fugitivo BR", "Crossboi", "Noob", "Gabriel8", "pinkie pie", "Wowkoks", "Zweilous", "oui oui", "asian kid", "top mozis xd", "Kofolka", "AcidRain", "a shield", "glitch tale", "Crong crong crong", "!!!!!!really happy!!!!?", "(vn) :p", "udhe7f", "phil", "Mort (pc)", "askib", "jygghhjj", "Last remote", "tttttttttttttttttttttttt", "asddasda", "LIGHTNING DRAGON X 96", "Minimal", "jelly", "Your Mom", "Peaceful", "respect women", "Darius_575Pro", "csabi", "7859", "tenk", "rayyan", "Fei", "Pango", "eeebot", "giranha", "spirit of the forest", "dark", "pro player", "Yeat", " %<AzEr<%", "notPickle", "Reflex", "Me", "Stalker Army", "Qin", "Predator Army", "NYADRA'ZATHA", "Roaster and Toaster", "CSDulce im boring :=", "Szymon", "es ta la vida que toca", "@RAFAEI  PR0", "$:$gc", "Suomi", "spankthemonkey", "KANG OF WAKANDA", "Ark", "tiny ones my friends", "op xd", "fence", "III", "GPA", "Bonaventure", "witherrrr", "mahiru shiina??", "(B) THE RISE OF THE FALL", "mahiru", "May I Fuq You?", "ID", "trying for world record", "75882310770", "PressNToLevelUp", "Dont TaLk 2 mE", "Do Not Disturb (oops)", "Wyd_Josh", "Pentagon protector", "tri-angle is paccific", "Good", "Do Not Touch Im AFK", "WiFi-Kun", "Bullet Bill", "pentagon protector", "%<AzEr<%", "PROOO", "ice tea for free", "Waiting", "busco pareja7w7", "agabaga", "SOLO AGO MI TRABAJO", "necro pet", "Kael", "Trash Anni", "Sev", "wypk", "G.A.P(MG)", "nokia", "Twin-Twin", "bronzzy", "Guy", "Ytt", "Ayman", "Zyiad", "Ahmed", "the general lee", "a littl' bad", "Bonk?", "SEBASTIAN.", "aIIan y sonic", "bigchad", "N05O7G", "Tengen Uzui", "Prees N", "tree", "SPILL THE BEANS BRO", "Escort Carrier", "HEEHEE", "X_DROP", "XboxUser", "55564", "porscheHUB", "Tenth Circle", "Spectator (dont attack)", "summoner2", "sentry", "The Covenant", "Storm", "itachi", "Only 1 Factory Can Stand", "TOBI MARCH", "Come Back Here!", "Spider cochon", "Crash And Burn-Dayseeker", "Clearing shapes...", "BOONE!!!", "tr ndxd", "lurker", "SONIC GO FAST!!!!!!!!!!!", "Covid 19", "tar tar teha tar sal-t", "Ray of doom!!!!!!!!!!!!!", "lautayo", "Herobrine", "let u know", "Peace and Unity", "kelly", "wingarr", "aIIan", "SEBASTIAN", "Sonic.EXE", "fghjijb", "the all seeing eye", "blitzburger is pro", "trust me do this", "Beans", "qwerty", "lucas", "Domb", "Kronos - Eternal", "45a,i", "unavaliable", "happe", "Racing?", "Buyandeho", "Mobile Not As GOod", "Arena Closer", "Ok Ur Done.", "alex", "Siren", "Defenders of The south.", "Ok Ur Done. Again", "ssad", "SAGAGH", "dwada", "Says Overlord in Green", "Wolf272", "Sry had to go afk", "WerestLuck", "press t", "corner base trust me", "nah i", "FIGHTONTHEHIGHTS", "jaxon", "Dark Pheonix", "porfavor venganxcadddddd", "Toxic", "iurgitues", "lolstar", "harnesto", "koby", "Shiny Beta Pentagon!?!?!", "Everyone Go MachGunner", ":3 hi", "GREEN Barricade", "oo i m friend", "ASKED", "Xtrem", "NopeTurtle", "porfavor vengan", "Chompy610", "Drones are gae", "Penta takeover", "one of the players", "Avenger!", "Sleeping Quadrilith", "dewfew", "king bob", "one of the newbies", "Spectator", "Fistandantilus 39 AC", "BIG POPPA", "diana <pleayr>", "Really:D", "Kenobi!!!!", "arias", "Arkaic", "i have sponks :)", "jor", "Arena CloserSinx :)", "ALL GO BENT", "Evades 2", "freee", "76...", "rigeeS", "Arena Closer", "ZEB", "koten-", "green", "little one :D", "Factory Takeover", "PRODIGGY", "Scratch", "1% Power", "Thank you", "OTD", "pet lvl 30", "world's best anni", " DONCRAK", "gnghfiukfhfj", "MASTER", "mi(moblie)", "let be friend", "defenders", "father landmine", "overlord takeover", "Bloop", "ayy", "Fighter", "W.A.R", "robococ", "TEQUILA!", "As lc", "ezz", "xQD", "AGUST-D", "USS Enterprise", "Visitor", "Wolfy_11_BR", "jonas", "Takeover", "Fall Guys", "momo", "ChickyNuggyCat", "today is christmas", "NotThebest", "NO ONE", "secks", "Overdrive", "Seb", "Machine Gunner =best", "Yevery1BetrayME:(", "Nathan_1", "Tickflung", "323f54", "boone", "ALAN PAPI", "Jikang", "lenin pro", "hydro", "Toxic sugar", "M.D", "gart", "wall", "Arena Closer", "grandmas ashes", "Eat my Doritos!", "No no!", "mr.cola", "Tundra cat", "AR", "david", "nnnnnnnnnnn", "study yo orgo (chem)", "Death Is inevitable", "Stuck", "dragon", "droplet", "HI  you mom is here", "Zeezees", "necro", "luchi", "rp - on mobile", "bored rn", "Pandrian.", "master", "Lightning", "CLEAN", "arisen", "raaaaaaaaaaaaaaaaaaaaa", "3k", "qusimocho", "Trolling Me :(", "weak tank", "HunggVn", "Touriat", "use adblock please", "Q", "Arena Closer", "I'm_Chris", "fvdr5", "bman", "skrill", "royce", "Star", "QQQ", "MONDAY", "armtumroom", "Ssunseer", "duji", "ryy", "sanggggggg", "hai", "oty", "148 toxic", "no mouse", "232523", "h..hi :S", "vvn", "sire soral", "frost", "btw", "lqkf", "Senator Armstrong", "Vn hi", "Fake.Fake.Fake", "molkin", "lEFF", "notsudon", "korean", "Henrystickcmans", "crongemaster", " dyllan", "A Goat", "TaKE LOl EPIC factory", "TaKE LOl EPIC machinegun", "Tiny Celestel", "asdfasdf", "BF An", "cooper", "Unwelcome School", "EtRNInja", "supernintendo meme", "15 fps player", "Day, day, da-da-da-da-", "i will download osu", "asdfasdfasdf", ".jpg", "Arena Closer", "kkj", "pet XD", "matias", "MAY BE HAPPEN", "heeeeeeelo", "BIG BRAIN TIME", "Koronoe Chan", "BOOOOOOOOOOOOOOOOOMM", "not the guy you just saw", "shark", "The Ghost", "get in wall", "o.o", "hara vi", " ElguerreroHastaElfinal", "literally the changelog", "top", "Minul", "Trutch", "Eternal Guardian", "JOSHUA", "End", "TANK", "531714", "senbonzakura kageyoshi", "minhhihi", "LUMBRE", "HEy Im frendly ;)", "just joe", "BonaventureVT", " i look into ur soul", "Teddybear", "Overload King", "alone", "peter", "Russo-Baltique Vodka", "Don't Let's Start", "nice one", "I Will Give U My Points", "toeless_monkey", "GANG", "0=IQ", "super booster", "seperate", "Prograde", "what does reload do", "Kevin Heckart", "CAVE- CE", "happy day", "Void Fighter", "race me?=Support <3 Bop!", "I'm protecting you! Sort", "hara- XDDDD", "Peacekeeper", "stares into ur soul", "Can I help you today?", "fdf", "Friend", "AYOOO", "odin <:)20", "Arena Closer", "Respect", "DontJudgeABookByItsCover", "OAO", "3vs2Ol", "Trinity", "yuan(A PENTAGON DDDDD:<)", "NO TIMMING", "wait in doing some work", "New", "Spin=peace", "retnuH", "Wall Protecter", "MUSTAFA/TR", "the deep", "CAN", "definitely not mq", "imbad", "Huy ;-;", "Gosu General", "Klair", "Ugly Beautifulness", "Dexter playz", "All Dead", "run  {ANGRY}", "VN.HM", "555 }{", "foon", "WHERE ARE THE DOORS", "toilet destroyer jordan", "No doors no fun", "Rico", "Giann", "SSS", "floppa", "Dominador", "ttttaaa", "ltester2000", "roberto", "Directors are Overused", "OverBrain", "Celestial", "HUH?", "Deepr", "Steve", "mathias", "1410065404", "ShinyG", "miguel", "yoyo", "subin", "Pega(SUS)", "cracked", "Arena Closer", "NO BAD WORDS", "PORT", "tale", "triangle drones = nolife", "TargetLocked", "Directors Are Overused", "(GG)", "qwe", "DUMB", "crocty poo", "creeper", "i just want shiny shapes", "Tommy Gun", "Your Mom is overused", "Overused Vibes", " jeje.2", "SONIC.EXE", "Planet", "-.-Razoix+?>", "Happe", "exc", "seensan", "cronge", "overused is overused", "Give Me Underused Vibes", "Extreme Speed", "j bert", "PARA", "Alan", "Friends?", "git gud", "Giant Justice YT", "yOU HAD YOUR CHANCE", "Jacob gomez_Jadenian", "mega monster", "Giant Justice YT - GG", "schrodinger = loser", "reaper of souls", "111111111111111111111111", "hostile", "ryuudddddddddwdw", "nononononononononononono", "Rocket shooter", "TTCBernard", "you deserve this", "raku", "why me???", "Rose", "top 1", "-KhangWasBroken-", "Uouuuuaju", "Fighter tank", "Solar Fighter", "sqrt_-1", "(<(?)>)", "du hund", "Ben", "A polygon", "AVIRA", "A.T. Beerful", "QER", ".exe", "GHHGR'986452|", "ck to la roseannenn.", "Orxan487", "zzx", "Clink", "popoi", "reicardo avocasde", "Doraemon", "Bandu", "oofoomode", "Sneaky annileatter", "Lofi", "Cancel Those Directors", "LeaderboardAllDirectors.", "1M + StormMachinegunner", "DR. BEEEEEEEESSSS!!!!!!!", "BH_FireFreezer", "frjhjhvt", "The Beast", "S u p e r", "Nice:))", "kdk", "Legacy", "jz", "ded", "yuco", "like", "rei", "atleast spare me till 1m", "Arena Closer", "Burning eye ;(", "Petsalt VN :)", "~|{boss fight}|~", "Reb", "mahluktakkasatmata", "EEEEEEEEEEE", "LowKey", "Praying for Winter", "tinh vn", "Phat", "AditGA", "cats nya nya ;)", "On the day you left me", "into my head", "CThanhYT", "NgontoL", "spin = friends", "Expand: 8(5y+88)", "Baroydroyd", "fewillos", "poper", "149 toxic", "The _________", "rsg23", "mwmwmwmwmwmwmwmwmmwmwmwm", "msalqm", "thx ", "150 toxic", "crescent", "dark karma link:wc2100", "NobleCrafter3219", "O K A Y ( ^ 3 ^ )", "egvda", "dark karma link:wc2118", "Gemma", "link ...", "DANGG", "This is the tale off", "Heeh", "The Fire Club", "c.ew.11.1.11.1.11.1.1.11", "pro is nood", "Random Tank", ":P", "Super Sonic", "Thai dark", "dfdfdf", "syron!!!", "strong tank", "main menu", "oblitereight 1000 ms", "its me pekola", "plungebob", ":(:(:(:(:(:(:(:(:((:(:(:", "ssd", ";kooo", "Kozuki Momonosuke", "SDASD", "Ha...Get Rekt", "be", "Wew", "321", "}{ex", "via", "Save The J'S", "ms. cold person", "FwgKing", "AnythonJS", "Theo", "BOB", "Mustafa", "dm", "Cgfsd", "Help", "{CHICK}", ",mnji", "<op>1", "SharkBuger$", "ATM", "Nining", "NEO ROY NEYEAH NAH", "Haunted", "Fireworks!?!?!?!?!?!?!?!", "Minhaaal", "Bobro", "YUU", "bob xllnnnnn", "Ailoki", "exu boi", "XYZ", "sus.", "star kirby", "Machine Gunners, unite!", "5min+5 overdrive", "Newsletter", "Meletiscool/", "allmyfriend.aretoxic VN", "Pet", "ivoree", "Twin Pro 3/3/4/7/7/7/7/4", "ka yawa", "SIUUUUUUUUUUUUUUUUUUUUUU", "ClosePro 2/2/4/7/8/7/6/6", "Snap ( Peace)", "???(vn)", "noob123", "Militant", "Banana", "fffffftt", "Hoi", "Ready For Another?", "Bossy", "ewltjdwns3673", "sa", "Don't worry I'm harmless", "freakshow :)", "aeaeae", "falc", "king4a", "ddt", "bangladesh", "Exterminate", "vIVIVgREYdOVE", "105050", "HI Youvn", "how? what? why?", "sdasda", "PYTHON", "lo hoc hanh", "who want race", "Arena Closer", "Xiao-Ling", "top 1000s", "A_C_L", "A flower tank", "Jash", "KRYZ", "Speed Build", "Tia", "Ha!Get Rekt", "hiboiXD", "Pro of ............", "vvv", "Rare", "draco", "Disaew", "Let's work together!", "iar chary", "Aqua", "Tgvy", "Ihv2010", "ASDUA", "Arena Closer", "chase him", "Nothing here", "Schwerer Gustav", "Dedeeeee", "Firnas", "yolo", "Psychic", "PLSSSSS FA", "mercy pls", "ur Being Fed", "FedEx Box", " not anak", "spinnnn", "proo...", "nn0", "the drones do not hurt", "Evil AliExpress Box", "Police Divo <3 XD", "pls Im friendly :)", "ldldl", "Like dat", "ytwjeit6tty", "UrBoringTbhLikeWhatsUrPt", "B(sian)", "bandit", "UnKnOwN", "TechnoBlade", "alien", "1934", "YoXieO", "why maze", "/donotello/", "Corrupt and dead.", "MAUS THE LEGEND", "WHYANDWHY     Y_N_Y", "GET MORE PEOPLE", "Bong Bong won't help you", "Pock", "CROSSIANT", "piece treaty with newbie", "too fast dident even get", "D A N I E L  bad...", " ryh'lrfh", "LEOPARD 1 WILD", "ya nos cargo la chingada", "Rainbow", "sssssssssssssssssssola", "lol darth vader noob", "AL| JustICE- sry luna", "Social Experiment Part 1", "Mercy", "take your time", "HI GONIALS", "i see who you are", "Cz Player", "Jap", "yeah yeah yeah yeah yeah", "Red Just Bled", "pounder", "eagle T", "Pet :D", "here to make friends :D", "Derniere Danse", "(Huggy wuggy) im nice", "PT5 | 03-04", "A Cat", "Skull", "PANZER VIII MAUS", "super perfect hexagon", "Rice", "protect perfert heha gon", "erf", "cable!!!", "PT5 | Tezerr", "Hi ._.", "WAAAAAAAAAAAAAAAAAAAAAA!", "xtrem", "eben", "1354", "far", "SOOOOKA", "alcatras", "mini boss spawner", "Arena Closer", "Eauletemps", "Aik", "BLITZ", "sinbadzx :)))))", "press n", "boom", "le tank", "dc yok bend", "Shay", "Solo :>", "Thunder", "best sentry", "dumdum", "Patterns", "R M", "FGDERTY", ":>PTM...''", "melee is better", "tmi 88>:?", "oooooooooo", "ffhfghu", "uuuu", "Acheron", "llol", "(vn)", "Zombie", "jellybEab", "4TDM", "pet", "ae vn", "Green Defender", "COME TO PLAY FLORR", "kr", "da", "dai", "USS Vella Gulf", "No One", "hus", "Let's work together!  N", "UNKNOW", "w r e c k", "Pobbrose", "belal abbasi", "Charles 18th", "Sir Theodore", "Arena Closer", "Hey What Happened?", "Mr.sod", "Graziani", "Ricsae", "'/;", "Anti celestial tank", "quandle dingle", "Eren noob you", "have fun crying eren hah", "MaiLotVNN", "A  l X back!!!!!", "np", "eeeeeeeee", "KHOA", "(:cai chua:)", "yulzzang", "boop", "Crazy", "MEGA MSC", "lyxn", "KarmaToken", "youssef", "LazerLOL", "HI  Five", "vvva", "GoGe", "Skawich", "Pixeljumper", "GALAXY", "Ppp", "crasher", "Min ye", "Arena Closer", "zen keon", "nzhtl1477777777", "Be Sidewinder press khh", "Indo Kok gk pro", "_blank_", "7151", "just", "tjplayz", "halo", "e5 y5gcv", "ds", "sdasdsssssssssssssssssss", "super tank", "BJ", "||H|E|L|L|O||", "swwsH", "||P|L|A|S|M|A||", "Blob", "Destructor92A", "catch me", "Coke cola espuma", "t. this green is glitch", "nhatbun", "You saw nothin", "cool dude", "Mr King", "THE PHONG", "Peace Dog", "DARRREN1407", ";D", "trust me", "2345678", "Apfel Saft", "new up :D", "Minerva", "12iiw", "Just aj", "UBER_TANK", "patata", "Minecraft", "Master of dying", "mommy long legsq", "Eauletemps why?=(", "sfdgfsgsfg", "U.A", "ze", "Eauletemps 4V1=noobs", "Qwerty", "doublade better", "sunkee", "MINI ON A LAPTOP", "snorp", "TOGESH", "GWiz", "sinx7", "Mon A", "Kartoffel", "t. green is glitch", "Nxoh", "Michael Jordan", "technically octo tank", "thick", ":cai chua:)", "Gabe Itches", "you can't see me", "TOXIC", "neph", "honesty Spectator", "Injoro", "E1", "your mum", "everyone sucks", "Charge with me/defender", "try me", "pheo", "uwj", "floofa", "Getnoobed", "test septa", "", "Pizza", "U Only Run To Ur Base?", "seb", "Maddog", "huy vn :D nhu loz", "Arena Closer", "Chicken KenChicken ken", ",l,l,l", "Comet", "Zhynt", "christopher", "The Mandalorian", "TomaToh", "tntman", "Tim", "spayer time", "piffermon", "Spectactor", "yyyyyyyyyyyyn", "left for dead", "iiiiiiiiiiiiiiiiiiiiiiii", "Pog", "BV", "burh", "ralsei with a BLUNT", "PROFIN 1000", "my guy", "Life is good", "pe11", "qqwqe", "0-=", "opp", "Panz3r of the Lake", "train", "furan", "Flawless_", "Oni-chan UwU", "Es3et", "Clorat suotn", "UNKNOWN LEGEND (UL)", "DEFENSE", "Rykav", "TYRONE GONZALEZ", "KarMaN", "urgh", "deffer in tanks", "rick astley", "BERSER", "WHY ARE YOU RUNNING", "booo", "WEST SLAVA UKRAINIA", "yups", "DEMIAN932", "THEBESTPLAYER", "8man", "Use machinegunner to win", "26317125   gff", "Joe Biden", "Nv Proxy", "Ethan david fernandez", "kbshlong", "wren", "(Very) Dangerous Pet", "police", "NEMDT playing shmart", "HEXDECA", "run.", "W", "sad", "try harder", " -_-", "a little bit of fun :)", "kendyl 1", "Ar-15", "Ha Ha Boo", "zay", "Rrennitten", "Monsia", "agus", "you dumb", "dino run", "Blood // Water", "Paradisal", ":O", "gulbos gulbos gulbos", "Dernier Danse", "La Espada", "Into the Light", "Planetoid", "...    ????", "swimsuit", "HEYYYYYYYYYYYYYYYYYYYYYY", "Q_us", "nom", "sentry strats", "josh how play?", "TheMadLad", "TheMadLad dylan strats", "THE LEADER GOES OUTSIDE?", "Eauletemps spin=screen", "Out of the Dark", "Lotus", "defender V2", "mmmmmmmmmmmmmmm", "TImmy", "ICBM", "animal", "Tezer", "Zver", "sindBax", "U2882JHS", "781", "Zorroooo", "I'm not bad", "IM WITH STUPID =>", "Miggy?", "sophia :)", "ImNew", "YoXieO_YX", "a pet", "TBB", "AICIAGOGH", "YANLUI", "facts", "XL", "DragonGOD64", "eys", "To Bee Keep", "VENOM", "pvto si lo lees", "grace.", "Speed", "289j", "A player", "cocomelon :P", "build wall :)", "Deino", "9902774653772", "Timmy, do your homework!", "elite basic lvl. 45", "MSI", "Make circle with Tri twi", "Message: Friendly uwu", "M4a1", "heist3", "Big Beep", "i like cheese", "Im weakest tank", "utifi", "jsohi", "cheese the best", "DOG", "cope", "F  A  M  I", "Little one <3", "Zoro", "DarthBader", "Mr.W", "Darth Vader's Slave", "Chroma", "demon xd:alone in life:(", "Luffy", "DOOR nr.1", "pancake", "TTroll_NEW MOUSE", "ubad", "NO MERCY", "peaceful farmer", "kokun", "This is the tale of:", "Best", "Square generator", "Corrupt Z", "angry?", "Aaaaa revenge", "DEFENDER AL FRIENDS", "partially illiterate", "Napoleon", "i destroy destroyers", "not pro", "Mr.Chaos", "~~ima try to protect U~~", "god is good", "Homing_Pigeon", "MazeDominator", "PM4037", "hehe car go vroom vroom", "gg partially you loser!", "'~Darkfiren~'", "La CFE me quito la luz", "nub7155 (Mobile)", "Chalicocerate - hu", "pew pew Gun", "yuma che3", "THOMAS crowded saturado", "TvT{ Thanh }TvT", "pentagon clean-up", "Go to Church", "Emi 10 ra ge hatag", "Im a landmine pls nohurt", "weird", "sorry Cheese", "dumpdump", "Rust", "Godzilla", "MEGAPIX", "demon:solo protejomihijo", "Your Bad :(", "a sweaty no lifer", "protecter crocty", "Caballo - horse", "my fists...", "playing from month", "trfhgyjhuiju8765t", "!emergencia!-!emergency!", "SIREN HEAD", "Yang", "pacific islander", "lucky", "MARK", "ALAN PAP", "nnnnnn", "dn", "Speedrun", "tre", "rocket", "B1 battle droid", "0,01%", "B2 super battle droid", "Your mum", "Goubekson", "Meti", "Wasap Papa", "tatut h", "LEADER = BANNED PLAYER", "shield", "afk ~30mins - stalker", "UHS23", "AlexDav", "!Hi!", "LOL ONYXD", "manager is just better", "Flying", "- - - - - - - - - - - -", "Roy", "Dank", "CrownPrincennnnn", "Gudmman", "CHAARGE", "GO TO DA TARGET STOEEE", "migel  papi", "Se", "PineapplEJuice", "lorain", "delta", "Jonk", "Endoy", "yeffri1", "luis daniel el pro", "Qpling", "An Endless Rise", "nerf", "8w329h", "Newb", "thicc", "just duo", "hahaa u noob", ";o", "xddd", "OSJJSJ", "Prime Chalicocerate - hu", "ilikemen", "IvanGG", "Ruwen", "moises", "jordan(:", "igoty", "vn exe", "TOGESH TOGESH", "Aprendo.en casa", "i only spectate", "DI", "deez", "Devourer Of Gods", "murt", "cocomelon- r u AA", "Polyhex", "KING OF DRONES", "POUNDER UPGRADER", "z54", "trees", "You show the lights", "Kirbo", "Turbo Bros", "stop me turn to stone", "Senseless", "You show the lights that", "T U R R E T", "uma delicia", "dohownik", "DESTINY PRO", "jory", "LITTLE GUY", "THE TERMINATOR", "hub", "GRAY STILL PLAYS", "Supsup", "Tedd", "Sup", "JUIDNDI", "ewres", "turu", "ffffffffffffffffffffffff", "soy susanaoria", "happy!", "Avarice", "im a cat", "protect me for 1m maby", "KEMUEL667", "Flowey723", "The shadow of none", "mebic", "Wsai12", "ALO", "oooo", "Hurricane", "i suck at bosses", "cv v", "ch.m", "Ovalsun", "rays", "naydanang bale!!!!!!! 1m", "poo face", "Akira bck!!!", "Arena Closer", "i believe in jesus", "SOFIA", "Yyfk", "Gigachad", "BANZAI", ">:v", "SUPRISE", "G l i t c h e d", "el mujahideen", "Soundwave", "torry", "AscendedCataBath", "The King", "Zac is best", "WBL", "Wait What?", "allmyfriend.aretoxic", "FNF Thorns", "L4r9", "Zzz Zzz Zzz:-)", "No Disturbing", "go away", "db", "P-Nice", "Duo", "nova", "hey vn;d", "DANCE", ":D hi", "dr.ninja", "Susana Oria", "arg", "7131", "Arena Closer", "SkuTsu\t", "Oh no Pathetic", "xeno", "y=ax+b", "Robleis", "Info?", "%t is the worst tank", "i hate %t", "%t sucks", "fallen %t", "Fallen %t", "%t", "%t is OP", "%t moment", "buff %t", "buff %t please", "nerf %t", "nerf %t please", "pet %t", "i looove %t", "green sunfish", "noew", "Dogatorix", "Charlemagne", "Drako Hyena", "long nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"];
+            const names = [
+                "!!!!!!really happy!!!!?",
+                "!!!",
+                "!!!",
+                "!",
+                "!ARNA LOSER !",
+                "!emergencia!-!emergency!",
+                "!foO",
+                "!Hi!",
+                "!^_^D0M1N4T1NG^_^!",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                " ",
+                "",
+                "#teamtrees",
+                "$$$",
+                "$$$$",
+                "$$$%$la plaga$%$$$",
+                "$1,000,000",
+                "$:$gc",
+                "$shark buger$",
+                "%<AzEr<%",
+                " %<AzEr<%",
+                "%t",
+                "%t is OP",
+                "%t is the worst tank",
+                "%t moment",
+                "%t sucks",
+                "%Weeping_God%",
+                "&__.._._:-:-:-.&",
+                "'/;",
+                "'>'",
+                "'CADO ON THE 'BOARD",
+                "'~Darkfiren~'",
+                "()UTi6",
+                "(-)",
+                "(:",
+                "(:cai chua:)",
+                "(<(:)>)",
+                "(<(?)>)",
+                "(Ai) bot",
+                "(B) THE RISE OF THE FALL",
+                "(B) Wehrmacht",
+                "(GG)",
+                "(Huggy wuggy) im nice",
+                "(LM)The Unknow",
+                "(O.<)b",
+                "(Tank) snowy! (Tank)",
+                "(UwU)",
+                "(Very) Dangerous Pet",
+                "(vn)",
+                "(vn) :p",
+                "(vn) go with me pls",
+                "(vn)TTT",
+                "(W!) Solo w!",
+                "(ZV) foricor",
+                "(・ω・＼)i am(/・ω・)/pinch!",
+                "):)                  ???",
+                "+",
+                "++",
+                "+S",
+                ",,",
+                ",l,l,l",
+                ",mnji",
+                "- - - - - - - - - - - -",
+                "------------------------",
+                "-.-Razoix+?>",
+                "-.......",
+                "-1",
+                "-CN- ",
+                "-CN-",
+                "-Corrupt3d-",
+                "-heix-",
+                "-heix-",
+                "-K-",
+                "-KhangWasBroken-",
+                "-  k    i    n    g  -",
+                "-KONZ-",
+                "-Monster-",
+                "-vn-",
+                " -_-",
+                "-_-",
+                "-_-Aigle Royal 72-_-",
+                "-_____________-",
+                ".",
+                ".",
+                ".-.",
+                "...",
+                "...",
+                ".....",
+                "..............",
+                "........................",
+                "........................",
+                "...    ????",
+                "...VN",
+                ".chao",
+                ".exe",
+                ".ium expanDeR!",
+                ".jpg",
+                ".v",
+                "._.",
+                "/.//.[]",
+                " //",
+                "//",
+                "// jAX",
+                "/:",
+                "/BIG BOYRockety",
+                "/donotello/",
+                "/donotello/raider/",
+                "/SUP Maths",
+                "0 helpful blues lol",
+                "0",
+                "0,01%",
+                "0-=",
+                "0=IQ",
+                "0jgojettreedew089",
+                "0____0",
+                "00",
+                "00123",
+                "0800 fighter¯_(ツ)_/¯",
+                "1 + 1 =1",
+                "1 + 1 = 3",
+                "1 + 1 = 3",
+                "1 cannon only chall",
+                "1 hand only",
+                "1 min",
+                "1",
+                "1",
+                "1",
+                "1% Power",
+                "1% Power...",
+                "1+1+1+1=4 OK!!!!!",
+                "1+1=3",
+                "1+1=11",
+                "1e+999",
+                "1K Followers lol",
+                "1M + StormMachinegunner",
+                "1M=100M",
+                "1M ????",
+                "1MiL",
+                "1m plez",
+                "1nFerN0 - 1 mil?",
+                "1st",
+                "1v1",
+                "1VS2?",
+                "1{1}1",
+                "2 0 2 2",
+                "2 Booster = Fun :D",
+                "2+2=4",
+                "2+3=5",
+                "2-3-40",
+                "2...00++++",
+                "3+3=6",
+                "3+4=6",
+                "3+4=7",
+                "3-D Julie Cat",
+                "3.14, 1.61, 1.41",
+                "3k",
+                "3vs2Ol",
+                "3w3f9",
+                "4/4/6/6/6/6/5/4/1/0",
+                "4TDM",
+                "4th Form",
+                "4tomiX",
+                "5C",
+                "5min+5 overdrive",
+                "5th base = best base",
+                "6",
+                "7/11",
+                "7/11/22",
+                "7U9ukhlehpwhowiwiijji29:",
+                "8hu",
+                "8man",
+                "8w329h",
+                "10xyz",
+                "12iiw",
+                "13isaluckynumber",
+                "15 fps player",
+                "15",
+                "19$ fortnite card",
+                "23",
+                "25m",
+                "26.26k",
+                "42",
+                "45a,i",
+                "47/107 :(",
+                "64M3R_999",
+                "64t",
+                "66",
+                "71",
+                "76...",
+                "78d",
+                "78d 714k bruh",
+                "78d pounder op",
+                "96",
+                "100k speedrun",
+                "117",
+                "121",
+                "124",
+                "125   mn",
+                "147 toxic",
+                "148 toxic",
+                "149 toxic",
+                "150 toxic",
+                "167",
+                "213",
+                "223",
+                "289j",
+                "321",
+                "323f",
+                "323f54",
+                "323f54",
+                "404 Not Found",
+                "453 sfafd",
+                "552",
+                "555 }{",
+                "567",
+                "600k is how far ive got",
+                "666",
+                "666",
+                "667ifjfjijfo",
+                "754",
+                "777 ////. ./. /./-.---77",
+                "777",
+                "781",
+                "888",
+                "998",
+                "999",
+                "1010",
+                "1111WW",
+                "1212",
+                "1354",
+                "1457",
+                "1922",
+                "1934",
+                "2020 im new",
+                "2022 SUPORT UKRANIE(2)",
+                "3310",
+                "5664",
+                "6109",
+                "7131",
+                "7151",
+                "7859",
+                "7888",
+                "8787",
+                "9999",
+                "45453",
+                "55564",
+                "105050",
+                "123456",
+                "178965",
+                "232523",
+                "531714",
+                "1010971",
+                "2345678",
+                "2377285 auto triangle",
+                "5252525",
+                "5555555",
+                "20240123",
+                "26317125   gff",
+                "99999999",
+                "100000000",
+                "1410065404",
+                "12345678910",
+                "24686872678",
+                "75882310770",
+                "9902774653772",
+                "1235434638968792345",
+                "111111111111111111111",
+                "1223332111111111112321",
+                "6666666666666666666666",
+                "9999999999999999999999dx",
+                "100000000000000000000000",
+                "100000000000000000000000",
+                "111111111111111111111111",
+                "222222222222222222222222",
+                "348562347862349254127651",
+                ":",
+                ":')",
+                ":('",
+                ":(((((((((((((((((((((((",
+                ":(:(:(:(:(:(:(:(:((:(:(:",
+                ":(=)",
+                ":(eu tou triste",
+                ": )",
+                ":)           (:",
+                ":) cavite",
+                ": ) ha ha",
+                ":3 hi",
+                ":3 s",
+                ":3",
+                ":3",
+                ":: Saved by Grace ::",
+                ":> hi",
+                ":>PTM...''",
+                ":?",
+                ":b",
+                ":cai chua:)",
+                ":D",
+                ":D hi",
+                ":O",
+                ":P",
+                ":p",
+                ":P",
+                ":P",
+                ":v",
+                ":_:mx",
+                ";",
+                ";)",
+                ";D",
+                ";jl",
+                ";kooo",
+                ";o",
+                ";v",
+                ";]",
+                "<1.5 is not enough",
+                "<3 Doreen~",
+                "<<< Saved by Grace >>>",
+                "<======Lasi======>",
+                "<call me",
+                "<op>1",
+                "<[AXS]> RASHOT",
+                "=",
+                "=",
+                "='))",
+                "=))) (10%streng)",
+                "=)))))",
+                "=W=W==",
+                "=ZZZ Bannanas Are Yuky =",
+                "=Z~",
+                ">",
+                ">:))",
+                ">:v",
+                "><II  gg",
+                ">=<",
+                ">>>",
+                ">_>O_O<_<3456",
+                "???(vn)",
+                "?????",
+                "????????",
+                "@- @",
+                "@@@",
+                "@@@@@@@@@@@@@@@@@@@@@@@@",
+                "@ace",
+                "@RAFAEI  PR0",
+                "a",
+                "A+",
+                "A+",
+                "A+ Yeah spin",
+                "A - E - T - H - E - R",
+                "A-K 8000",
+                "A.L.",
+                "A.T. Beerful",
+                "A1D2J3",
+                "A3145",
+                "aa",
+                "AA01blue",
+                "Aaa",
+                "A A A",
+                "aaaaaaa1",
+                "AAAAAAAA2A22222222222222",
+                "aaaaaaaaaa",
+                "aaaaaaaaaaaaaaaaaaaaaaaa",
+                "AAAAAAAAAAAAAAAAAAAAAAAA",
+                "Aaaaa revenge",
+                "aaaaargh",
+                "Aadhy",
+                "aaeaeae",
+                "aajlrtgtrtty",
+                "aaron",
+                "abbi_alin",
+                "ABC",
+                "ABC",
+                "abd lhalim",
+                "Abdule lah",
+                "Abdurahman",
+                "abominacja",
+                "AborTurboMan",
+                "Abrar",
+                "AbrasiveBrivilly",
+                "A br stranded",
+                "abuk",
+                "A Cat",
+                "Ace",
+                "ace",
+                "Acheron",
+                "Achi",
+                "AcidRain",
+                "acidre",
+                "AC Perú",
+                "Actual Pro",
+                "Ac𐍉͢͢͢ᵐᵐSiรcuᵐMum🌼",
+                "ad",
+                "ad",
+                "add me",
+                "Add update for chat",
+                "adefe",
+                "adelson",
+                "AditGA",
+                "adljsaknckjas",
+                "Adnan",
+                "adreszek",
+                "adrik",
+                "a duck=",
+                "Adventure",
+                "Adyintred",
+                "adymin",
+                "Adymin",
+                "aeaea",
+                "aeaeae",
+                "Aespa",
+                "Aestudireastal",
+                "ae vn",
+                "aewrsd",
+                "afafafafafaffalafel",
+                "afes",
+                "Affeuredi",
+                "AFK",
+                "afk leave me alone",
+                "afk ~30mins - stalker",
+                "A flower tank",
+                "agabaga",
+                "again and again",
+                "agar.io",
+                "agdgdgdr",
+                "Agent Sauce",
+                "A Goat",
+                "agus",
+                "AGUST-D",
+                "Agͥreͣeͫⱥ多leCⱥ多liรรi☂",
+                "ah, but u cant see me",
+                "ah, but u dont see me",
+                "Aha!",
+                "AHHHHHH!",
+                "Ahmad",
+                "Ahmed",
+                "Ahmet",
+                "AHOI",
+                "ah~",
+                "AI",
+                "AICIAGOGH",
+                "aIIan",
+                "aIIan y sonic",
+                "Aik",
+                "Ailoki",
+                "Aim(^-^)Bot",
+                "Ainnim Loof",
+                "air",
+                "Aith",
+                "ajajajjaja",
+                "Aj is dumb",
+                "ak",
+                "AK-47",
+                "Akilina",
+                "Akira bck!!!",
+                "Alan",
+                "ALAN PAP",
+                "ALAN PAPI",
+                "alcatras",
+                "Alejandro 22",
+                "alejo XD",
+                "Aleph",
+                "aleph",
+                "Aleph Null",
+                "alex",
+                "ALEXANDER👑💎",
+                "AlexDav",
+                "Alexis",
+                "Algi",
+                "Algiz",
+                "Ali",
+                "Alice",
+                "alien",
+                "a littl' bad",
+                "a little bit of fun :)",
+                "AliveKelichap",
+                "Alkaios",
+                "Alkaios",
+                "Alkali",
+                "Allah Is King",
+                "All Dead",
+                "ALL GO BENT",
+                "all i know 2x",
+                "all monsters",
+                "allmyfriend.aretoxic",
+                "allmyfriend.aretoxic VN",
+                "all my friends are cool",
+                "ALO",
+                "alone",
+                "alp",
+                "Alpha",
+                "Alpha",
+                "ALPHA CHAD OF CHADISTAN",
+                "Alpha Fart",
+                "alpharad",
+                "alr-ight",
+                "alright buddy",
+                "alsterercrak",
+                "Alt+f4",
+                "AltruisticFaric",
+                "Always not alway kid",
+                "A  l X back!!!!!",
+                "AL | 2 Week No Play",
+                "AL|Air",
+                "AL| JustICE- sry luna",
+                "AL| JustICE-theresaclone",
+                "AlสrᴍingSђerᴍ",
+                "AmetionMinion",
+                "AMIGOS",
+                "Am I Sinbadx?",
+                "am low, I Need Backup!",
+                "AMOGUS??????????????",
+                "a mongoose",
+                "Among Us",
+                "among us",
+                "A M O U G U S",
+                "Amyntas",
+                "AnA",
+                "Anak",
+                "Anak why u solo",
+                "A named player",
+                "Ancient",
+                "Anderson",
+                "Andivedyngstims",
+                "AndoKing",
+                "andria",
+                "Andy",
+                "An Endless Rise",
+                "Aneumenctr",
+                "angel",
+                "angel",
+                "Angel",
+                "Angel",
+                "Angel",
+                "Angela",
+                "Angle",
+                "AnglysSilly",
+                "angry?",
+                "anh tuấn anh nè tôm",
+                "Aniketos",
+                "Aniketos",
+                "Aniketos",
+                "animal",
+                "anime",
+                "anime",
+                "Anime",
+                "Anken",
+                "annialator",
+                "Annie",
+                "Annihilhator bravo 1m po",
+                "Annoying",
+                "Annoying drones",
+                "annoying tank",
+                "Anonymous",
+                "Anti-Hax",
+                "Anti celestial tank",
+                "AntilkMilkman",
+                "ANTI OCTO TANK",
+                "AntionFunTime",
+                "antontrygubO_o",
+                "antrax",
+                "AntsAreCool",
+                "a nuisance",
+                "An unnamed player",
+                "AnyMore",
+                "AnythonJS",
+                "Anytimple",
+                "ANZAI",
+                "Anͥkeͣnͫtscru",
+                "APE",
+                "a pet",
+                "Apex",
+                "Apfel Saft",
+                "A player",
+                "A Poisonous Egg",
+                "Apollon",
+                "Apollon",
+                "Apollon",
+                "a polygon",
+                "A polygon",
+                "APplayer113",
+                "apple",
+                "Aprendo.en casa",
+                "AQEEL",
+                "Aqua",
+                "Aquiles TEAM LOVE",
+                "Aquiner_ouo",
+                "AR",
+                "Ar-15",
+                "Ar 15",
+                "ara ara...",
+                "Arahana",
+                "Archimedes",
+                "Archimedes",
+                "Arcturus",
+                "Arcturus mobile",
+                "Ardenll54",
+                "Area closer",
+                "ArenaC",
+                "Arena Close",
+                "ARENA CLOSEA",
+                "Arena Closer",
+                "Arena   Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer ",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "arena closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena Closer",
+                "Arena CloserSinx :)",
+                "Arena Defender",
+                "Arena Opener",
+                "are the dominators blind",
+                "Are you okay?",
+                "arg",
+                "ari",
+                "arias",
+                "arisen",
+                "Arisu",
+                "Ark",
+                "Arkaic",
+                "ARKE:D",
+                "ARMADA",
+                "ARMADA",
+                "armtumroom",
+                "Arninℓץie",
+                "aronnax",
+                "Around",
+                "Around Calm",
+                "arR",
+                "arras.io",
+                "Arras.io",
+                "arras > diep",
+                "ARRASMONSTER KILLYOUha5x",
+                "Array.io",
+                "arrowz",
+                "Arsecritom",
+                "arslan",
+                "Artemis",
+                "Artemis",
+                "Artemis",
+                "Arthur",
+                "aru",
+                "ArΐsVΐssψ✨",
+                "Ar†h☢uldre🅽diส▤",
+                "as",
+                "a salty discord kid",
+                "AscendedCataBath",
+                "asd",
+                "asd",
+                "asdasd",
+                "asdasdasd",
+                "asddasda",
+                "asdf",
+                "asd fake",
+                "asdfasdf",
+                "asdfasdfasdf",
+                "asdfasdfasdfasdfasdfasdf",
+                "Asdfghjkjjhgfdsdfghjhgfd",
+                "asdfghjkl;:]@ouytrewq",
+                "asdfjkl",
+                "ASDUA",
+                "a sentilen",
+                "Asesino",
+                "Asesinooooooooooooooo",
+                "A Settlement Needs Your Help",
+                "Ashes",
+                "a shield",
+                "asia",
+                "asian kid",
+                "ASKED",
+                "askib",
+                "asky",
+                "As lc",
+                "a spinner",
+                "Astagfirulla",
+                "AstoundingEst",
+                "Astrageldon",
+                "Astral Java",
+                "asw",
+                "a sweaty no lifer",
+                "aswon",
+                "aswon(ur bad)",
+                "A tank",
+                "A TANK",
+                "A team with 💚 is doomed",
+                "Atereatha",
+                "Athena",
+                "ATK_X",
+                "atleast spare me till 1m",
+                "ATM",
+                "atomic",
+                "Attacker",
+                "AttentiveFornate",
+                "Atumkj.",
+                "Austinz",
+                "austinz",
+                "austo asa",
+                "auto",
+                "Auto's power",
+                "Auto 4",
+                "AUTO 555",
+                "Auto factory 19187944889",
+                "Auto factory 37448936323",
+                "auto gunner",
+                "Autooligue",
+                "AUUUUUUGH!",
+                "Avarice",
+                "Avenger!",
+                "Average DPS enjoyer",
+                "avex",
+                "AVIRA",
+                "avn",
+                "awa",
+                "AWESOMENATEXD",
+                "awesome soccer(pog)",
+                "AwesomeTomostur",
+                "Awes๏meStanψt๏m",
+                "awootube",
+                "Awzcdr",
+                "ax",
+                "AxiomaticMantr",
+                "Ayman",
+                "ayo",
+                "AYOOO",
+                "Ayo peace",
+                "Ayrton",
+                "ayy",
+                "ayyy",
+                "az",
+                "azen",
+                "AZERBAYCAN  TURK",
+                "AZERBAYCAN  TURKIYE",
+                "Azra",
+                "AZU",
+                "azuris lol",
+                "A_C_L",
+                "AŇergeNeesคnค",
+                "AƓ Aηgєℓ#Use AƓ  Tag",
+                "AƤeͥndͣiͫMonLaƤຮin",
+                "Aɴᴋᴜsʜ ᶠᶠ",
+                "AήixecemØcultiή",
+                "Aήสℓroseℓ♛",
+                "Aгti𝒸ulateUภtalaภ",
+                "Aຮiaτinga",
+                "Aᖙeth☢☢LØυᖙmØυth💌",
+                "A∂aptableやapti☢ng",
+                "A𝖙hedi🆁on",
+                "B",
+                "B(sian)",
+                "B1 battle droid",
+                "B2 super battle droid",
+                "ba",
+                "BA.2.75 Omicron",
+                "back pain",
+                "backrooms",
+                "Badaracco",
+                "badda",
+                "badog",
+                "baited!?!",
+                "baited??!",
+                "Ball",
+                "Baller",
+                "ballistic 2.0 fnf",
+                "Balloon",
+                "BaLu",
+                "BaLu...",
+                "baLu is kinda cool",
+                "Banana",
+                "Banarama",
+                "bandit",
+                "Bandu",
+                "bangladesh",
+                "Banned from seige?",
+                "Ban she",
+                "BANZAI",
+                "Bao",
+                "baos",
+                "Bar Milk",
+                "Baroydroyd",
+                "Barry",
+                "Bartek",
+                "Base",
+                "BASE",
+                "BASE MAKER",
+                "Basic",
+                "Basic",
+                "basic",
+                "Basic Enjoyers",
+                "Battle Tank",
+                "bay sorry.",
+                "bayzid",
+                "bazooka",
+                "bb",
+                "b b/",
+                "bb8",
+                "bbebebebe",
+                "BBoRRaBBiDDo",
+                "bcd",
+                "bcj8721yt",
+                "bcr",
+                "BDO",
+                "be",
+                "Bean Man",
+                "Beans",
+                "Beast",
+                "BeautifulFoutes",
+                "BeautifulToldif",
+                "BEDROCK",
+                "be dum like me",
+                "Bee",
+                "Beedaltyo",
+                "Beeg Yoshi Squad",
+                "beep",
+                "beep boop",
+                "be free",
+                "be freind",
+                "Beganiateds",
+                "Begone",
+                "begone",
+                "Begone (1v1",
+                "Behemoth",
+                "being afk",
+                "BeirstHairBall",
+                "belal abbasi",
+                "bello",
+                "Belowaver",
+                "Ben",
+                "BeneficentTocen",
+                "benni",
+                "BERD",
+                "berd",
+                "Berkanan",
+                "BERSER",
+                "bert",
+                "Be Sidewinder press khh",
+                "Best",
+                "BEST",
+                "best",
+                "BEST",
+                "best sentry",
+                "Betelguese is Super",
+                "Better Than U",
+                "bewear GX",
+                "BF An",
+                "bgs",
+                "bhosdike",
+                "BH_FireFreezer",
+                "Bi",
+                "biba338",
+                "bibi",
+                "bibi a",
+                "BigBadBoom",
+                "Big Beep",
+                "BigBrain Time",
+                "BIG BRAIN TIME",
+                "bigchad",
+                "big chungus",
+                "biggest noob",
+                "bigmac",
+                "big me!",
+                "Big Papa",
+                "Big Poppa",
+                "BIG POPPA",
+                "B I G V I E W",
+                "BILL WIN",
+                "BING CHILLING",
+                "bin huhu",
+                "b I protected u before",
+                "bird said the n word",
+                "Bisax",
+                "Bitter Dill",
+                "bixent boo",
+                "BJ",
+                "bla",
+                "Blank",
+                "Blarg",
+                "BLAST",
+                "blessing",
+                "BLITZ",
+                "blitzburger",
+                "blitzburger is pro",
+                "BLITZKRIEG STRAT",
+                "Blob",
+                "Block Craft 3D",
+                "Blocker",
+                "blon td siix",
+                "Blood // Water",
+                "blood for the blood god",
+                "Bloop",
+                "blue",
+                "Blue are dumb players",
+                "BlueJayJaimingi",
+                "blue octos useless",
+                "blue octos __",
+                "blue suck so bad XD",
+                "blue suck XD",
+                "Blumin",
+                "Blyat",
+                "bman",
+                "bo",
+                "bo",
+                "bob",
+                "bob",
+                "Bob",
+                "bob",
+                "bob",
+                "BOB",
+                "bob AT",
+                "bobbb",
+                "Bob le bricoleur",
+                "Bobro",
+                "bob the builder",
+                "bob xllnnnnn",
+                "bo ckick R",
+                "Bocow",
+                "Bodyguard",
+                "boi",
+                "boknoy",
+                "BOMBS AWAY",
+                "Bonaventure",
+                "BonaventureVT",
+                "Bong Bong won't help you",
+                "Bonk?",
+                "BooBooKittyRettlyst",
+                "boojawzee",
+                "boom",
+                "Boomer Humor",
+                "BOONE!!!",
+                "boone",
+                "booo",
+                "BOOOOOOOOOOOOOOOOOMM",
+                "boooster.io",
+                "Boop",
+                "boop",
+                "Boop skdoo bep",
+                "Boost",
+                "BOOSTER AIRSTRIKE ORELSE",
+                "Booster join",
+                "Booster race :D",
+                "bored rn",
+                "boring survivor",
+                "bosss?",
+                "Bossy",
+                "BOT-342465",
+                "botanical torture",
+                "Bots Drovtend",
+                "BoW",
+                "Bowler",
+                "Bowler",
+                "box",
+                "BoyFriend [FnF]",
+                "Bozo",
+                "Bravo",
+                "brayan el proxd",
+                "brazen",
+                "breaden",
+                "Brian",
+                "BrOBer The Prod",
+                "Broccoli",
+                "bro doesnt have a life",
+                "bro follow me",
+                "brogle",
+                "bronzzy",
+                "Brotherhood of Steel",
+                "BR PARADO",
+                "brrrrrrrrrrrrrrrrrrrrruh",
+                "Bruh",
+                "BRUH",
+                "bruh",
+                "BruhBruhBruh",
+                "bruhhh",
+                "bruhhh (vn)",
+                "bruh moment",
+                "Bruh Momentum",
+                "Bruh Monument",
+                "Bruh Monumentum",
+                "Bruh player",
+                "Brujh",
+                "bruno",
+                "bruuur",
+                "bryan",
+                "bryan  stichn",
+                "Bryson",
+                "BSK • ＫＩＬＬＥＲ亗",
+                "BSK・L E G E N Dᵀᵒᴾ",
+                "BSK・L i e e Eᵀᵒᴾ",
+                "btw",
+                "BT_O",
+                "b T規RㄩIes矩W ˋ*ˊd",
+                " BUB",
+                "BUB",
+                "Bubbles",
+                "bubble shooter",
+                "buff %t",
+                "buff %t please",
+                "buff arena closer",
+                "buff basic",
+                "BUGEN",
+                "BUGEN+",
+                "bugo",
+                "builder",
+                "BUILDERS!!",
+                "build wall :)",
+                "bukaka",
+                "Bullet Bill",
+                "BulutMobile",
+                "Bunzo",
+                "burh",
+                "Burning eye ;(",
+                "busco pareja7w7",
+                "BUSTER WOLF",
+                "But you keep on breaking",
+                "Buyandeho",
+                "Buzzy",
+                "BV",
+                "bvaietd?!?!",
+                "bvnfgh",
+                "Byakugan!",
+                "bye",
+                "Bye :)",
+                "bye error i gtg",
+                "bye jax",
+                "Byribibeg",
+                "BℝeͥncͣyͫtRสncoℝ",
+                "C",
+                "C - 4 Spank Spank",
+                "C - 4 Spank Spank",
+                "C-7",
+                "c.ew.11.1.11.1.11.1.1.11",
+                "c@rt3r",
+                "C@t has C@p",
+                "Caballo - horse",
+                "cable!!!",
+                "Caca",
+                "CACA",
+                "Caesar",
+                "cai chua",
+                "CAL",
+                "Calob",
+                "CAMALEON",
+                "CambessCupcakes",
+                "CAN",
+                "can",
+                "Canada > USA",
+                "Cancel Those Directors",
+                "Can I help you today?",
+                "Can pls be your friend",
+                "Can u see me? :D",
+                "can you beat me smashey",
+                "Captian",
+                "Caracal",
+                "Careenervirus",
+                "CARELESS(I care less)",
+                "car go tornado",
+                "carlitos pro",
+                "Carmen",
+                "Carpyular",
+                "Carry",
+                "Carsonxet",
+                "CarthaHatred",
+                "casa",
+                "casyle on the hill",
+                "Cat",
+                "cat",
+                "Catalyst",
+                "catch me",
+                "cat o' nine tails",
+                "CATS",
+                "cats>dogs",
+                "cats nya nya ;)",
+                "CAVE- CE",
+                "CaภdefJefe",
+                "CC",
+                "Cc",
+                "CCC",
+                "ccc",
+                "ccf",
+                "CDU No.30",
+                "CELESTIAL",
+                "Celestial",
+                "Celestik",
+                "CentoodDoobie",
+                "Cgfsd",
+                "ch.m",
+                "CHAARGE",
+                "Chaini",
+                "Chalicocerate - hu",
+                "Charge with me/defender",
+                "Charlemagne",
+                "Charles 18th",
+                "Charlie",
+                "Chase",
+                "chase him",
+                "cheap tank",
+                "ChEeSe",
+                "Cheese and Perfect RNG",
+                "cheese the best",
+                "Chekks",
+                "chew 5 gum",
+                "chicken",
+                "Chicken KenChicken ken",
+                "chicken wing",
+                "ChickyNuggyCat",
+                "chill",
+                "CHN fed",
+                "Chobblesome",
+                "Chompy610",
+                "Choose otto we stronger",
+                "chop",
+                "ChRiS",
+                "Christofer",
+                "christopher",
+                "Chroma",
+                "Chungus B.",
+                "ciao",
+                "ciganoit",
+                "ciken",
+                "circus of the dead",
+                "Cirrus5707",
+                "Cj",
+                "CJ",
+                "cjccsqb",
+                "ck to la roseanne",
+                "ck to la roseannenn.",
+                "Claire",
+                "CLEAN",
+                "Clearing shapes...",
+                "click 'F'",
+                "Clink",
+                "Clorat suotn",
+                "ClosePro 2/2/4/7/8/7/6/6",
+                "Closeyoureyes",
+                "Cloudless",
+                "CN Tower",
+                "Coapc",
+                "Cochon",
+                "cocomelon- r u AA",
+                "cocomelon :P",
+                "cocorito XD",
+                "code master",
+                "Cody",
+                "Coke cola espuma",
+                "college sucks",
+                "colombia",
+                "color",
+                "Colors all around me",
+                "Come Back Here!",
+                "COMEDORDEMAE",
+                "Comeme Soy Dulceee aaaaa",
+                "Comeme Soy Dulceeeee ;:(",
+                "Comeme Soy Dulceeeee xd",
+                "Comeme Soy Dulce wateer",
+                "Comet",
+                "COME TO PLAY FLORR",
+                "come with me guys",
+                "COMMAND.Z ANTI BOOSTER",
+                "comm ander",
+                "comma verga",
+                "ComptsBaldyDom",
+                "comrade",
+                "ConsistentOffortsi",
+                "constructor",
+                "cookie",
+                "cool",
+                "cool dude",
+                "CoolguySkinqu",
+                "cool kid",
+                "cooooooooool",
+                "cooper",
+                "cope",
+                "COPPA Sucks",
+                "copy my tank",
+                "Copy my tank ok pls",
+                "copy my tank pls",
+                "copy The tank",
+                "cor",
+                "coriander",
+                "corner base trust me",
+                "Coronavirus",
+                "Corrupt and dead.",
+                "CorruptedPenguin",
+                "CorruptedSpectro",
+                "Corrupt Y",
+                "Corrupt Z",
+                "CosseaPoppyseed",
+                "Covid 19",
+                "Cozy.",
+                "CoͥŇeͣrͫŇizαr⚔",
+                "CoήMonƑrสise",
+                "CoϻpePregy",
+                "CoภsนdBeสภs",
+                "cracked",
+                "CrankyBanc",
+                "CrAsH",
+                "Crash And Burn-Dayseeker",
+                "crasher",
+                "crasher",
+                "Crazy",
+                "Crazyattacker9YT",
+                "CraZy II",
+                "CraZy III",
+                "creeper",
+                "Creeper, Aw Man",
+                "crescent",
+                "crgine",
+                "Cristay",
+                "crocty gets 1M first",
+                "crocty poo",
+                "Crong crong crong",
+                "cronge",
+                "crongemaster",
+                "Crossboi",
+                "CROSSIANT",
+                "CrownPrincennnnn",
+                "Crozo",
+                "Crush Limit",
+                "csabi",
+                "CSDulce  .      _      .",
+                "CSDulce im boring :=",
+                "CS Dulce i some tired-_-",
+                "CSDulce  Legend stop ._.",
+                "CS Dulce oh ok -_-",
+                "CS Dulce u no are friend",
+                "CThanhYT",
+                "CTRL+W=godmode",
+                "CTRL+W=godmode(viet nam)",
+                "CUCK",
+                "Cursed",
+                "cute pet",
+                "cv v",
+                "cx",
+                "CX Fan",
+                "Cxrrupted",
+                "cyan",
+                "CyͥniͣcͫalIntudynt",
+                "Cz Player",
+                "cz sk",
+                "Công",
+                "CђⱥrᴍingPⱥcerᴍⱥr♛",
+                "Cสneͥຮeͣfͫight",
+                "CℓeDⱥiryVⱥiͥήtͣeͫℓ✨",
+                "CℝectͥℓiͣgͫŇe",
+                "C𝓪ge¥W𝓪gencie︾",
+                "d",
+                "d",
+                "d",
+                "D0M1NAT1NG++",
+                "D4C",
+                "D19",
+                "D:",
+                "D=EMON$ do u know?",
+                "da",
+                "Da boss",
+                "da duck",
+                "Daffa",
+                "Dagaz",
+                "Dagaz 2.0",
+                "dai",
+                "Daisy",
+                "Daizole",
+                "DalikTikku",
+                "Daluns the one?",
+                "Damage",
+                "dan",
+                "Dance",
+                "DANCE",
+                "DanceTillYou'reDead",
+                "Dangerous",
+                "DANGG",
+                "DAN GYUL",
+                "daniel",
+                "D A N I E L  bad...",
+                "daniel zZ",
+                "Dank",
+                "dante",
+                "DanZo",
+                "Dapa",
+                "Darius",
+                "Darius_575Pro",
+                "DaRk",
+                "dark",
+                "dark:)",
+                "Dark Devil",
+                "DarkHeart",
+                "dark karma link:wc2100",
+                "dark karma link:wc2118",
+                "Dark Pheonix",
+                "DarkStorm3",
+                "DARRREN1407",
+                "DarthBader",
+                "Darth Vader's Slave",
+                "darwin",
+                "das",
+                "Dasher8162",
+                "Data Expunged",
+                "DatBoi",
+                "Dave",
+                "David",
+                "david",
+                "David Sanchez",
+                "DawbufBunrose",
+                "Day, day, da-da-da-da-",
+                "DayeSaySay",
+                "db",
+                "dc yok bend",
+                "DD",
+                "dddd",
+                "Dddd",
+                "Ddddd",
+                "DDDDDD",
+                "ddqdqwdqw",
+                "ddt",
+                "dead",
+                "DEAD",
+                "Deadlord",
+                "Dead server",
+                "Death",
+                "Death Is inevitable",
+                "DEATH TO TEAMERS",
+                "Debreo",
+                "debris",
+                "Decagon?",
+                "ded",
+                "Dedeeeee",
+                "Deed",
+                "Deep",
+                "Deepr",
+                "deez",
+                "deezs",
+                "def",
+                "DEFEND",
+                "Defender",
+                "DEFENDER AL FRIENDS",
+                "defenders",
+                "Defenders of The south.",
+                "defender V2",
+                "DEFENSE",
+                "deffer in tanks",
+                "definitely not mq",
+                "Deino",
+                "Delta",
+                "delta",
+                "DEMIAN932",
+                "democrats SUCK",
+                "Demon",
+                "demon",
+                "DEMON",
+                "demon:solo protejomihijo",
+                "demon xd",
+                "demon xd:alone in life:(",
+                "Denied",
+                "Denied",
+                "Denied",
+                "Dernier Danse",
+                "Derniere Danse",
+                "Derp",
+                "Despair",
+                "DESTINY PRO",
+                "destroyah",
+                "Destroyer",
+                "destroyer",
+                "DESTROYER (VN)",
+                "Destroyer only",
+                "Destructor92A",
+                "DESTRUYE SQUADS",
+                "Detective Conan",
+                "Deus ex Machina",
+                "Deve",
+                "developer",
+                "developer",
+                "devil",
+                "devon",
+                "Devourer Of Gods",
+                "DevoutItlereve",
+                "Dev_Bs",
+                "dewfew",
+                "Dex Arson",
+                "Dexter playz",
+                "dez noits",
+                "DeͥℓiͣgͫhτfuℓAnᖙeg",
+                "dfdfdf",
+                "dfhdhgsdgf",
+                "dgfdgr",
+                "dh_hniV",
+                "DI",
+                "diana <pleayr>",
+                "Die!!!",
+                "die",
+                "Diedinsto",
+                "DIEGO",
+                "diep.io",
+                "Diep_daodan",
+                "dinmor",
+                "dino",
+                "dinogis",
+                "dino run",
+                "DIONAX",
+                "DiplomaticBerat",
+                "Director",
+                "Directors are Overused",
+                "Directors Are Overused",
+                "Disaew",
+                "Discord",
+                "Disposition",
+                "DittØήSqͥuaͣtͫty",
+                "Divine",
+                "diện",
+                "DJ-Nate",
+                "djbd65",
+                "DJT",
+                "DJVI",
+                "dk",
+                "dkd",
+                "dm",
+                "dn",
+                "Doanh: basic win vn :)??",
+                "DOEBLE TOP!",
+                "Doe£🆄lMψSo🆄l😬",
+                "dog",
+                "DOG",
+                "Dogatorix",
+                "doge",
+                "DOGE",
+                "Dogs On Mars",
+                "Dogs On Mars | no N",
+                "dohownik",
+                "Domain YT mobile player",
+                "Domb",
+                "Dominador",
+                "DOMINATOR",
+                "DOMINON",
+                "dom is easz",
+                "Don't bother me",
+                "Don't Let's Start",
+                "Don't Make Me Mad",
+                "Don't touch me",
+                "Don't worry I'm harmless",
+                " DONCRAK",
+                "Do Not Disturb (oops)",
+                "Do Not Touch Im AFK",
+                "Dont away, noob",
+                "dont feed me",
+                "DontJudgeABookByItsCover",
+                "Dont pee on the floor",
+                "Dont TaLk 2 mE",
+                "dont touch me",
+                "dont trust anyone",
+                "Doofus",
+                "Doofus",
+                "doomsday bunker",
+                "Door",
+                "DOOR nr.1",
+                "Doraemon",
+                "Dorcelessness",
+                "Dorcelessness.",
+                "doublade better",
+                "Dousermⱥi∂ﾂ",
+                "down",
+                "downside 930",
+                "DPS!!",
+                "DR. BEEEEEEEESSSS!!!!!!!",
+                "Dr. Eggman",
+                "dr.ninja",
+                "Dr.Tool",
+                "Drabbleasur",
+                "draco",
+                "dragon",
+                "Dragon ,You Dead",
+                "dragonfruit",
+                "dragonfruit icy 1212 X4",
+                "DragonGOD64",
+                "dragons go mlem",
+                "dragon sleep no brakezzz",
+                "drakeredwind01",
+                "Drako Hyena",
+                "DraXsaurus",
+                "dread",
+                "Dream",
+                "Dream",
+                "drift",
+                "drifting",
+                "Dr J.I.D eyer",
+                "droldaed",
+                "Drones are gae",
+                "drone users are weird",
+                "droplet",
+                "Dr pizza eyes",
+                "DRUNK DRIFTER",
+                "ds",
+                "dsa.",
+                "dscem",
+                "dssfb sk",
+                "duck",
+                "DuckBatman",
+                "DuckBatmann",
+                "ducko",
+                "ducky",
+                "ducky",
+                "duda",
+                "dude",
+                "du hund",
+                "duji",
+                "Dulanka",
+                "DullDozyLemodu",
+                "Dumb",
+                "DUMB",
+                "dumb",
+                "dumdum",
+                "dumpdump",
+                "dunt kell meh plas",
+                "Duo",
+                "DUO MONETER",
+                "Duong 20712",
+                "duo octo",
+                "duos",
+                "Dusk Defender",
+                "dustnine22",
+                "Duy Lee",
+                "DVS|| BuiltKIDD",
+                "dwada",
+                "Dyaranhi",
+                " dyllan",
+                "dáwsda",
+                "Dɪᴏ፝֟sᴀღ᭄",
+                "e",
+                "e04",
+                "E1",
+                "e5 y5gcv",
+                "E?",
+                "eaeaeaeaeaeaeaeaeaeaeaea",
+                "eafscx",
+                "eagle T",
+                "earth",
+                "earth = sphere",
+                "Earth is Super Cool",
+                "Eating Fighter ^Silvy^",
+                "eat my bullet",
+                "Eat my Doritos!",
+                "Eauletemps",
+                "Eauletemps 4V1=noobs",
+                "Eauletemps spin=screen",
+                "Eauletemps why?=(",
+                "eben",
+                "Echo",
+                "Ecxel",
+                "eda",
+                "edan",
+                "EDI",
+                "Edith",
+                "EDP445",
+                "eee",
+                "eeebot",
+                "eeee",
+                "eeeee",
+                "eeeeeee",
+                "eeeeeeeee",
+                "EEEEEEEEE",
+                "EEEEEEEEEEE",
+                "EEEEEEEEEEEEEEEEEEEEEEEE",
+                "eeeeeeeeeeeeeeeeeeeeeeee",
+                "eeeeeeeeeeeeeeeeeeeeeehh",
+                "Eeeeeeva",
+                "eef freefzz",
+                "Eesti",
+                "Egg'in",
+                "Egg Spawner",
+                "Egg tart",
+                "egvda",
+                "eh",
+                "ehehe",
+                "EHSY BAAA",
+                "Ehwaz",
+                "ehwhylag",
+                "EIDOLON",
+                "Eiffel Tower",
+                "either",
+                "EJIT",
+                "Eleanor",
+                "elecgance",
+                "elecgance4",
+                "elecgance404",
+                "Electrodynamix",
+                "Elegirionvedr",
+                "el epepep",
+                "ElfuภΐBΐBαr͢͢͢rel",
+                " ElguerreroHastaElfinal",
+                "eli",
+                "ELITE",
+                "elite basic lvl. 45",
+                "Elite Celestial",
+                "Elite Crasher",
+                "Elite Knigh*",
+                "eliza2",
+                "Elmo is gone",
+                "el mujahideen",
+                "eloxus",
+                "el pendejo",
+                "el pogero momento",
+                "Elson",
+                "EL TRUENO PRO",
+                "Emi 10 ra ge hatag",
+                "Emilnines",
+                "Emily",
+                "EminentKinteeni",
+                "Eminx",
+                "emir",
+                "emir",
+                "Emmett",
+                "EMO",
+                "emp",
+                "empire",
+                "Encipansoncla",
+                "End",
+                "Enderian Overlord",
+                "ENDERMÉN",
+                "Endoy",
+                "EnemyTracker (LookAtMap)",
+                "Enendscandspip",
+                "Energized",
+                "Engineer Army",
+                "Engineering",
+                "eng pa",
+                "enr",
+                "Enter Me",
+                "Enter to the Dungeon",
+                "epic nokia",
+                "Eponesibadedge",
+                "EpsiCron",
+                "Er0  VN",
+                "eRAnnnnnnnnnnnnnnnnnnnnn",
+                "EreN0",
+                "Eren noob you",
+                "Eren slenderman",
+                "erf",
+                "Eric.  The. Unstoppable",
+                "erro 1mil im so bad:(",
+                "error",
+                "Error 404",
+                "Error 505",
+                "errora",
+                "error error error error",
+                "ERROR windows xp",
+                "eryweufhw8r46yq3782edtqf",
+                "Es3et",
+                "Escort Carrier",
+                "EsionlyGillygum",
+                "es ta la vida que toca",
+                "ET",
+                "Eternal(VN)",
+                "eternal.exe",
+                "Eternal Guardian",
+                "EternalMakaush",
+                "Ethad",
+                "Ethan",
+                "Ethan david fernandez",
+                "EthicalPriametr",
+                "EthΐcαlͥHoͣdͫyetre⚠",
+                "EtionSeatides",
+                "EtRNInja",
+                "Etz",
+                "eu tenho a melhor mae^-^",
+                "eutimato your bad",
+                "Evaden K",
+                "Evades 2",
+                "Evalingђteᖙseᖙi",
+                "evan",
+                "Evan",
+                "everybodybecomespike",
+                "EVERYONE BE DESTROYER",
+                "Everyone Go MachGunner",
+                "everyone sucks",
+                "Everything RAM Mobile",
+                "EvesevStSteve",
+                "Evil AliExpress Box",
+                "Evil }{eonyao",
+                "ew",
+                "EwE",
+                "ewltjdwns3673",
+                "ewqasd2021vinicius",
+                "ewres",
+                "exc",
+                "exc",
+                "exc (fake)",
+                "exc (real)",
+                "Exendern",
+                "e xin thua",
+                "Exotrezy",
+                "Expand: 8(5y+88)",
+                "ExpectMe2BeDeadCuzOfLag",
+                "Exterminate",
+                "extreme hapiness noise",
+                "Extreme Speed",
+                "extrextrehomiscopihobia",
+                "exu boi",
+                "Exͥamͣiͫckร☢ή",
+                "Eydan ツ",
+                "Eye",
+                "EyeCⱥnᖙyᖘunᖙeseg",
+                "Eye Of The Sahara = City",
+                "eys",
+                "EZ",
+                "EZNT",
+                "ezz",
+                "EzzeKiel",
+                "ezzzezezezezezeze",
+                "EήthHⱥlfPint",
+                "f(x)=k",
+                "F-35",
+                "F-777",
+                "F-898",
+                "F7",
+                "Faaip de Oiad",
+                "FabianTu",
+                "factory not op :(",
+                "Factory Takeover",
+                "facts",
+                "facu++",
+                "Fade",
+                "fahrradsattel",
+                "FAIRY",
+                "Fairy",
+                "Fake.Fake.Fake",
+                "falc",
+                "Fallen",
+                "Fallen",
+                "fallen %t",
+                "Fallen %t",
+                "FALLEN. BOOSTER",
+                "Fallen AI",
+                "Fallen Auto-Tank",
+                "fallen booster",
+                "FALLEN BOOSTER",
+                "Fallen Boss",
+                "Fallen Bot",
+                "Fallen E",
+                "Fallen Factory",
+                "Fallen Hybrid",
+                "Fallen Nothing",
+                "Fallen Overlord",
+                "Fallen Overlord red",
+                "Fallen Spiddy",
+                "FALLEN SWORD",
+                "FALLEN SWORD",
+                "Fall Guys",
+                "F  A  M  I",
+                "far",
+                "farmer's tan",
+                "Fart",
+                "Fartington",
+                "FAST",
+                "fast boi",
+                "Faster",
+                "father landmine",
+                "Fatty",
+                "Faͥveͣrͫnext",
+                "FBI",
+                "fdb",
+                "fdf",
+                "fdfdf",
+                "fdgxcgvx",
+                "fdsmn",
+                "fed",
+                "FedEx Box",
+                "FEED ME",
+                "Fei",
+                "Felchas",
+                "Felchas",
+                "fellen 0",
+                "fence",
+                "fencer add me on disc",
+                "Fenrir",
+                "ferge",
+                "Ferge",
+                "ferrari",
+                "FersoPowerpuff",
+                "FessoPissant",
+                "fev",
+                "fewillos",
+                "FEWWW....",
+                "FEWWW....",
+                "FeZTi Fan",
+                "fezti fan",
+                "FeZTiVAL",
+                "FeZTivAL",
+                "FeZtiVaL",
+                "FeZTiVAl",
+                "FEZTIVAL",
+                "feztival",
+                "FeZTivAL",
+                "FeͥllͣsͫoϻƤlo",
+                "Ff",
+                "FF9JesT",
+                "ffa till 1m!!!",
+                "ffdf",
+                "ffffffffffffffffffffffff",
+                "fffffftt",
+                "ffhfghu",
+                "ffk the desrtroy",
+                "F for Froot Loops",
+                "FFOx",
+                "fg",
+                "FGDERTY",
+                "fgg",
+                "Fggf8ytr ftrfbtruf7rtfru",
+                "fghjijb",
+                "Ficli",
+                "FicบℝneCบʝo",
+                "FIFA",
+                "FIGHT",
+                "Fighter",
+                "Fighter tank",
+                "FIGHTONTHEHIGHTS",
+                "final destination, fox only",
+                "Finally, 3 m on siegers",
+                "Find Me",
+                "finland",
+                "FINz'D",
+                "Fire",
+                "FireBerryBethindi",
+                "fIrEbOt",
+                "fire exe",
+                "FireStorm",
+                "firework",
+                "Fireworks!?!?!?!?!?!?!?!",
+                "Firnas",
+                "First Time Play",
+                "fisch",
+                "Fistandantilus 39 AC",
+                "fix performanz, devz plz",
+                "FiήgtFiggץ⚔",
+                "Fk",
+                "fk demon",
+                "fkdla",
+                "Flace_25",
+                "Flash",
+                "Flashbacks",
+                "Flawless_",
+                "FleRex",
+                "Flight",
+                "floof",
+                "Floofa",
+                "floofa",
+                "floppa",
+                "Florentino",
+                "Flowey723",
+                "Fluffy",
+                "Flying",
+                "FnF",
+                "fnf is a poop",
+                "FNF Thorns",
+                "FOLLOW ME OCTO TANKS",
+                "FOLLOW ME TO VICTORY!",
+                "food",
+                "Fookeyedep",
+                "foon",
+                "footeloka",
+                "force feild",
+                "force field",
+                "Force field",
+                "ForessiKisses",
+                "forest",
+                "ForeverBound",
+                "ForgivingForn",
+                "Forgor",
+                "Forightse",
+                "fotosintesis",
+                "Fotosintesis",
+                "Founititag",
+                "Fourty-Six & 2",
+                "fov",
+                "Foxtrot",
+                "FoบຮervͥᎥdͣeͫ",
+                "FPT",
+                "fr0z3n",
+                "freakshow :)",
+                "Freddy",
+                "freee",
+                "free fire",
+                "free fire  max",
+                "Free Points? Nuh-Uh!",
+                "Free to insult",
+                "FREJEA CELESTIAL 1.48MXyn",
+                "Friend",
+                "friendly",
+                "Friendly",
+                "Friendly /j",
+                "Friendly Elite Crasher",
+                "friendn",
+                "friend of mo",
+                "Friend pls",
+                "Friends?",
+                "Friends ? ",
+                "Friends?",
+                "FRIENDS TO ENEMY",
+                "friend to all",
+                " Friend with me",
+                "frjhjhvt",
+                "FRNDL",
+                "frost",
+                "Frost? Mobile",
+                "Frostbite#6915",
+                "Frostbite#6915",
+                "FrownyTownswe",
+                "frrrrrr????",
+                "frrrrrrr???",
+                "Fruits",
+                "FR|Fajro",
+                "fshwel",
+                "ft. Karmatoken",
+                "fudgg",
+                "Fugitivo BR",
+                "fun.",
+                "Fundy",
+                "Funky Fresh",
+                "funnylemon",
+                "furan",
+                "fux",
+                "fvdr5",
+                "fvha",
+                "fwen -w-",
+                "FwgKing",
+                "FαcͥτoͣrͫyInτorτ",
+                "F๏นghτsere",
+                "Fℓน††eriή𝓰T๏ήce͢͢͢∂in",
+                "g'day mate :)",
+                "G,bdx m",
+                "G.A.P(MG)",
+                "G1019_t",
+                "gab",
+                "GABE",
+                "Gabe Itches",
+                "gabi",
+                "Gabogc",
+                "GABRIEL",
+                "Gabriel8",
+                "gal",
+                "Galactic slush",
+                "Galax",
+                "GALAXY",
+                "gamer.io",
+                "Gamer🎮",
+                "GANG",
+                "gang gang",
+                "Gangsters_Paradise",
+                "gart",
+                "gas",
+                " Gaurdian",
+                "Gavin",
+                "Gawr Gura",
+                "Gay Overlord",
+                "Gay Overlord",
+                "GB",
+                "GBQQ",
+                "gdfaaa",
+                "Gee, thanks",
+                "GEESER",
+                "Gelsouldi",
+                "Gem!?!?!?!?!?!?!?!?!?!?!",
+                "gemgemgemgemgemgemgemgem",
+                "Gemma",
+                "General",
+                "General",
+                "genocide BBB",
+                "Geo",
+                "g  ergd",
+                "German",
+                "get better bozo",
+                "get error to 1m",
+                "get error to 1mil",
+                "get in wall",
+                "GET MORE PEOPLE",
+                "Getnoobed",
+                "GetRekt",
+                "get rekt",
+                "Geຮຮionͥຮtͣaͫ",
+                "Gggg",
+                "ggggg",
+                "gg gmzin",
+                "ggh",
+                "ggking",
+                "gg partially you loser!",
+                "ggs",
+                "ggs (1m!)",
+                "ggs you are good drone",
+                "GGui",
+                "GGuisa",
+                "ggwz",
+                "GHASH",
+                "ghg",
+                "Ghgft",
+                "ghgh",
+                "GHHGR'986452|",
+                "ghhhhhhhhhhhtoast",
+                "Ghi",
+                "ghost",
+                "ghostly_zsh",
+                "Gianan",
+                "Giang~Mweo",
+                "Giann",
+                "GIANNIS ANTETOKUMPP",
+                "Giant Justice",
+                "GiantJustice-",
+                "Giant Justice YT",
+                "Giant Justice YT - GG",
+                "GIGA CHAD",
+                "Gigachad",
+                "GiGa LEN",
+                "GIGA SHRIMP",
+                "Giggity",
+                "Gingentray",
+                "giraia",
+                "giranha",
+                "git gud",
+                "give beta tester",
+                "Give Me Underused Vibes",
+                "Give Me Wings",
+                "give me your butt dude",
+                "glacieronfire",
+                "glenn <3 rachel",
+                "G l i t c h e d",
+                "glitch tale",
+                "glurip",
+                "gmonster",
+                "gnghfiukfhfj",
+                "go",
+                "go",
+                "GOAT",
+                "go away",
+                "Go Away",
+                "god fighter",
+                "god is good",
+                "Godzilla",
+                "godzilla",
+                "gofra",
+                "GoGe",
+                "go jax!",
+                "goku",
+                "GOKU",
+                "Goku drill",
+                "GOMU GOMU NOOOOOOOOOOO",
+                "GONIALS",
+                "Gonials > Bird",
+                "gonzalo whathat",
+                "Good!",
+                "Good",
+                "Good Job Chicken",
+                " GoodLuck",
+                "good luck",
+                "good morning",
+                "goofy ah single",
+                "goofytank",
+                "Gorilla gang",
+                "Gortaitic",
+                "go sleep",
+                "Gosu General",
+                "got 3m og save cant use",
+                "go to 10 mil record",
+                "Go to Church",
+                "GO TO DA TARGET STOEEE",
+                "GOTTA SWEEP SWEEP SWEEP",
+                "Goubekson",
+                "GPA",
+                "Gr8",
+                "Grabourch",
+                "grace.",
+                "grandmas ashes",
+                "graumops",
+                "gray",
+                "GRAY STILL PLAYS",
+                "Graziani",
+                "GraվรⁱRนgraτ🌻",
+                "Great Bydgoszcz Reich",
+                "greedy",
+                "green",
+                "Green.grey.purple.blue.",
+                "GREEN Barricade",
+                "Green Defender",
+                "green square",
+                "green sunfish",
+                "Green will win",
+                "Gregoryelproo",
+                "Greg the Hunter",
+                "grendel",
+                "Griffy",
+                "Grill my flippen butt",
+                "Ground",
+                "GRRR",
+                "gruby",
+                "GrͥesͣsͫB𐍉sslคdψ",
+                "Grαcΐ๏uຮCaͥ๏uͣnͫc",
+                "gtegnugnbdbdtui",
+                "gtrr56e4e5eerer",
+                "Guard",
+                "Guardian",
+                "guardian",
+                "Gudmman",
+                "GUGUn",
+                "Guilherme",
+                "Guillotine",
+                "GujiGuji",
+                "gulbos gulbos gulbos",
+                "Gun",
+                "gun boll",
+                "Gurmaan THE PRO",
+                "Gusfin3  :)",
+                "Gustav",
+                "Gutey",
+                "Guy",
+                "guy",
+                "Guͥΐlͣtͫless𐐚otlץsΐs",
+                "G vytvyv",
+                "GWiz",
+                "GX",
+                "GX .ver",
+                "GxngW",
+                "GymGuyMgbil",
+                "GZGESETA",
+                "GℝegⱥℝiouຮMeⱥℝee☂",
+                "h",
+                "h",
+                "h..hi :S",
+                "h1h4",
+                "h8u",
+                "Ha!Get Rekt",
+                "Ha...Get Rekt",
+                "HAAAAAAAAAAAAAAAAAAAAAAA",
+                "hack",
+                "hacker",
+                "HACKER",
+                "hackercool",
+                "hacker lololololol",
+                "Hagalaz",
+                "haha",
+                "hahaa u noob",
+                "Ha Ha Boo",
+                "haha bowler no 1M",
+                "hahaha!!!",
+                "Hahaha",
+                "HAHAHAHAHAA",
+                "HAHAHAHAHAHA",
+                "Hahahahahahahahaha",
+                "HAHA HEHE HUHU",
+                "HAHA HEHE HUHU MOBILE",
+                "HAH LOLX)",
+                "hai",
+                "haiw",
+                "Halal Certified Tank",
+                "Hallo",
+                "halo",
+                "Hammer",
+                "Hank",
+                "hansith",
+                "Hanumanumani",
+                "Happe",
+                "happe",
+                "happy!",
+                "happy day",
+                "happy mafer <3<3<3<3<3<3",
+                "hara",
+                "hara )))=",
+                "hara- XDDDD",
+                "hara ...",
+                "hara dont trust me",
+                "hara vi",
+                "Harder Demon",
+                "harmless shower",
+                "harnesto",
+                "Harry Styles",
+                "Hatsune Miku",
+                "Haunted",
+                "have fun crying eren hah",
+                "Have mercy...",
+                "Have you seen me",
+                "hawaii",
+                "   HCM MUÔN NĂM",
+                "Hdujdb",
+                "he",
+                "Healer",
+                "healer",
+                "Healer",
+                "healersruseless",
+                "Heandy",
+                "HeaຮΉ𐍉ducҜᴸᴵᶠᴱ",
+                "heck",
+                "HECool",
+                "heeeeeeelo",
+                "Heeh",
+                "HEEHEE",
+                "heh",
+                "hehe!",
+                "hehe",
+                "Hehe",
+                "hehe boi vn",
+                "hehe car go vroom vroom",
+                "Hehehe",
+                "hehehehaw",
+                "heist3",
+                "Helga",
+                "hell",
+                "HELO GUYS",
+                "Help",
+                "help",
+                "HELPE ME FOR HELP YOU",
+                "help me",
+                "HenHen",
+                "HenHennnn",
+                "HeNrY",
+                "HENRY      ANOS7",
+                "Henrystickcmans",
+                "here to make friends :D",
+                "Here Were Dragons",
+                " HEROBRINE",
+                "Herobrine",
+                "heroy_105",
+                "Herrionati",
+                "hetman666",
+                "Hewwo :3",
+                "hex",
+                "HexaDecagon(I grind)",
+                "hexagonal",
+                "Hexagon Temple",
+                "HEXDECA",
+                "Hey!",
+                "HEy Im frendly ;)",
+                "hey moskau!! moskau !!",
+                "hey sister",
+                "Hey team",
+                "hey vn;d",
+                "Hey What Happened?",
+                "heyy!!",
+                "heyyyy",
+                "HEYYYYYYYYYYYYYYYYYYYYYY",
+                "Heɭɭ฿☢ᴿåbo",
+                "HeͥᴍaͣdͫeDelᎥ𝖗Ꭵum😇",
+                "He∂uαlrigive",
+                "hfski",
+                "hgdgt",
+                "hghg",
+                "hguyuthg",
+                "hhfggddfdf",
+                "HHH",
+                "hhh",
+                "hhhh53535",
+                "hhhhh",
+                "hhhhhhhhhhhhhhhhhhhhhhhh",
+                "hi!",
+                "HI!",
+                "Hi",
+                "HI",
+                "hi",
+                "hi",
+                "hi (original)",
+                "hi.",
+                "Hi ._.",
+                "hi8addas",
+                "hi :)",
+                "hi ;)",
+                "Hiary",
+                "Hiary4",
+                "hiboiXD",
+                "Hi bruh guy",
+                "Hichicapho",
+                "HI  Five",
+                "HighFenrir",
+                "highh",
+                "HI GONIALS",
+                "hihi",
+                "hihihi",
+                " hihihihuhihihihhiihhihi",
+                "Hii",
+                "hiiii",
+                "hiiiiiii",
+                "hiiiiiiiiiiiiii",
+                "Hiiiiiiiiiiiiiiiiiiii",
+                "hi im friendly :)",
+                "hi im one",
+                "hijo de su putisima madr",
+                "Hi Levi!",
+                "hi long tri",
+                "Hinote",
+                "Hint :D",
+                "hiro",
+                "hi saya",
+                "Hissiodustomer",
+                "Hi Travis!",
+                "Hiu VN",
+                "hi UwU",
+                "hi vn 1",
+                "HI Yoou",
+                "HI  you mom is here",
+                "HI Youvn",
+                "Hiภⱥls†MiAlmⱥ",
+                "hi ツ",
+                "Hi 香港😘> pls don't kill�",
+                "hj",
+                "Hlp my ky r brokn",
+                "Hm",
+                "Hm",
+                "Hmm",
+                "HMMMMMMMMMMM you are L",
+                "hmst",
+                "HNY",
+                "hoang",
+                "hoang118",
+                "Ho Ho Ho",
+                "hohohoimsanta",
+                "Hoi",
+                "hola",
+                "Holy",
+                "Homeless man",
+                "Homing_Pigeon",
+                "honesty Spectator",
+                "Honey Bee",
+                "hooray",
+                "hop",
+                "hope i dont dc",
+                "Hoping",
+                "Horizon",
+                "HORRIBLE LAG i'm pacific",
+                "hose man",
+                "hostile",
+                "HostilityBustay",
+                "Hotel",
+                "Hourabony",
+                "houses",
+                "Houstsibl",
+                "Houℝgͥΐcͣaͫr︾",
+                "how? what? why?",
+                "hows your day",
+                "how to get testbed?",
+                "How to get you",
+                "how to stack fighter",
+                "hsg is sb",
+                "Ht",
+                "hu",
+                "hub",
+                "huff",
+                "huggi wagi",
+                "Huggy wuggy",
+                "huggy wuggy 2",
+                "Hugh",
+                "Hug Me",
+                "Hugo",
+                "huh",
+                "HUH?",
+                "HumptyImpelic",
+                "HUNG",
+                "Hung dayy",
+                "HunggVn",
+                "Hunker down",
+                "Hurricane",
+                "hus",
+                "Hut",
+                "huttutu",
+                "huy",
+                "Huy ;-;",
+                "huy vn :D",
+                "huy vn :D",
+                "huy vn :D nhu loz",
+                "hvdhh",
+                "hWE",
+                "HxD",
+                "hy",
+                "Hybalixa",
+                "hybrid",
+                "Hybrid",
+                "Hydra",
+                "hydro",
+                "Hymness",
+                "hyperbolica",
+                "hypertone",
+                "H̵͊̕ė̵̮l̷͎̈́l̵̅͛ơ̸͊",
+                "H̵͊̕ė̵̮l̷͎̈́l̵̅͛ơ̸͊",
+                "HⱥŇceIcepicҜ❥",
+                "I",
+                "I",
+                "I",
+                "i'm a sadboiz (joke)",
+                "I'M CHILLIN",
+                "I'm Friendly",
+                "i'm friendly",
+                "I'm harmless! -Press N",
+                "I'm Innocent",
+                "I'm in school",
+                "I'm not bad",
+                "I'm poor:(fortnine duo",
+                "I'm protecting you! Sort",
+                "I'm Q",
+                "I'm Real",
+                "I'm so lag(sinbadx)",
+                "I'm your son",
+                "I'm_Chris",
+                "I also helping blue",
+                "I am milk",
+                "I am your shield :)",
+                "Ian6000",
+                "iar",
+                "iar chary",
+                "i asia so 300ms",
+                "i believe in jesus",
+                "I bet you never",
+                "ICBM",
+                "Ice Breaker",
+                "ice tea for free",
+                "ID",
+                "i destroy destroyers",
+                "IDK",
+                "Idk...",
+                "idk bro",
+                "idol askib",
+                "I don't even care",
+                "I don't know",
+                "I don't need a Partner.",
+                "idonthavaccount",
+                "i dont know",
+                "idrk",
+                "I eat dirt",
+                "Ifarm",
+                "igh",
+                "Ight Bro",
+                "i go high",
+                "igoty",
+                "i go UP and DOWN",
+                "i hate %t",
+                "Ihavelocty",
+                "i have sponks :)",
+                "Ihv2010",
+                "III",
+                "iiiiiiiiiiiiiiiiiiiiiiii",
+                "ijklmnop",
+                "I JUST SUCK",
+                "i just want shiny shapes",
+                "ikandoit",
+                "IKEA Box",
+                "i like cheese",
+                "i like cheese too",
+                "Ilikefarming",
+                "ilikemen",
+                "i like walls:3",
+                "Ill Tear your eyes out..",
+                "illuminati",
+                " i look into ur soul",
+                "i looove %t",
+                "I love nahu",
+                "I Love you",
+                "I Love you",
+                "im 100 years old",
+                "im a cat",
+                "Imaginary",
+                "Imagine",
+                "imagine being nub",
+                "IMAGINE DRONE IN TDM",
+                "imagine spinning",
+                "im a joke",
+                "im a joke",
+                "Im a landmine pls nohurt",
+                "i m a protector",
+                "IM AWESOME",
+                "IMAXI",
+                "im a yoututoer",
+                "imbad",
+                "im bad",
+                "im beef",
+                "im bored",
+                " im crying do to U!",
+                "Im friendri your order",
+                "Im gonna knock you out",
+                "im new",
+                "imnew",
+                "ImNew",
+                "Im New,dont kill me pls",
+                "im noob",
+                "Im not a tank",
+                "Impact of TY-77",
+                "Impeach Trump",
+                "im poppin' off",
+                "ImposingVelsical",
+                "imscared",
+                "Im scary",
+                "im sorry",
+                "IM SUPER RETARDED!!!!!!!",
+                "im the best",
+                "Im uwu",
+                "im watching you",
+                "Im weakest tank",
+                "IM WITH STUPID =>",
+                "im your pet",
+                "Imק𝔯essi𝕧eや𝔯iτs",
+                "InceirKissyFace",
+                "Indeed",
+                "India",
+                "India",
+                "INDIA",
+                "INDIAN",
+                "Indo",
+                "Indo Kok gk pro",
+                "I need 3 1m more",
+                "i need a pee",
+                "i need score",
+                "i never bin 1 mill",
+                "Inevitable X",
+                "Info?",
+                "Inf𝔞M𐍉nFr𝔞ΐรe",
+                "Ingdpoici",
+                "IngenScrooge",
+                "IngheoAngon",
+                "IngiShinyGaze",
+                "Ingledible",
+                "IngmerRhino",
+                "IngshiDingo",
+                "InguDerange",
+                "IninFeint",
+                "Injoro",
+                "ink sans",
+                "Innkeeper Worm",
+                "Insanity",
+                "InsibilWinkyDink",
+                "Inside Out!",
+                "insta 'brn.o.z'",
+                "insta: 'brn.o.z'",
+                "Internet Explorer",
+                "into my head",
+                "Into the Light",
+                "Inverse",
+                "inverse square law",
+                "invincible man",
+                "invisible drones",
+                "Inͥ∂eͣlͫψຮtr",
+                "i only farm",
+                "i only spectate",
+                "IRS",
+                "i Saw LimeinSoccer penta",
+                "I see",
+                "i see fire",
+                "i see who you are",
+                "is op on siege mode",
+                "I stand for Liberty",
+                "i suck",
+                "i suck at bosses",
+                "Isͥheͣrͫΐτaℓes",
+                "it's a lie",
+                "It's a lie",
+                "it's a lie it's a lie",
+                "It's all okay.",
+                "itachi",
+                "Italok",
+                "Itarᖙรcreϻa",
+                "Itiattive",
+                "ItisBityarani",
+                "its me! the",
+                "its me pekola",
+                "Ittelitingly",
+                "ItyansSugarBuns",
+                "Itycomplandshor",
+                "Ityretuddynt",
+                "iuiui",
+                "ium",
+                "iurgitues",
+                "i use hacks",
+                "I use handphone",
+                "I use underrated tanks",
+                " Iv",
+                "IvanGG",
+                "ivoree",
+                "i vow to protect",
+                "I Voyage Around Map",
+                "iv vs 3",
+                "IW",
+                "I WANT A HIGH SCORE",
+                "IwantLegs",
+                "i will download osu",
+                "I Will Give U My Points",
+                "i will troll :D",
+                "i won't let it end",
+                "IXGAMËSS",
+                "iXPLODE",
+                "Izumi-san (VN)",
+                "IŇeττivie♛",
+                "IήesนrͥŇeͣmͫ",
+                "Iτedeຮeded",
+                "Iภge†eͥℝeͣdͫu",
+                "I๓թe𝒸cąbℓeMusper☘",
+                "I†iͥonͣgͫingeℝna⚠",
+                "I𝓃gMøn🅰nge",
+                "j",
+                "J.L",
+                "ja",
+                "jace",
+                "Jachris",
+                "jack.vn",
+                "Jack Daniel",
+                "JACKSON",
+                "Jacob gomez_Jadenian",
+                "Jacob gomez _ Jadenian",
+                "jacquie",
+                "jaffa calling",
+                "Jagdpanzer IV",
+                "Jagdtiger",
+                "Jain",
+                "jajajaj",
+                "Jake",
+                "Jambi",
+                "Jame∂iͥPaͣtͫtψMeℓt",
+                "Janet",
+                "Jap",
+                "jared2.0",
+                "JaredUwU",
+                "Jash",
+                "jaxon",
+                "jax sucks",
+                "jbc",
+                "j bert",
+                "jeb",
+                "Jeff",
+                " jeje",
+                " jeje.2",
+                "Jekyllean",
+                "Jekyll Why",
+                "jelly",
+                "jellybEab",
+                "Jera",
+                "jerry",
+                "Jerry",
+                "Jerry - LOL",
+                "Jes;/;ter",
+                "jesian",
+                "Jess",
+                "JESUS E AMOR",
+                "jesus proooooooooooooooo",
+                "Jet(pet)",
+                "JeͥcrͣeͫสCleʝerrℽ",
+                "jhh",
+                "jhonny",
+                "Jhon the nub",
+                "Jikang",
+                "jimmy",
+                "jimmy",
+                "jj",
+                "jj",
+                "jjj",
+                "jjjj",
+                "jjjjj",
+                "jjuanto",
+                "jk",
+                "JK",
+                "JK+",
+                "jkhhgg",
+                "jkl",
+                "jmanplays",
+                "JockyAckn",
+                "joe",
+                "Joe Biden",
+                "Joe Mamma",
+                "john",
+                "johnrobin",
+                "JohŇiteƤⱥ",
+                "Joidaskin",
+                "JOIN THE PENTA PARTY",
+                "jojo",
+                "JokaDa",
+                "JokaDa: how incremente s",
+                "JOKER",
+                "joker",
+                "Jolo",
+                "Jon",
+                "jonas",
+                "jonh",
+                "jonh real",
+                "Jonk",
+                "jony0814",
+                "jonyy0814",
+                "jor",
+                "jordan(:",
+                "Jorge",
+                "jory",
+                "jose digma",
+                "JOSEF",
+                "josh",
+                "Josh",
+                "josh how play?",
+                "joshkidkid",
+                "joshs",
+                "JOSHUA",
+                "Jotaro",
+                "jotaro kujo",
+                "Jr.Greeen",
+                "JSABJSAB",
+                "JSjs",
+                "jsohi",
+                "JTG",
+                "juan",
+                "Juan B)",
+                "JudensPendulum",
+                "Judith",
+                "JUIDNDI",
+                "JUIHAN",
+                "Julia",
+                "Juliet",
+                "jumla",
+                "jummer",
+                "JUMP ROPE 10 TIME IN ROW",
+                "Juna",
+                "jungleman",
+                "junhu",
+                "just",
+                "Just aj",
+                "Just a Spectre",
+                "Justa_Noob",
+                "just boone",
+                "just duo",
+                "Just Existing",
+                "Just Having Fun",
+                "just joe",
+                "Just Luke",
+                "JustLurkin",
+                "Just Spinning",
+                "jUst TrolLinG aRouNd",
+                "Just watching",
+                "jygghhjj",
+                "jz",
+                "JzF",
+                "JบicץJบnᖙen",
+                "J๏ѵiaℓP𝓇iaℓ",
+                "J𐍉viαℓC𐍉vi𐍉",
+                "k",
+                "k",
+                "K.I.L.L",
+                " KA2",
+                "kaan",
+                "ka boom",
+                "Kaboom",
+                "Kael",
+                "Kaiju spacegodzilla",
+                "Kaiju you",
+                "kaio",
+                "kakyus222",
+                "kakyus222f",
+                "Kalashnikov",
+                "Kalijia",
+                "Kalijia GG",
+                "Kalijia Let's Peace",
+                "KANG OF WAKANDA",
+                "Karen-SpeakToYourManager",
+                "KarMaN",
+                "KarmaToken",
+                "karol43",
+                "Karthik",
+                "Kartoffel",
+                "kase",
+                "kase is good",
+                "Katya",
+                "kavin",
+                "ka yawa",
+                "Kazakhstan",
+                "Kazzbro",
+                "kbshlong",
+                "kdk",
+                "Keestingko",
+                "kek",
+                "kelly",
+                "KEMUEL667",
+                "kendyl",
+                "kendyl 1",
+                "Kenobi!!!!",
+                "KermitHasAGlock",
+                "kermit the frog",
+                "kevin",
+                "Kevin Heckart",
+                "kevynz",
+                "kha",
+                "khang",
+                "khe",
+                "KHOA",
+                "khoa fake:)))",
+                "Kid",
+                "kiet",
+                "KillerTMSJ",
+                "KILL ME I DARE YOU",
+                "Kilo",
+                "Kim Jong-Un",
+                "king4a",
+                "king bob",
+                "KING CRIMSON!",
+                "Kingdom Hearts",
+                "King Hans",
+                "king of ...",
+                "king of diep",
+                "KING OF DRONES",
+                "King of Pros",
+                "King Pikachu",
+                "king pug",
+                "king slayer",
+                "king vn",
+                "King_plays",
+                "Kino",
+                "Kira",
+                "Kirbo",
+                "kirilloid",
+                "kiriloid",
+                "KissableDontrisd",
+                "kitten",
+                "Kitzuneko",
+                "kiyo",
+                "kjiegu835946793",
+                "KK",
+                "kk",
+                "kkj",
+                "kkk",
+                "kkkkkk",
+                "kkkkkkkkkkkkkkkkkkkk",
+                "KL",
+                "Klair",
+                "KN-23",
+                "knbg",
+                "knjbfhiu",
+                "Know",
+                "Knoz",
+                "KOA",
+                "koala",
+                "Koala",
+                "koby",
+                "Kofolka",
+                "koishi",
+                "kokak",
+                "kokun",
+                "Kol",
+                "kolibri",
+                "kom",
+                "kool",
+                "koral",
+                "KOREA",
+                "Korea :D",
+                "korean",
+                "korea no academy",
+                "korne",
+                "Korone Chan",
+                "Koronoe Chan",
+                "kostas friends ? greece",
+                "koten-",
+                "kotetsu",
+                "Kozuki Momonosuke",
+                "kr",
+                "kr9ssy",
+                "kracc bacc",
+                "kraken",
+                "kral kaan",
+                "Kristoffer",
+                "Kronos - Eternal",
+                "Krystal110607",
+                "KRYZ",
+                "KSA",
+                "ku",
+                "kumar jeremy",
+                "kuro",
+                "ky",
+                "Kylaura",
+                "Kyrie o.O",
+                "L4r9",
+                "l7er max",
+                "La-BareTTA",
+                "LA2T",
+                "La CFE me quito la luz",
+                "laco",
+                "la couronne",
+                "La Espada",
+                "laffy taffy",
+                "lagg",
+                "Lagmat YT = 🎷 channel",
+                "LAINofLAIN",
+                "lakalaka",
+                "lakf",
+                "La meilleure",
+                "laranon br",
+                "Last remote",
+                "Lateralus",
+                "Lateralus",
+                "laugh_laff",
+                "Launchers no buff no gg",
+                "lautaro",
+                "lautayo",
+                "Lava Perros",
+                "lawless",
+                "LazerLOL",
+                "LazuLight",
+                "ldldl",
+                "LEADER = BANNED PLAYER",
+                "LeaderboardAllDirectors.",
+                "leader Slayer",
+                "Learn with pibby",
+                "leave me alone!",
+                "leave me alone pls",
+                "lee77",
+                "lEFF",
+                "left for dead",
+                "Legacy",
+                "legend",
+                "LEGEND",
+                "Legend",
+                "Legendary",
+                "LEGENDARY (VN)",
+                "LEGENDARY BEST",
+                "LemonTea",
+                "lena",
+                "Lena",
+                "lena<3",
+                "lenin12",
+                "lenin pro",
+                "leo!",
+                "leo! hel",
+                "Leo",
+                "Leo hacker",
+                "Leon",
+                "Leonard",
+                "leonardo",
+                "leonardo YT",
+                "LEOPARD 1 WILD",
+                "Lera",
+                "let's begin....",
+                "let's go!",
+                "Let's work together!",
+                "Let's work together!  N",
+                "le tank",
+                "let be friend",
+                "let me farm alone",
+                "Let me free",
+                "let me protect u my lord",
+                "lets 1 v 1 bra",
+                "Lets be frands",
+                "lets be freinds guys!!!!",
+                "letsbuildawall",
+                "LETS GOO",
+                "let u know",
+                "Lety <3 :)",
+                "lev",
+                "level",
+                "Level  fun",
+                "Leviathan",
+                "LIBE",
+                "Liberty Prime",
+                "Life is good",
+                "Lifeless..",
+                "Lightning",
+                "LIGHTNING DRAGON X 96",
+                "lightz squad",
+                "like",
+                "Like crashers",
+                "Like dat",
+                "lily the pad",
+                "Lima",
+                "LincystColestah",
+                "Linghtning McQueen",
+                "link ...",
+                "LintanG",
+                "LintanGG",
+                "LintanR",
+                "lio",
+                "list of noobs:",
+                "literally the changelog",
+                "LittleBana<3",
+                "little bitch",
+                "LITTLE GUY",
+                "little one",
+                "little one :D",
+                "Little one <3",
+                "Little Red Rocket",
+                "Little Timmy",
+                "Lixeiro do mal",
+                "Lixツ",
+                "Liͥveͣrͫiภgบi",
+                "lk;k",
+                "llego el pro!",
+                "lll",
+                "llllllm",
+                "llol",
+                "LMGshooter",
+                "lnwZa007",
+                "lobo",
+                "LOCO",
+                "Lofi",
+                "lo hoc hanh",
+                "Loki",
+                "lol",
+                "lol",
+                "lol",
+                "LOL",
+                "lol1",
+                "lol2",
+                "lol:):):):)",
+                "lol darth vader noob",
+                "loler",
+                "lolera",
+                "lolnub",
+                "LOL ONYXD",
+                "lolstar",
+                "Lonely :/",
+                "longest run",
+                "long nameeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "longvn racing boiz",
+                "look behind you",
+                "look llllllll",
+                "look llllllll kkkkkkkkkk",
+                "Loop",
+                "lopi",
+                "lor",
+                "Lorain",
+                "lorain",
+                "LorcaExE",
+                "LORD X",
+                "Lore",
+                "Lore",
+                "Lorenzo",
+                "LoSTcar",
+                "Lost MvP#7777",
+                "Lostvayne",
+                "Lotus",
+                "LowKey",
+                "loxc",
+                "loz.",
+                "lp lithium",
+                "lqkf",
+                "LSV-005",
+                "ltbc",
+                "ltester2000",
+                "lth",
+                " lu",
+                " lucas",
+                "Lucas",
+                "lucas",
+                "luchi",
+                "lucho",
+                "lucky",
+                "Lucy",
+                "Luffy",
+                "luis",
+                "luis daniel el pro",
+                "luka modric",
+                "LUKI",
+                "LUMBRE",
+                "lumity",
+                "lumos - kms",
+                "LumpyNemples",
+                "Lunatic",
+                "lurker",
+                "lusy",
+                "Lux",
+                "Lx1000000000000000000000",
+                "ly",
+                "lyxn",
+                "LΐvͥesͣeͫsChΐℓΐ",
+                "L𐍉veCaภdψMaͥภdͣeͫra✨",
+                "L𐍉𐍉ภψSi𐍉ภaͥlsͣeͫ❥",
+                "m",
+                "M.",
+                "M.D",
+                "M4a1",
+                "M8",
+                "M163 SPAA",
+                "Ma$t3R",
+                "Ma$t3R=No Ski||s",
+                "Ma$t3R lucky",
+                "Machine Gun",
+                "Machine Gunner =best",
+                "Machine Gunners, unite!",
+                "Machine gunOP",
+                "mada fking",
+                "MadCroc",
+                "MadCroc 1.21mToday",
+                "Maddog",
+                "mafer  <3<3<3<3<3<3<3<3",
+                "mafer bad DX",
+                "mafer im sad 3<",
+                "mafia",
+                "Maga",
+                "Magaltyea",
+                "magic_cheese",
+                "Magikarp",
+                "Mago",
+                "mahiru",
+                "mahiru shiina??",
+                "Mahlo Cardinal?",
+                "mahluktakkasatmata",
+                "mai",
+                "MAICK",
+                "MAICROFT",
+                "maida",
+                "maikesito",
+                "MaiLotVNN",
+                "main menu",
+                "Maize",
+                "Major Meowzer YT",
+                "Make circle with Tri twi",
+                "maksim",
+                "Maksim",
+                "Manager",
+                "manager is just better",
+                "Mango",
+                "ManiaC",
+                "Manic|Eraser|Cat110",
+                "manne",
+                "Manoel Rafael",
+                "manoso",
+                "Manoso G",
+                "Mantra",
+                " manu",
+                "Marchin Through Georgia",
+                "Marco the great",
+                "Mardi 1",
+                "margaret thatcha",
+                "MARK",
+                "Marxtu",
+                "MARY",
+                "Mary",
+                "Masher",
+                "Master",
+                "master",
+                "MASTER",
+                "Master Noob: Bruhhhhhhhh",
+                "Master Noobpet",
+                "Master of dying",
+                "Mat (Bocow)",
+                "ma ta",
+                "matao",
+                "matatoe",
+                "mateo",
+                "Maternize",
+                "Mateus",
+                "matew",
+                "mathias",
+                "MATHUEL",
+                "Math you",
+                "MATI",
+                "Matias",
+                "matias",
+                "MATRIX",
+                "Matt",
+                "MAUS THE LEGEND",
+                "Max",
+                "max",
+                "max",
+                "max",
+                "mAX",
+                "maxi",
+                "MAXICHIBROS",
+                "Maximaths",
+                "MAY BE HAPPEN",
+                "May I Fuq You?",
+                "maze",
+                "Maze",
+                "Maze Cops",
+                "MazeDominator",
+                "maze goblin",
+                "maze runner",
+                "mcbeef",
+                "Mcmaster64",
+                "mds",
+                "me",
+                "ME",
+                "Me",
+                "me(duh)",
+                "Me-arac",
+                "me?? 😢",
+                "Meashichem",
+                "meb",
+                "me best",
+                "Mebh",
+                "mebic",
+                "meckazAN",
+                "Medeconlyme",
+                "Medium tank",
+                "Meepet",
+                "MeepMweep",
+                "Meeps",
+                "me fan valt shu lui free",
+                "mega",
+                "Mega :)",
+                "mega monster!",
+                "mega monster",
+                "MEGA MSC",
+                "MEGAPIX",
+                "meids",
+                "melee is better",
+                "Meletiscool/",
+                "meliodas",
+                "Mellow",
+                "MelodicDell",
+                "MelodicOloodpor",
+                "meme",
+                "meme",
+                "Mem mem",
+                "me noob",
+                "me no u(u know me)",
+                "MentMedusa",
+                "men treibe",
+                "Me n You",
+                "Men†e∂eem",
+                "meo & sup",
+                "meow",
+                "Mercy",
+                "mercy pls",
+                "Merdka!",
+                "meris",
+                "Message: Friendly uwu",
+                "messi",
+                "MetatronXY",
+                "Meti",
+                "Mew",
+                "Meͥdeͣmͫeήdiήgeή",
+                "Meͥภeͣqͫuสles♦️",
+                "Meℝaͥ∂lͣyͫקen⚠",
+                "mf=r",
+                "mf yeezys",
+                "MG Post",
+                "Mh?",
+                "mi(mobile)",
+                "mi(moblie)",
+                "MICAH",
+                "Michael",
+                "Michael Jordan",
+                "Michel",
+                "micsodaaaaaaaaaaa",
+                "mie",
+                "migel  papi",
+                "Miggy?",
+                "miguel",
+                "miIk",
+                "Mikasa Ackerman",
+                "MIKE",
+                "Mike",
+                "MIKKEL ",
+                "Milan",
+                "milena",
+                "Militant",
+                "milky will eat your toes",
+                "mil leches",
+                "Milton Friedman",
+                "MilwaspChiliPepper",
+                "Min",
+                "Mine craft",
+                "Minecraft",
+                "minecraft",
+                "Minecrafter",
+                "Mine is Mine",
+                "Minerva",
+                "Mine says hi fake anak",
+                "minh7cvn",
+                "Minhaaal",
+                "minhhihi",
+                "minh vn",
+                "mini",
+                "Mini",
+                "mini boss",
+                "mini boss spawner",
+                "MINI defender",
+                "Minimal",
+                "Mini moving safe zone",
+                "MiningMiner27",
+                "MINI ON A LAPTOP",
+                "minty fresh",
+                "Minul",
+                "Min ye",
+                "MJK",
+                "MK",
+                "mkZZZ",
+                "mlk",
+                "mm",
+                "mmm",
+                "Mmmm",
+                "mmmmmmmmmmmmmmm",
+                "MOAR OCTO TANKS!",
+                "Mobile",
+                "Mobile Not As GOod",
+                "Mobile no work",
+                "Mobile player",
+                "Mobile player",
+                "Mobile sucks",
+                "moblie 1.37m siege woo!",
+                "ModestEctoormo",
+                "mogerath",
+                "moises",
+                "molkin",
+                "mom",
+                "mommy long legsq",
+                "momo",
+                "Mon A",
+                "MONDAY",
+                "monica",
+                "monke",
+                "Monsia",
+                "MONTER",
+                "MookyPorPooh",
+                "MOONLIGHT",
+                "Moragull is JOHN CENA",
+                "morbius",
+                "Mort",
+                "Mort (pc)",
+                "MossfนlthapeᖙyŇ☘",
+                "Motar2K",
+                "motherhip",
+                "Mothership Drone",
+                "Mothership Drone",
+                "mothership protrector 1",
+                "motik_kotik",
+                "Mr.Chaos",
+                "mr.cola",
+                "Mr. Lord",
+                "Mr. Porridge",
+                "Mr.sod",
+                "Mr.Tank",
+                "Mr.W",
+                "MrBeast",
+                "MrBeast Rules",
+                "Mr D",
+                "Mr KaRbS",
+                "Mr King",
+                "Mr lord have mercy on me",
+                "Mr Shorts",
+                "MrYoungSir",
+                "ms. cold person",
+                "msalqm",
+                "MSI",
+                "ms tang",
+                "Mtp tv tiktoker",
+                "Mud Muppet",
+                "muhahaha",
+                "Multibot",
+                "multibxersin2tdm",
+                "Mumo",
+                "mundo x bomb",
+                "Murdock",
+                "MURIQI 03",
+                "murt",
+                "Musa♗ - The Shipwrecker",
+                "Mushroom",
+                "Music man",
+                "Mustafa",
+                "MUSTAFA/TR",
+                "mustard the rohirrim!",
+                "mustfarm",
+                "mwmwmwmwmwmwmwmwmmwmwmwm",
+                "Mwoon",
+                "mwrtql",
+                "mwr_csqb",
+                "my",
+                "My 10th life",
+                "my fists...",
+                "my guy",
+                "MYJ",
+                "MYLEFTBALLHURTS",
+                "MyLittlePony",
+                "My Music:)",
+                "MyonlyDestrion",
+                "MYRIGHTBALLHURTS",
+                "mystery",
+                "My struggle",
+                "Mythical",
+                "Mythical",
+                "MØcipParรήip",
+                "m̸̐̽ᵃ𝔭ʟₑ౪🌸🎀🌺🌷🩰🧁",
+                "m̸̐̽ᵃ𝔭ʟₑ౪🌸🎀🌺🌷🩰🧁",
+                "Mสmm☢τhT☢τh☢ldi",
+                "mắm tôm",
+                "M☢tivͥαtͣiͫngB☢nαtiff",
+                "MⱥiήτFunͥτoͣnͫ",
+                "Mⱥภumbℝip",
+                "N",
+                "N05O7G",
+                "na",
+                "Nafi",
+                "naga",
+                "Nageron",
+                "Nagi",
+                "nah i",
+                "Nailguns HELP!!!!!!!!!!!",
+                "nam",
+                "name",
+                "nani?",
+                "Napoleon",
+                "naruto",
+                "Naruto",
+                "naruto",
+                "narutouzumaki",
+                "nashe",
+                "nat",
+                "natasha",
+                "nate",
+                "Nate",
+                "NATH",
+                "NATHAN",
+                "Nathan_1",
+                "NAtZac1424",
+                "nayc",
+                "naydanang bale!!!!!!! 1m",
+                "Naΐgͥΐcͣaͫℓℓef",
+                "Na†eℝaŇiŇgs⚠",
+                "NB",
+                "ndn",
+                "necro",
+                "Necro",
+                "Necromancer",
+                "Necromancer Pet",
+                "Necromonkey",
+                "Necromuncher",
+                "necro pet",
+                "need protector",
+                "neep",
+                "nek minet",
+                "Nelly",
+                "NEMDT playing shmart",
+                "NEMDT REEEEEEEEEEEEEEEEE",
+                "Neo",
+                "Neo",
+                "Neonlights",
+                "Neonneosh",
+                "NEO ROY NEYEAH NAH",
+                "neph",
+                "Nerblet",
+                "Nerd",
+                "Nerdy Ball",
+                "Nerdy Ball :)",
+                "nerf",
+                "nerf %t",
+                "nerf %t please",
+                "Nest Keeper",
+                "netherlands",
+                "never gonna give u up",
+                "NEVER GONNA GIVE YOU UP",
+                "never gonna let u down",
+                "never gonna let you down",
+                "never gonna turn around",
+                "New",
+                "newae mobile",
+                "Newb",
+                "new player",
+                "Newsletter",
+                "new up :D",
+                "NEYONSTANK",
+                "Neττeຮ℘andaττr",
+                "NgocAnVNA",
+                "NgontoL",
+                "nhan",
+                "nhat",
+                "nhatbun",
+                "nhi015042012",
+                "nho",
+                "Ni",
+                "nice",
+                "Nice:))",
+                "nice one",
+                "Nice~",
+                "nicola",
+                "nicolas123",
+                "nieeieeeeecceeeeeeeeceee",
+                "NightFire",
+                "niitrooooooooooooooooooo",
+                "Nina",
+                "Nining",
+                "ninja",
+                "ninjin",
+                "Nintendo Memes",
+                "Nirviar",
+                "NitroX",
+                "Nividimmka",
+                "niwa niwa",
+                "Njayy",
+                "njs",
+                "n level up",
+                "nm00{",
+                "nmnmn",
+                "nn",
+                "nn0",
+                "Nnmnnnmmmnmmmm",
+                "nnn",
+                "nnnnn",
+                "nnnnncaptiann",
+                "nnnnnn",
+                "nnnnnnn",
+                "nnnnnnnnnnn",
+                "nnnnnnnnnnnnnnnnnnn nnnn",
+                "NNNNNNNNNNNNNNNNNNNNNNNN",
+                "nnnnns",
+                "nnw'",
+                "no",
+                "no",
+                "No",
+                "no-one",
+                "no. 9",
+                "no ;)",
+                "nob",
+                "NO BAD WORDS",
+                "nobby",
+                "NOBDY w",
+                "NobleCrafter3219",
+                "NobleSkele",
+                "Nobody",
+                "nobody",
+                "NobodyIsReaching500K>:(",
+                "nobodynoticedyouweregone",
+                "no c-",
+                "NoCopyrightSounds",
+                "No Disturbing",
+                "No doors no fun",
+                "NOE BODY",
+                "noew",
+                "n o i c e",
+                "NO IDEA",
+                "noir",
+                "nokia",
+                "nom",
+                "no me mates amigos",
+                "NO MERCY",
+                "nom nomnomonm",
+                "NO MORE OVERLORDS!!!!!!!",
+                "no mouse",
+                "non't",
+                "None",
+                "No no!",
+                "nononononononononononono",
+                "noob",
+                "noob",
+                "Noob",
+                "Noob",
+                "noob",
+                "noob",
+                "noob123",
+                "Noob AC",
+                "Nooblet",
+                "noob vn",
+                "NOOB VN",
+                "Nooby",
+                "NOOD --_--",
+                "NO ONE",
+                "No one",
+                "NO ONE",
+                "No One",
+                "nope",
+                "Nope :))",
+                "NopeTurtle",
+                "no pew and paw here",
+                "No Player",
+                "no plis",
+                "no plz",
+                "No pp for u",
+                "no pressure",
+                "Nora",
+                "NORMAL DAY",
+                "No Ski||s",
+                "NoSpeak",
+                "No Surviors",
+                "not -_-",
+                "notable",
+                " not anak",
+                "not an easy target",
+                "not boster",
+                "not Devin real bruh meme",
+                "no team Kill",
+                "no teem",
+                "Nothin",
+                "nothing",
+                " nothing",
+                "Nothing",
+                "nothing's",
+                "Nothing.",
+                "Nothing here",
+                "Nothing overlord",
+                "Nothing to lose Tank",
+                "NO TIMMING",
+                "notlazar",
+                "not onyxd",
+                "not P",
+                "notPickle",
+                "not pro",
+                "notsudon",
+                "NotThebest",
+                "not the guy you just saw",
+                "not  tifo",
+                "no u",
+                "NoU",
+                "NO U",
+                "Nova",
+                "nova",
+                "November",
+                "novice",
+                "no vn",
+                "Nowerstope",
+                "NO WITCH-HUNTING",
+                "NowSnookie",
+                "NO your mom",
+                "NoͥteͣwͫoℝthyCสtHeสt",
+                "Noωαselli",
+                "np",
+                "nreferif",
+                "ns",
+                "n to level up",
+                "nub7155 (Mobile)",
+                "NucelAR",
+                "nuiw",
+                "NUKE H",
+                "Numb The Pain",
+                "Nv Proxy",
+                "Nxoh",
+                "nyac",
+                "NYADRA'ZATHA",
+                "Nya~",
+                "nya~~",
+                "Nyroca",
+                "nzhtl1477777777",
+                "N𐍉ᴍbec𐍉ήts✨",
+                "o",
+                "o.o",
+                "oa",
+                "OAO",
+                "oath sign",
+                "obed",
+                "OBL",
+                "oblitereight 1000 ms",
+                "ObservantLarbsedi",
+                "obyness",
+                "Octavius",
+                "octavo",
+                "odin <:)20",
+                "odo",
+                "odszdc",
+                "o farinha SUS",
+                "Oferbelogr",
+                "Ofewposicu",
+                "Offeckert",
+                "Offermang",
+                "OffeรeรSugαrͥᖘuͣfͫf♛",
+                "OfficeboyFillan",
+                "OffingeCoffy",
+                "Offᖙ🅰𝔶botᴳᵒ",
+                "OFN tank",
+                "OfteOfficeboy",
+                "Ofteᖙucee︾",
+                "Ofͥerͣsͫやr𐍉fess𐍉r",
+                "OfͥfeͣcͫelŦec†𐍉",
+                "OfͥfeͣcͫKΐck𐍉ff",
+                "Ofͥfeͣdͫg๖ۣۜßαllØfFαt❥",
+                "Ofͥteͣdͫΐe฿edbeⱥuty",
+                "Ofͥ†eͣnͫcheye",
+                "Ofτeᖙบree",
+                "Oh",
+                "oh, dear",
+                "oh im noob",
+                "Oh no Pathetic",
+                "Oi",
+                "ok",
+                "Ok, Boomer",
+                "O K A Y ( ^ 3 ^ )",
+                "ok boomer",
+                "okey",
+                "ok fine",
+                "ok i pull up",
+                "ok la :)",
+                "ok so...",
+                "Ok Ur Done.",
+                "Ok Ur Done. Again",
+                "OL Impossible On Mobile",
+                "Olivia",
+                "OliwierQ Chojnacki",
+                "omni",
+                "om nom nom",
+                "on de xd",
+                "OndoingDomino",
+                "One.",
+                "one floofy boi",
+                "One Floofy Boi",
+                "one of the newbies",
+                "one of the players",
+                "One of your pets",
+                "one piece",
+                "ONE SHOT",
+                "Oni-chan UwU",
+                "oni-chan~?",
+                "Only 1 Factory Can Stand",
+                "On Mobile",
+                "On mobile",
+                "OnovonO",
+                "Onquentabliate",
+                "onsen",
+                "On the day you left me",
+                "Onyx",
+                "Onyx, The Fall of Hero's",
+                "oo",
+                "oof",
+                "oof",
+                "Oof",
+                "oofania",
+                "Oofed",
+                "oofoomode",
+                "oo i m friend",
+                "oompa loompa",
+                "oooo",
+                "ooooohhhhhhhhhhhhhhhhhhh",
+                "o o o o o o o o",
+                "OOOOOOOOFfffffffffffffff",
+                "oooooooooo",
+                "ooooooooooooiygf,fss';",
+                "OOOOOOOOOOOOOOOOOOOOOOOF",
+                "oooooooooooooooooooooooo",
+                "oopsie",
+                "oop zeros",
+                "Op",
+                "op",
+                "OP",
+                "Opan Come Go Note Yeah",
+                "Opan Come Go Note Yeah",
+                "opp",
+                "Ops...",
+                "OptimisticPtinknew",
+                "Optimus Prime",
+                "op xd",
+                "OPㅤㅤVICENZO√",
+                "orange",
+                "OrangeCat",
+                "ORA ORA ORA",
+                "Orca",
+                "oreo",
+                "Orn20",
+                "orphan destroyer",
+                "OrryᎥeรᎥ๏",
+                "Orxan487",
+                "Orͥ∂sͣmͫนcessน⚔",
+                "Oscar",
+                "OSJJSJ",
+                "osuer",
+                "Oswald Veblen",
+                "OTD",
+                "OTTOMAN EMPİRE",
+                "oty",
+                "Ot☢☢sℓคwคℓtede",
+                "Ouake",
+                "oui oui",
+                "Our World of Tanks",
+                "OutitiTooti",
+                "Out of the Dark",
+                "outrun my gun",
+                "Ovalsun",
+                "over",
+                "over 'GOD'",
+                "OverBrain",
+                "Overdrive",
+                "OverGod",
+                "Overload King",
+                " OVERLORD HEROBRINE",
+                "overlord is:):)",
+                "overlord king x",
+                "overlord takeover",
+                "Override",
+                "overused is overused",
+                "Overused Vibes",
+                "ovMasted",
+                "OWO",
+                "OwO",
+                "OwO",
+                "owo",
+                "Oxylit",
+                "OXZ",
+                "Ozymandias",
+                "O_O",
+                "Oᶠectบสlsereedl",
+                "Oⁿeรsitedit⚠",
+                "P",
+                "p",
+                "P-Nice",
+                "p1",
+                "pablo",
+                "Pablo",
+                "pacific islander",
+                "pacifist cant help sry",
+                "packy",
+                "Paideliti",
+                "pain",
+                "Paladin",
+                "Paladin",
+                "Paladin",
+                "Paladin-Celestial",
+                "pancake",
+                "Panda <3 FFA",
+                "PandaNa",
+                "Pandrian.",
+                "Pango",
+                "Panther",
+                "Panz3r of the Lake",
+                "Panzer",
+                "Panzerfaust",
+                "Panzershreck",
+                "panzershreck",
+                "PANZER VIII MAUS",
+                "Papa",
+                "PARA",
+                "Paradisal",
+                "Paradox",
+                "partially illiterate",
+                "Partisan",
+                "Party_CZE",
+                "Partℽ𝓌𝔥ᎥꜱᎥภ∂บc",
+                "Parzival",
+                "PassionateLasiste",
+                "pastry king",
+                "Pat",
+                "patata",
+                "Pato Lime",
+                "Patterns",
+                "Paw Patrol",
+                "PaX|A1ma|YT",
+                "PB123",
+                "pc",
+                "pe11",
+                "peace :D",
+                "Peace and Unity",
+                "Peace Dog",
+                "Peaceful",
+                "peaceful farmer",
+                "PeaceKeeper",
+                "Peacekeeper",
+                "peace_farm",
+                "peasant",
+                "pedro :(",
+                "Pega(SUS)",
+                "PEGA(SUS)",
+                "penguinz0",
+                "pentagon clean-up",
+                "Pentagon Nest Miner",
+                "pentagon protector",
+                "Pentagon protector",
+                "PeNtaLOL",
+                "Penta takeover",
+                "pe players be like:",
+                "Peraddiesphic",
+                "percy",
+                "PerfectWeregife",
+                "perra el que me mate",
+                "Person",
+                "PERU",
+                "pesca",
+                "pescah",
+                "PEST_YT",
+                "Pet",
+                "pet",
+                "pet",
+                "Pet",
+                "pet",
+                "pet %t",
+                "pet(XD)",
+                "pet :3",
+                "Pet :3",
+                "Pet :3",
+                "Pet :D",
+                "pet basic -(======>",
+                "Pet bird (eat triangles)",
+                "pet brick",
+                "Peter",
+                "peter",
+                "pet lvl 30",
+                "Petsalt VN :)",
+                "Pet tank",
+                "pet XD",
+                "Pew!",
+                "Pew",
+                "PewPew",
+                "Pewpew",
+                "pew pew Gun",
+                "Pew Pew Pew",
+                "PeℝfectIteήeℝ⚔",
+                "PFC|| KEVYNZ",
+                "PH",
+                "PH - r҉a҉i҉n҉",
+                "phantanduy",
+                "phantantri",
+                "Phat",
+                "pheo",
+                "phi",
+                "phil",
+                "Phoenix_Gamer",
+                "phong",
+                "Phong",
+                "phong fan vn!",
+                "Phoodyeang",
+                "PHRENTINO",
+                "Phycron",
+                "Phystudeat",
+                "PH|Player!",
+                "Pickerel Frog",
+                "piece treaty with newbie",
+                "Pieceℓᴮøøkie🌺",
+                "pierre",
+                "piffermon",
+                "pighati",
+                "pika :P",
+                "pikachuboi124",
+                "Pikachu ^~^",
+                "Pilav",
+                " pimp <3",
+                "PineapplEJuice",
+                "pin h 3",
+                "pinkie pie",
+                "Pixeljumper",
+                "Pizza",
+                "Pizza Bread",
+                "PJfd13",
+                "Pkao",
+                "Planet",
+                "Planetoid",
+                "play",
+                "PLAYER",
+                "Player",
+                "Player 1",
+                "player 8483",
+                "playeur",
+                "playing from month",
+                "Play wommy-arras.io",
+                "PlaภtøƤee",
+                "Please no more Y team",
+                "PLL",
+                "plplpl",
+                "pls Im friendly :)",
+                "PLSSSSS FA",
+                "plungebob",
+                "plus points",
+                " pluss亗",
+                "PM4037",
+                "Pobbrose",
+                "Pock",
+                "Pog",
+                "pokemon",
+                "poker 567",
+                "Pokey thingy",
+                "Polandbanner oo",
+                "police",
+                "Police Divo <3 XD",
+                "Pollo",
+                "poly :/",
+                "polyagon",
+                "poly gone :D",
+                "Polyhex",
+                "poo",
+                "poo face",
+                "Pop",
+                "popa peg",
+                "poper",
+                "Popo",
+                "popoi",
+                "poppy",
+                "porfavor vengan",
+                "porfavor venganxcadddddd",
+                "Pork",
+                "porscheHUB",
+                "PORT",
+                "Portaun",
+                "Poseidon",
+                "PositiveNovermal",
+                "POU 2",
+                "poui",
+                "pounder",
+                "POUNDER UPGRADER",
+                "Pounder | aaaaaaaaaa",
+                "Pounder | pain.",
+                "pov:u need 5 prot for 1m",
+                "power",
+                "PowerPoint",
+                "poyo",
+                "poyo poyo",
+                "pp",
+                "PPANG",
+                "PPguy",
+                "ppoppoppo",
+                "Ppp",
+                "PPPIIIGGG",
+                "PP Tank",
+                "praca",
+                "Pray for Ukrainian ppl",
+                "Praying for Winter",
+                "prb",
+                "Predator Army",
+                "Prees N",
+                "Preku",
+                "Press C+E: Octotank",
+                "press F",
+                "press N",
+                "press n",
+                "press n = score",
+                "press n to level up",
+                "press n to level up",
+                "PressNToLevelUp",
+                "press n to levle up",
+                "press t",
+                "press u",
+                "PretendToBeANoob",
+                "PrettyProessi",
+                "Prime Chalicocerate - hu",
+                "primos bros proo",
+                "PrincenHitchen",
+                "Prm",
+                "Pro",
+                " PRO",
+                "PRO",
+                "pro",
+                "PRO123123123123123123123",
+                "ProbseVinDiesel",
+                "pro cart pusher",
+                "PRODIGGY",
+                "PROFIN 1000",
+                "PROFIN try's 1m scores",
+                "ProgetcBucket",
+                "Prograde",
+                "pro is nood",
+                "pRo LiFe",
+                "Promax",
+                "proo..",
+                "proo...",
+                "Pro of ............",
+                "PROOO",
+                "pro player",
+                "protec me pls",
+                "Protect",
+                "protected",
+                "protecter crocty",
+                "protecter_of_free",
+                "Protect me",
+                "protect me for 1m maby",
+                "protectn",
+                "Protector",
+                "Protector Of Worlds",
+                "protect perfert heha gon",
+                "protectsage",
+                "Providence",
+                "pro vn",
+                "pro_noob",
+                "Psychic",
+                "PSYCHO",
+                "PT5 | 03-04",
+                "PT5 | Tezerr",
+                "pulp",
+                "Pulter",
+                "PUNSIHMENT",
+                "pup",
+                "PUPTO",
+                "PuringiTinyBoo",
+                "Purple",
+                "Purple2",
+                "PUSH ME",
+                "Push me for barrier",
+                "pushmetothe sancuary",
+                "put Factory",
+                "putre",
+                "PvPok",
+                "pvto si lo lees",
+                "pwease?",
+                "pwease lemme get 1m :D",
+                "Pyrolysis",
+                "PYTHON",
+                "PђeαlαHitcђeภ",
+                "PℝocͥRoͣbͫotobαmα",
+                "PℝoͥfuͣsͫeOftsΐ",
+                "q",
+                "Q",
+                "Q",
+                "q00000",
+                "Q8238q",
+                "Q Checked These Names",
+                "QER",
+                "Qin",
+                "Q is Awesome.",
+                "qoh",
+                "qp",
+                "Qpling",
+                "QQQ",
+                "qqqqqqqqqqqqqqqqqqqqqqqq",
+                "qqwqe",
+                "Qscxz5",
+                "quandle dingle",
+                "quang",
+                "quant2345677",
+                "Quebec",
+                "Queen",
+                "QUESO Y TORTILLA",
+                "Quest",
+                "queue",
+                "qusimocho",
+                "qwe",
+                "QWEr",
+                "qwerty",
+                "Qwerty",
+                "QWERTY",
+                "qwertyqwerty",
+                "qwertyuiop",
+                "Q_us",
+                "q__o__h",
+                "R",
+                "R",
+                "raaaaaaaaaaaaaaaaaaaaa",
+                "race",
+                "RACE",
+                "race me!!!!!!!!!!!!!!!!!",
+                "race me?=Support <3 Bop!",
+                "race with me!",
+                "Racing?",
+                "Radiant",
+                "rae",
+                "Rafael",
+                "Raganrok",
+                "Ragnarok",
+                "Ragnarok-eternal",
+                "RAHAN",
+                "Raid",
+                "Railgun",
+                "Railroad",
+                "rain and fezti",
+                "Rainbow",
+                "rainbowmonochrome",
+                "raindog",
+                "Rainforest",
+                "Rake",
+                "Raknar",
+                "raku",
+                "ralsei with a BLUNT",
+                "Ramen",
+                "Random Guy",
+                "Randomness",
+                "Random Tank",
+                "random tank",
+                "raoof",
+                "Raoof",
+                "raoofOverlords for noobs",
+                "RAPTURE",
+                "Rare",
+                "rat",
+                "RATA INSANA :3",
+                "RATATATATATATATATATATA",
+                "Raul39",
+                "Raul39",
+                "Raul39",
+                "RavenXL",
+                "ravi",
+                "Raymond bince",
+                "Ray of doom!!!!!!!!!!!!!",
+                "rays",
+                "rayyan",
+                "razenezyou",
+                "rdagonfruit icy",
+                "Rd h",
+                "ReacPokerface",
+                "read and u gay",
+                "Ready For Another?",
+                "Real AI",
+                "Real CreepyDaPolyplanet",
+                "Real CX",
+                "Real Dark Knight",
+                "Real Despacit.io",
+                "Real Hellcat",
+                "Real Kitty!",
+                "Really:D",
+                "Reaper",
+                "reaper of souls",
+                "Reb",
+                "RectProject",
+                "Rec†scess",
+                "redhood",
+                "Red Hot Chili Pepper",
+                "Red is best",
+                "Red Just Bled",
+                "redrealm",
+                "red sun in the sky",
+                "REEEEEEE",
+                "reeeeeeee",
+                "reeeeeeee",
+                "Re Fachero",
+                "Reflection",
+                "Reflex",
+                "RegralPlegasus",
+                "rei",
+                "reicardo avocasde",
+                "ReignOfTerror",
+                "Relatively Harmless Tonk",
+                "Relosa",
+                "Remuru Tempest",
+                "RENFORCEMENCE",
+                "RENGAR!!!",
+                "ResoluteAntardso",
+                "Respect",
+                "respect women",
+                "Rest",
+                "rest area",
+                "retard",
+                "retnuH",
+                "Revenge",
+                "REVENGE",
+                "revenge:(",
+                "REVEnGE__+=!!!!!!!!!!!!!",
+                "REVENGE✨",
+                "REVIVAL:",
+                "Reͥivͣiͫ๖ۣۜᗯeiner",
+                "ReήsecoEnglishRose",
+                "rf",
+                "Rice",
+                "ricegrain",
+                "Rick Astley",
+                "rick astley",
+                "Rico",
+                "Ricsae",
+                "rid",
+                "ridah",
+                "ridge",
+                "rigeeS",
+                "Rigged",
+                "Rilαtoℝyᴍ⚔",
+                "RISK RISK RISK RISK RISK",
+                "rIsKy",
+                "RJ",
+                "Rk",
+                "R M",
+                "road to 1m",
+                "Road To 10m",
+                "Roaster and Toaster",
+                "roberto",
+                "Roberto",
+                "Robleis",
+                "robococ",
+                "robo cop",
+                "Rock",
+                "rocket",
+                "Rocket shooter",
+                "Rockety",
+                "rococdc",
+                "Roger",
+                "Roly poly player",
+                "Romeo",
+                "Rompleseral",
+                "Rongomatane",
+                "Ron_scratch",
+                "Roomb 2.0",
+                "Roomba 2.0",
+                "Root",
+                "ropell",
+                "RopeSteel",
+                "Roronoa Zoro +++",
+                "Rose",
+                "Rosenrotteneggs",
+                "Rosetta Stoned",
+                "Roskarya",
+                "rotten punk",
+                "rowan",
+                "Roy",
+                "royce",
+                "RP",
+                "rp - on mobile",
+                "RPs",
+                "Rrennitten",
+                "RRO",
+                "rrrrrrr",
+                "rsg23",
+                "RSN",
+                "rsn.",
+                "rt",
+                "rtt",
+                "Ruan=_= ",
+                "Rubrub",
+                "rubyslime",
+                "r u dangewus",
+                "rule.txt",
+                "ruler of tanks",
+                "run",
+                "run.",
+                "run  {ANGRY}",
+                "rush",
+                "Rusher",
+                "russia",
+                "Russo-Baltique Vodka",
+                "Rust",
+                "Rusty",
+                "Ruthless",
+                "Ruwen",
+                "rwegwerg",
+                " ryh'lrfh",
+                "ryheghjt",
+                "Rykav",
+                "Ryland",
+                "Ryuu",
+                "ryuuddddddd",
+                "ryuudddddddddwdw",
+                "ryy",
+                "RİKKET FAN",
+                "Rᴇsp☢ήsΐvᴇC☢ήsi",
+                "RⱥsƤberrψ๖ۣۜ山heriesi",
+                "RⱥyRⱥyDisђirⱥƤ",
+                "S",
+                "S. Liza Yt",
+                "s7ㅋㅋㅋ",
+                "S8NF-EB3J-FHEI-N264BR3KJ",
+                "S45vn steel op",
+                "sa",
+                "sacapak",
+                "sad",
+                "sadf",
+                "sael savage",
+                "SAENG",
+                "saffy",
+                "SAGAGH",
+                "sage",
+                "saibou",
+                "Saika",
+                "Saika/Na2/500ms+",
+                "SairaciElais",
+                "saitan",
+                "Saking",
+                "Salsa Verde",
+                "Salt",
+                "salty",
+                "sandbox",
+                "Sandwich",
+                "sanesytp",
+                "sang",
+                "sanggggggg",
+                "sanic",
+                "Sans",
+                "SANS",
+                " sans",
+                "sans pro",
+                "sant the sant the sant t",
+                "Sara",
+                "SAS",
+                "Sas",
+                "sasukeuchiha",
+                "satan",
+                "Saturn",
+                "Savage xD discord?",
+                "Save The J'S",
+                "say cheese",
+                "Says Overlord in Green",
+                "Scarlet Rage(mobile)",
+                "schrodinger = loser",
+                "Schwerer Gustav",
+                "ScieήtificPสti",
+                "Scoped",
+                "scortt reach 1m friend",
+                "ScoutTF2",
+                "Scratch",
+                "ScratchyScra",
+                "screw",
+                "Scrub Exterminator >:D",
+                "scx",
+                "sd",
+                "SDASD",
+                "sdasda",
+                "sdasdsssssssssssssssssss",
+                "sdddd",
+                "sdsd",
+                "Se",
+                "Sean",
+                "Sea urchin",
+                "Seb",
+                "seb",
+                "SEBASTIAN",
+                "SEBASTIAN.",
+                "secks",
+                "sedat emir",
+                "SedoFirebred",
+                "seensan",
+                "Seer",
+                "seesaw",
+                "segurity 2",
+                "Sei",
+                "Seig",
+                "Sei GF:3",
+                "Senator Armstrong",
+                "senbonzakura kageyoshi",
+                "Senseless",
+                "SensibleAlsem",
+                "Sensor",
+                "senti <3",
+                "sentry",
+                "Sentry :3",
+                "sentry strats",
+                "seperate",
+                "SERIES 113 JAPAN",
+                "ServentOfDeath",
+                "server",
+                "Sev",
+                "seve",
+                "Se∂iͥรhͣiͫmส∂",
+                "Se∂iสCสucสsiสŇ",
+                "sfdgfsgsfg",
+                "sg",
+                "sg ez",
+                "sghhgsfhgsfghsffhshg",
+                "Shadow",
+                "shadow",
+                "Shadow closer",
+                "shame",
+                "Shankerith",
+                "SHARK",
+                "shark",
+                "shark bait",
+                "SharkBuger$",
+                "Shay",
+                "sheeeesh",
+                "Sheep",
+                "Sheeps",
+                "sheesh",
+                "sheild",
+                "shheshhh",
+                "Shhh!",
+                "shhhhhhhhhhhhhhheeeeeesh",
+                "Shide",
+                "shield",
+                "Shields and Guns",
+                "Shiny Beta Pentagon!?!?!",
+                "ShinyG",
+                "Shiny Triangle!?!?!?!?!?",
+                "Shitislonesp",
+                "Sh l",
+                "Shoot double",
+                "Shoot gun pls join",
+                "shuna no 6m",
+                "shuna wakuwaku",
+                "shush cat",
+                "shutgun",
+                "Sh | cc_",
+                "Sh |             _",
+                "ShⱥŇdΐDΐŇyͥerͣoͫ❥",
+                "Si",
+                "Sidewinder-firebolt",
+                "SIEGE  lhaahahahahahah",
+                "Siege weapon",
+                "Sierra",
+                "silent",
+                "SILIKA",
+                "SillyPantalones",
+                "silvally 1v1 me pls",
+                "simba",
+                "sin",
+                "Sin (watch my videos).",
+                " Sinbadx",
+                "sinbadx",
+                "SINBADX",
+                "Sinbadx",
+                "Sinbadx",
+                "sinbadzx :)))))",
+                "since 1986",
+                "SincereAnce",
+                "sindBax",
+                "Sinx",
+                "Sinx",
+                "sinx",
+                "sinx (fk demon)",
+                "sinx7",
+                "sir bobybop",
+                "Siren",
+                "SIREN HEAD",
+                "SIRENHEADYTs lost pet",
+                "sire soral",
+                "Sir Theodore",
+                "sit",
+                "SIUUU",
+                "SIUUUUUUUUUUUUUU",
+                "SIUUUUUUUUUUUUUUUUUUUUUU",
+                "sj",
+                "sjw",
+                "Skawich",
+                "skitlies",
+                "skrill",
+                "Skull",
+                "skull emoji",
+                "SkuTsu\t",
+                "Sky",
+                "Sky_Good",
+                "Slayer",
+                "Sleak Override",
+                "Sleeping Quadrilith",
+                "slow but friendly",
+                "SlowKnife",
+                "slowpoke",
+                "SmokeyMorsiall",
+                "Snap ( Peace)",
+                "snaper",
+                "Snapwingfriendstriker007",
+                "Snapwingfriendstriker007",
+                "Sneaky annileatter",
+                "snorp",
+                "Snow",
+                "soccer",
+                "Soccer",
+                "Social Experiment Part 1",
+                "sodbazar",
+                "SOFIA",
+                "SoftOffel",
+                "SoftyOffee",
+                "Solar Fighter",
+                "Solaris",
+                "Sol Blaze",
+                "Sollℽstriongst",
+                "solo1 -1",
+                "solo 1v1!!!!!",
+                "Solo :>",
+                "SOLO AGO MI TRABAJO",
+                "Solomon",
+                "solo vs 3",
+                "somebody",
+                "SomentsSoul",
+                "SOMEONE",
+                "Someone",
+                "SOMEONE",
+                "some random oreo",
+                "sonic",
+                "SONIC.EXE",
+                "Sonic.EXE",
+                "SONIC GO FAST!!!!!!!!!!!",
+                "sonick12",
+                "sonofgrits",
+                "SOOOOKA",
+                "sophia :)",
+                "Sorry!",
+                "Sorry",
+                "SORRY..I'M..(vn)im so :(",
+                "Sorry broh",
+                "sorry Cheese",
+                "sorry sorry",
+                "Soulless",
+                "Soundwave",
+                "Souper?",
+                "Soviet Union",
+                "Soviet Union",
+                "soy noob :,(",
+                "soy sauce",
+                "soy susanaoria",
+                "space",
+                "Space",
+                "Spade",
+                "spadzz",
+                "spankthemonkey",
+                "SPAS-12",
+                "Spawner > Factory",
+                "SPAXDE",
+                "spayer time",
+                "Spectactor",
+                "Spectator",
+                "Spectator (dont attack)",
+                "Spectator:)",
+                "Sped demon",
+                "speed",
+                "Speed",
+                "Speed Build",
+                "Speedrun",
+                "speedrun",
+                "Speeedrun 200k plss",
+                "SPEEEEEEEED",
+                "spencer",
+                "SPICY RAMEN",
+                "spider .,,.",
+                "Spider cochon",
+                "SPILKE",
+                "SPILL THE BEANS BRO",
+                "Spin = Free Protector",
+                "spin=friend",
+                "spin = friends",
+                "Spin=peace",
+                "spin= team",
+                "Spin=Team",
+                "Spin=Team",
+                "Spin=Team",
+                "spinnnn",
+                "spirit of the forest",
+                "spitandsteelfriend",
+                "Sppooky",
+                "Spree",
+                "Spring Bonnie",
+                "sprotto",
+                "sqrt_-1",
+                "Square generator",
+                "squirt",
+                "Sr. GT",
+                "Sry had to go afk",
+                "Sry m8",
+                "ssad",
+                "ssd",
+                "ssdd",
+                "sss",
+                "SSS",
+                "ssss",
+                "sssss",
+                "Sssssssssssss",
+                "sssssssssssssssssssola",
+                "sssssssssssssuuuuuussss",
+                "ssssssssusssssssssssssss",
+                "Ssunseer",
+                "stacked",
+                "stalker",
+                "Stalker Army",
+                "Stalk Is Actual Pain",
+                "Stand For Ukraine",
+                "Star",
+                "Star Ender",
+                "stares into ur soul",
+                "star kirby",
+                "starlight!thunder!",
+                "Starlight",
+                "STARLIGHT",
+                "starmie",
+                "starwarrior",
+                "starwarrior",
+                "stay all over me",
+                "Stealth Jet Delta",
+                "Stealth Tank Delta (STD)",
+                "steeg",
+                "stegosaurus",
+                "Steve",
+                "Steve",
+                "Steven Universe",
+                "StevenUniverseFan",
+                "stfutduy",
+                "stink",
+                "stinky/ gg jax!",
+                "Stocxk_",
+                "stone",
+                "STOP",
+                "stop me turn to stone",
+                "stop plz",
+                "Storm",
+                "Storm King",
+                "StormX",
+                "STPSPMMNGSNPR 64M3R_999",
+                "STRIKER007",
+                "strong tank",
+                "Stuck",
+                "study yo orgo (chem)",
+                "stuff",
+                "StUfFy_ChEeZe",
+                "Stupid Overlord",
+                "StͥedͣiͫรDilrubⱥ",
+                "StͥunͣnͫingAndin",
+                "Suallizatiᴍe",
+                "Sub 2 Pewdiepie",
+                "subin",
+                "SublimeItsubi",
+                " sub to",
+                "Sucko mode",
+                "Sudu",
+                "sudu",
+                "suffer",
+                "summoner",
+                "summoner2",
+                "Summoner boss",
+                "sumoga",
+                "SUN",
+                "sunkee",
+                "Suomi",
+                "Sup",
+                "Sup :)",
+                "super",
+                "S u p e r",
+                "super booster",
+                "Superchad factory",
+                "super idoi",
+                "superium.",
+                "superman",
+                "supernintendo meme",
+                "super perfect hexagon",
+                "super pro prot 4 you",
+                "super shock",
+                "Super Sonic",
+                "super stinker",
+                "super tank",
+                "supperlenny123",
+                "Support",
+                "support tank",
+                "supraaaaaaaaaaaaaaaaaaaa",
+                "supreme",
+                "SUPRISE",
+                "SUPSPRIES!!!",
+                "Supsup",
+                "sure sure sure",
+                "surprise",
+                "Surprise Surprise",
+                "Survivalist",
+                "sus",
+                "SUS",
+                "sus.",
+                "Susana Oria",
+                "sus destroyer",
+                "susicoi",
+                "Suzanne",
+                "SuթerBoℽAvetℽթe",
+                "sven",
+                "Sven.",
+                "sven drop",
+                "SWAT",
+                "swimsuit",
+                "Swohmee",
+                "Swohmee: HowDidIDoThat!?",
+                "Swooper",
+                "swrmur op",
+                "swwsH",
+                "Synth",
+                "Syringe",
+                "syron!!!",
+                "SYSTEM",
+                "Szymon",
+                "Sµccessfµ͢͢͢𝖑Toccesse",
+                "Sτiᵛeʀmin〽️",
+                "Sקityℝicђe",
+                "S๏ñcͥifͣeͫ͢͢͢Mนñchie🎤",
+                "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ",
+                "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ",
+                "Sᴋ᭄Sᴀʙɪʀᴮᴼˢˢ",
+                "S℘iяiᵗe∂Pie🅽t💦",
+                "SⱥτBigPØτⱥτØ✪",
+                "S𝒽ⁱlⁱŇgบre",
+                "T",
+                "t",
+                "T-Chan 13",
+                "T-Gay",
+                "T-REX",
+                "t-rex vs raptor",
+                "t-series succs",
+                "T-T",
+                "t. food bc why",
+                "t. green is glitch",
+                "T.Khang",
+                "t. this green is glitch",
+                "t143",
+                "taal volcano",
+                "Taboo",
+                "taco",
+                "taem?",
+                "Taha and Sardar",
+                "TailQZ",
+                "Tailred",
+                "TAIWAN protector",
+                "TaKE LOl :D",
+                "TaKE LOl EPIC auto 4",
+                "TaKE LOl EPIC factory",
+                "TaKE LOl EPIC machinegun",
+                "TaKE LOl god shoot",
+                "Takeover",
+                "take this L",
+                "take your time",
+                "Taklao",
+                "Tal",
+                "tale",
+                "Tale",
+                "TaleήtedEήtiรa⚔",
+                "TallStop",
+                "Tango",
+                "Tango",
+                "TANK",
+                "TankTankTankTankTank",
+                "Tanky",
+                "Tanky's 30th 1mil?",
+                "tanvik",
+                "TargetLocked",
+                "tar tar teha tar sal-t",
+                "TaserBlazer",
+                "TATICAL NUKE INCOMING!!!",
+                "Tattletale",
+                "tatut h",
+                "TBB",
+                "TCO (The Chosen One)",
+                "td",
+                "Te",
+                "teach me",
+                "Team",
+                "team ?",
+                "team??!",
+                "Team Boom",
+                "teamplz",
+                "team plz:(",
+                "TEAM POLICE",
+                "team protect",
+                "technically octo tank",
+                "TechnoBlade",
+                "Tedd",
+                "Teddybear",
+                "Tembito",
+                "Tengen Uzui",
+                "tenk",
+                "tennis",
+                "Tenth Circle",
+                "Tenzo",
+                "TEQUILA!",
+                "TERA BAAP✿AYA★💓Bhagwanmr noob",
+                "Tesea",
+                "TEST",
+                "Test",
+                "TeSt",
+                "testbed B",
+                "teste",
+                "Tester",
+                "Tester BT",
+                "test septa",
+                "Teuge",
+                "Tezer",
+                "TF2 Heavy",
+                "Tgvy",
+                "Thai dark",
+                "Thalasin OH GOD HELP NO",
+                "Thanks M8",
+                "Thank you",
+                "That Guy",
+                "That Guyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+                "That_Thing",
+                "ThaͥŇkͣfͫulChaℝᴍis",
+                "THE",
+                "the 501st",
+                "the all seeing eye",
+                "thearch.hmmmm it lurks",
+                "thearchy",
+                "The Audacity of this tank",
+                "TheBasil",
+                "The Beast",
+                "the beep !!!",
+                "The Beep 3",
+                "The beep  duo",
+                "The Beep MAD>:(",
+                "thebestofthebest",
+                "the  best PEOPLE IN THE",
+                "THEBESTPLAYER",
+                "The Best Player",
+                "The Big One",
+                "THE BIG ONE",
+                "The Boop",
+                "The Bron Jame",
+                "theCityCR",
+                "The cLe@nER",
+                "The Comeback of 0800",
+                "The Common Cold",
+                "The Covenant",
+                "The death",
+                "the deep",
+                "The Destroyer",
+                "the drones do not hurt",
+                "THe Emperor",
+                "The End!",
+                "THE FAT RAT",
+                "TheFatRat",
+                "The Fire Club",
+                "The Flu",
+                "the general lee",
+                "The General Lee 01",
+                "The Ghost",
+                "THE GOD!++",
+                "tHE great king",
+                "The Grudge",
+                "The gun on the wall!!!",
+                "the guy",
+                "TheHero383",
+                "The Hybrid",
+                "THEIA CELESTIAL RULE 34",
+                "The Immune System",
+                "The Influence",
+                "the j",
+                "THE King",
+                "The King",
+                "The leader",
+                "THE LEADER GOES OUTSIDE?",
+                "the legend hero",
+                "The Light",
+                "THE LOADROJOZ",
+                "TheMadLad",
+                "TheMadLad dylan strats",
+                "The Mandalorian",
+                "The Mind Flayer",
+                "The N2R",
+                "The Nameless",
+                "THE NEW BOSS",
+                "the new era",
+                "Theo",
+                "The One",
+                "the only one",
+                "Theory of Everything",
+                "The Palidin Tank",
+                "The Patient",
+                "THE PHONG",
+                "The Pot",
+                "the protector",
+                "the quiet kid",
+                "The Ranger",
+                "there",
+                "theres so much sercets",
+                "the return of chewy pie",
+                "The Robot Kid",
+                "the ruler of eveything",
+                "The shadow of none",
+                "the sky",
+                "The Sliding Door Com",
+                "THE SUN IS BURSTING",
+                "The Tale Of Tanks",
+                "The Tanky",
+                "THE TERMINATOR",
+                "the things we do to surv",
+                "The Truth Untold",
+                "the ultimate multitool",
+                "The Underspeeder",
+                "The Unknown",
+                "the UNTIMATE DESTROYERb",
+                "The Void",
+                "THE WORLD!",
+                "The _________",
+                "TheͥℝvͣeͫᖙS†aℝveᖙ",
+                "thiago",
+                "thicc",
+                "thick",
+                "thien5011",
+                "thingy",
+                "thinh",
+                "Thinh",
+                "This",
+                "This is a Laser tank",
+                "This is far",
+                "THIS IS INSANE!",
+                "Thisislie",
+                "This Is Nobody",
+                "this is the tale of",
+                "This is the tale of:",
+                "This is the tale of a",
+                "This is the tale off",
+                "This is the tale of FFA",
+                "This is the tale of Me",
+                "This is the tale ofn",
+                "This is the tale of you",
+                "THOMAS crowded saturado",
+                "thomas tank engine meme",
+                "Thor 4/10 :(((((",
+                "threuagnduirx 1234567890",
+                "Thriller",
+                "Through the Rain",
+                "THUGGER",
+                "Thunder",
+                "Thunder(Tapenty)",
+                "thx ",
+                "Tia",
+                "Tickflung",
+                "TIE/IN",
+                "TienBach",
+                "tiky",
+                "tiler bolck man 456",
+                "tilvlad",
+                "Tim",
+                "tim",
+                "time too tryhard",
+                "timi po",
+                "TImmy",
+                "Timmy, do your homework!",
+                "Tin",
+                "tinh vn",
+                "Tiny",
+                "Tiny Celestel",
+                "tiny ones my friends",
+                "tjplayz",
+                "tkdarkdomain",
+                "Tki",
+                "tmi 88>:?",
+                "tntman",
+                "Toast",
+                "ToastyImpaspen",
+                "To Bee Keep",
+                "TOBI MARCH",
+                "today is christmas",
+                "toeless_monkey",
+                "TOGESH",
+                "TOGESH TOGESH",
+                "toilet destroyer jordan",
+                "tokar6",
+                "tomas",
+                "TomaToh",
+                "Tomi",
+                "Tommy",
+                "Tommy Gun",
+                "tomnguha123",
+                "TON | 618",
+                "too fast dident even get",
+                "toon",
+                "Toopy&Binoo",
+                "toothpaste",
+                "top",
+                "top 1",
+                "top 1000s",
+                "top mozis xd",
+                "TOP X",
+                "TorClaymore",
+                "Tormaภτmerΐcaภg",
+                "torry",
+                "Totally Not A Bot",
+                "totie",
+                "TOUCAN",
+                "Touriat",
+                "TOXIC",
+                "Toxic",
+                "Toxic sugar",
+                "TR",
+                "train",
+                "tran duc hieu",
+                "TR Angela",
+                "Trans Rights",
+                "TRASH",
+                "Trash Anni",
+                "trashmxnn",
+                "trboo",
+                "trbo trbo trbo",
+                "tre",
+                "tree",
+                "tree'lean",
+                "trees",
+                "TreαNeαt𐍉",
+                "trfhgyjhuiju8765t",
+                "tri-angle is paccific",
+                "Triad",
+                "Tri Angel-Booster",
+                "triangle drones = nolife",
+                "Triangle Gang",
+                "tribe",
+                "Tricky",
+                "Trinity",
+                "Tristan",
+                "tr ndxd",
+                "troll",
+                "Troll",
+                "Troller",
+                "Trolling Me :(",
+                "Truchenco",
+                "trump",
+                "truper",
+                "trust me",
+                "trust me do this",
+                "Trutch",
+                "try harder",
+                "tryhard mode on !!!!!!!",
+                "trying for world record",
+                "trying out factory",
+                "Trying to be peaceful",
+                "try me",
+                "TryMe:360NoScope",
+                "TryMe: DodgeBot2.0",
+                "Try Thalasin Today!",
+                "Trͥitͣeͫ丹ภtຮeภtr",
+                "TS/RRRR",
+                "Tt",
+                "TTCBernard",
+                "ttjjl",
+                "TTroll",
+                "TTroll_NEW MOUSE",
+                "ttttaaa",
+                "tttttttttttttttttttttttt",
+                "tuan",
+                "Tubby",
+                "Tundra cat",
+                "Tunnel Wanderer",
+                "turaco",
+                "turbo",
+                "turbo bro",
+                "turbo bros",
+                "Turbo Bros",
+                "Turbo Valtryek",
+                "TURK",
+                "Turkey",
+                "T U R R E T",
+                "Turret",
+                "Turret LV 1",
+                "turtle",
+                "Turt Talks to Much.",
+                "turu",
+                "TU VIEJA",
+                "TV",
+                "TvT{ Thanh }TvT",
+                "twan",
+                "twilight",
+                "T   W   I   N",
+                "Twin-Twin",
+                "Twin Pro 3/3/4/7/7/7/7/4",
+                "twotales",
+                "TYRONE GONZALEZ",
+                "Tyson",
+                "tyty",
+                "T^2",
+                "Türk'ün Gücü Adına🌸 OwO",
+                "Türk  polisi",
+                "TΐrelessToήdessΐ",
+                "TωorᴍaͥHoͣrͫnet",
+                "TสiͥsiͣgͫerƤsץmend☘",
+                "T๏iͥndͣeͫLⱥcewing",
+                "u",
+                "U.A",
+                "U2882JHS",
+                "ubad",
+                "UBER_TANK",
+                "udhe7f",
+                "Ugly Beautifulness",
+                "ugok",
+                "uh",
+                "UHF",
+                "UHS23",
+                "Uh what",
+                "uhyi",
+                "uirouri",
+                "ulan",
+                "UldfuBaldman",
+                "Ultimate Dominator",
+                "Ultra",
+                "UltraOmega",
+                "um",
+                "uma delicia",
+                "umm,dab?",
+                "ummm..... ok",
+                "unavaliable",
+                "Unbalanced Build",
+                "Uncle Iroh",
+                "undecidable",
+                "underated tank?",
+                "underverse delta sans",
+                "under_gamer092",
+                "UNGA BUNGA",
+                "Uniform",
+                "unikit",
+                "UnizPizzawife",
+                "UNKNOW",
+                "UnKnOwN",
+                "U  N  K  N  O  W  N",
+                "UNKNOWN LEGEND(UL)",
+                "UNKNOWN LEGEND (UL)",
+                "Unlucky",
+                "UnpunUnoShoten",
+                "Unravel",
+                "unscientific",
+                "Until next time",
+                "UnusuⱥʟFrøungdø",
+                "Unwelcome School",
+                "uoivhhfgrryttyhj",
+                "U Only Run To Ur Base?",
+                "Uouuuuaju",
+                "UPdAE",
+                "UPdArE",
+                "Update",
+                "Update me",
+                "UpdDAR3",
+                "Updog. Dying Breath. 2",
+                "u POO",
+                "Ur4ny4n",
+                "ura bot",
+                "ur all bAAAAAAAAD",
+                "UrBadLOL",
+                "ur Being Fed",
+                "UrBoringTbhLikeWhatsUrPt",
+                "u really like to hide",
+                "urfwend",
+                "urgh",
+                "ur mom",
+                "ur mom",
+                "Ur momma's",
+                "ur nub",
+                "Ursula",
+                "USA",
+                "use adblock please",
+                "use fighter plsss :)",
+                "Use machinegunner to win",
+                "Use me as a shield",
+                "use this tank with me",
+                "USS Enterprise",
+                "USSR(Russian)",
+                "USS Vella Gulf",
+                "u stupid",
+                "utifi",
+                "Utilisateur",
+                "uudsibfhb",
+                "uuuu",
+                "uwj",
+                "UwU",
+                "Uwu",
+                "uwu",
+                "uYu",
+                "uyuy",
+                "uywu",
+                "U S A",
+                "V",
+                "V&N",
+                "V:",
+                "vaboski",
+                "Vakst",
+                "Vakvak",
+                "val",
+                "valer",
+                "Valley",
+                "value1",
+                "Vanze",
+                "Vaskrano",
+                "vcl",
+                "vc landmine",
+                "VEISEL",
+                "ven",
+                "VengefulPentse",
+                "Venom",
+                "VENOM",
+                "venom",
+                "VenomoบຮNorτnear",
+                "Very dangerous",
+                "vex",
+                "Veℝ∂สntͥSiͣmͫสntสc",
+                "via",
+                "Vicarious",
+                "vicrouss",
+                "victor",
+                "Victor",
+                "VictoriousWousi",
+                " vikas",
+                "vikitor",
+                "vilad",
+                "vilad pro!!!!!! :)",
+                "Vinaphone",
+                "Vincent",
+                "Vincent Ling",
+                "vinh",
+                "Vinh HD",
+                "vinud",
+                "Violin is Interesting.",
+                "virtual machine",
+                "Visitor",
+                "Viva",
+                "vIVIVgREYdOVE",
+                "viwpo",
+                "Việt Cường 2A5",
+                "Việt Cường 2A5",
+                "Vladmir Poutine",
+                "vlasta",
+                "vn",
+                "vn",
+                "VN",
+                "VN",
+                "VN.HM",
+                "VN 3",
+                "VN:P",
+                "vn <>????",
+                "VN chose machine gunner",
+                "vn exe",
+                "Vn hi",
+                "vn luffy",
+                "vn nha",
+                "vnnnnnn",
+                "VN TOXIC",
+                "vn{CHP}",
+                "VN~I LoVe You Chu Ca Mo",
+                "Vogelaj",
+                "Void",
+                "Void Fighter",
+                "vokki8skand",
+                "Volderet",
+                "voltic",
+                "VoluntaryRary",
+                "vordt",
+                "vortex",
+                "VoteOutRacists",
+                "VousyX",
+                "vovotthh",
+                "VT",
+                "Vunda = Mythical",
+                "Vuͥldͣrͫatediesio",
+                "V VAG",
+                "vvn",
+                "vvv",
+                "vvva",
+                "vvvvvvvvvvvvvvvvvvvvvvvv",
+                "vyde",
+                "vyey",
+                "vyn",
+                "vz",
+                "Vỹ đẹp zai",
+                "W",
+                "W.A.R",
+                "W1lleZz",
+                "W = Team",
+                "WAAAAAAAAAAAAAAAAAAAAAA!",
+                "Waffles",
+                "wait",
+                "wait in doing some work",
+                "Waiting",
+                "Waiting on a Miracle",
+                "Wait What?",
+                "wake up",
+                "wall",
+                "WalleeE",
+                "wall hallo",
+                "Wall Protecter",
+                "Waloh",
+                "Walorried-TR",
+                "WarleffBuffalo",
+                "warrion",
+                "Wa Sans ashinenguna!",
+                "Wasap Papa",
+                "wasd",
+                "WasedlaTiddles",
+                "waste of time",
+                "wat?",
+                "WatchMeDestroyYou",
+                "WatchMeDestroyYou ol 1v1",
+                "W a t e r",
+                "water",
+                "Waterflame",
+                "Watertitur",
+                "WateᖙeToℝ℘eᖙo",
+                "WatsonKong",
+                "WaysidKidSister",
+                "WBL",
+                "Weakest woomy player:",
+                "weak tank",
+                "We Do A Little Trolling",
+                "we do i little trolling",
+                "WEEEEEEEEEEEEEE",
+                "wee woo",
+                "weird",
+                " weirdo",
+                "Well",
+                "wellerman",
+                "wendy imposter is sus",
+                "were",
+                "Werediand",
+                "WereituAtum",
+                "WerestLuck",
+                "WervidVivitar",
+                "WEST SLAVA UKRAINIA",
+                "Wew",
+                "wewewe",
+                "We_peace_farm",
+                "Weяw𝕖𝐑ώ€я𝓺q2️⃣prankeo",
+                "WHAT!",
+                "what's reload???",
+                "What?",
+                "What?",
+                "what does reload do",
+                "what is this?",
+                "WHATS UP BOI",
+                "what tis going on here??",
+                "Whaviatte",
+                "Wheaple the great",
+                "when the",
+                "WHERE ARE THE DOORS",
+                "where are you fern",
+                "WHERED MY RELOAD GO",
+                "Wherly",
+                "WherviKicker",
+                "Whiskey",
+                "WhiteyWhati",
+                "who want race",
+                "Whowediff",
+                "WhowerHotsnap",
+                "why",
+                "WHy",
+                "why am i here",
+                "WHYANDWHY     Y_N_Y",
+                "WHYANDWHY     Y_N_Y",
+                "WHY ARE YOU RUNNING",
+                "Why Buff Factory?It's OP",
+                "why is anni overrated",
+                "why maze",
+                "why me???",
+                "why yall so bad",
+                "wibu",
+                "wibu king",
+                "WiFi-Kun",
+                "Wilhelm",
+                "willim",
+                "Will join me?",
+                "willlddd",
+                "Windows8.1 Pro Build9600",
+                "Windows 8.1",
+                "Windows 98",
+                "wingarr",
+                "Winner",
+                "WINNER",
+                "winnner",
+                "Winter",
+                "Winterblade",
+                "wispy",
+                "Withering",
+                "witherrrr",
+                "Witionsips",
+                "Witψภclคi",
+                "wltjdwns234",
+                "wltjdwns836",
+                "woi",
+                "Wojak R FuNNy",
+                "Wolf272",
+                "Wolfgang",
+                "Wolfy_11_BR",
+                "Womp Womp",
+                "Wooksommen",
+                "Woomy",
+                "woomy arras.io",
+                "WOOT",
+                "World",
+                "world's best anni",
+                "Wormserld",
+                "worst impact",
+                "WoW",
+                "wow",
+                "Wow",
+                "Wowkoks",
+                "Wow that is not sure",
+                "wreck",
+                "w r e c k",
+                "wren",
+                "Wsai12",
+                "wuzz buzz chuzz",
+                "ww3",
+                "WWZZX",
+                "Wyd_Josh",
+                "Wynder",
+                "wypk",
+                "WZ_120",
+                "Wสs†eGℽmⲘสs†eℝ",
+                "W๏rͥteͣsͫSᴍartie",
+                "Wⱥsͥ†iͣoͫnfℝou",
+                "X-BOX",
+                "X-Ray",
+                "X.ALEXANDER.X",
+                "X.Clamator .YT",
+                "X11 | Nebuqa",
+                "xAd_rian",
+                "xan",
+                "Xander",
+                "Xant",
+                "XboxUser",
+                "XD",
+                "xDD",
+                "xddd",
+                "XDDDDDDDDDdDDDDDDDDDDDDD",
+                "xDer",
+                "xDer MY FiRST 1M",
+                "xdnha",
+                "xeno",
+                "Xenon",
+                "Xentnya~",
+                "Xerxes",
+                "Xh",
+                "xia",
+                "Xiao-Ling",
+                "Xiggy",
+                "xijinping",
+                "Xjso",
+                "XL",
+                "Xlemargg",
+                "XLF",
+                "Xlo-250",
+                "XP_Toxic_CJS",
+                "XP_Toxic_CST",
+                "Xqaris",
+                "xQD",
+                "XRECS",
+                "xs",
+                "XSET",
+                "xtrem",
+                "Xtrem",
+                "XtremeJoan",
+                "xtrw",
+                "XxNicolas GamerxX",
+                "XxshadowxX Ilove u",
+                "Xyx Wdtcfgzezgk",
+                "xyz",
+                "XYZ",
+                "XYZ",
+                "xz",
+                "xzxz",
+                "X_DROP",
+                "X℘ExͥplͣoͫຮᎥveﾂ✔",
+                "Y",
+                "Y.S",
+                "y=ax+b",
+                "ya",
+                "yaaaaaaaaaaaaaaaaaaaaaa",
+                "Yael",
+                "yahhhh",
+                "yahya",
+                "ya mom",
+                "yang",
+                "Yang",
+                "Yankee",
+                "YANLUI",
+                "ya nos cargo la chingada",
+                "yayayayayan",
+                "ya YYYYYYEEEEEEEETTTTT",
+                "ye",
+                "yeahs",
+                "yeah yeah yeah yeah yeah",
+                "Yeat",
+                "Ye boi",
+                "yee",
+                "Yeeeyee",
+                "Yeet",
+                "Yeeter",
+                "yeey",
+                "yeffri1",
+                "Yelloboi",
+                "Yep.",
+                "yes",
+                "yesbody believs a lair",
+                "yess",
+                "Yevery1BetrayME:(",
+                "YieldingForier",
+                "Yimo",
+                "Yimo (Friendly forces)",
+                "YinYang",
+                "yoavmal",
+                "Yocto To Yotta",
+                "Yodin",
+                "yolo",
+                "yo racingboi",
+                "Yoriichi Tsugikuni",
+                "YOTTA CHAD",
+                "You",
+                "You",
+                "you(VN)",
+                "you are my father",
+                "you can't see me",
+                "you deserve this",
+                "you dumb",
+                "youencounterHIM!yourDEAD",
+                "yOU HAD YOUR CHANCE",
+                "YoulloDulhaniya",
+                "You Made Me Mad!",
+                "YOU NAAASTY",
+                "Your Bad :(",
+                "YOUR BAD = YOUR DEAD!!!",
+                "Your Drones Will Lose",
+                "YouRIP",
+                "YOUR JORDANS ARE FAAAAKE",
+                "Your Mom",
+                "Your mom",
+                "Your Mom is overused",
+                "your mom is watching you",
+                "your mum",
+                "Your mum",
+                "Your Pet",
+                "yourself",
+                "your son",
+                "your tail",
+                "Your Triggering Me 🤬",
+                "your worst lightmare",
+                "You saw nothin",
+                "you shall not pass!!",
+                "You show the lights",
+                "You show the lights that",
+                "youssef",
+                "you were so mad",
+                "You were so mine",
+                "YO what? bro im out...",
+                "YoXieO",
+                "YoXieO_YX",
+                "yoyo",
+                "Yrneh!",
+                "YT=GLITCHER TM",
+                "Ytt",
+                "ytwjeit6tty",
+                "yu",
+                "yuan(A PENTAGON DDDDD:<)",
+                "yuan(hi)",
+                "Yuck",
+                "yuco",
+                "Yujin_05",
+                "yulzzang",
+                "yuma che3",
+                "Y U NO?",
+                "yup",
+                "yups",
+                "Yurin",
+                "YUU",
+                "Yuvyyuy vyu",
+                "Yvonne",
+                "yvyg",
+                "yx",
+                "Yyfk",
+                "yyyyyyyyyyyy",
+                "yyyyyyyyyyyyn",
+                "YYYYYYYYYYYYYOOOOOOOOOO",
+                "Y𐍉utђr𐍉uภ",
+                "Z",
+                "z54",
+                "Zachary",
+                "ZACHARY",
+                "Zac is best",
+                "zad5",
+                "zae",
+                "zaid x",
+                "zander",
+                "Zaphkiel",
+                "Zaphkiel",
+                "zaphkiel celestial",
+                "zaq",
+                "zarity",
+                "Zarma",
+                "Zasriel",
+                "ZasrielDreemurr",
+                "ZA WARUDO!",
+                "zay",
+                "ze",
+                "ZealousMovereat",
+                "ZEB",
+                "Zeezees",
+                "zeke",
+                "ZEN",
+                "zen keon",
+                "Zephr is Mod???",
+                "Zer0",
+                "zeraora",
+                "ZERO",
+                "zero to hero",
+                "Zhynt",
+                "Zod",
+                "zombie",
+                "Zombie",
+                "Zoro",
+                "Zorroooo",
+                "Zort",
+                "Zplit",
+                "Zp r oZ",
+                "zuesa",
+                "Zulu",
+                "Zver",
+                "Zweilous",
+                "zX-TwinChilla-Xz",
+                "zx 33q",
+                "Zyiad",
+                "zz",
+                "zzx",
+                "Zzz",
+                "ZZZ",
+                "ZZZ ZZZ ZZZ!",
+                "Zzz Zzz Zzz:-)",
+                "[/G]/O1D SL/Y3R",
+                "[AC] VGamerZ",
+                "[AI]",
+                "[AI] Kidell",
+                "[BK] [XC] PAKISTAN",
+                "[FBI]Σvi₺ℭℏἏ❀₴#1628",
+                "[GZ]GESETA",
+                "[GZ] team",
+                "[insert creative name]",
+                "[IX] clan",
+                "[lag]Armando",
+                "[MG] GLITCH TR",
+                "[MG] PRO TEAM",
+                "[MG] Team",
+                "[MM]  Ⓕ𝓸𝓻𝓫𝓲𝓭𝓭𝓮𝓷",
+                "[M๏ℝec𝔥Muy𝔊๏rᖙØ]",
+                "[PFF][|| ı'ɱ ცąცყ||]",
+                "[PFF][|| ı'ɱ ცąცყ||]",
+                "[Repsaj]ĎąŗĸMãştɛɾ",
+                "[VN] MeltedGirl",
+                "[VN]Ảo Vãi Lồn🤔",
+                "[VN]Ảo Vãi Lồn🤔",
+                "[ɨƙ]ɳøʘɗɫɚ",
+                "[Σϰ][Ωϰ] ...",
+                "[⚔️wiki]₵₳V₳ⱠłɆⱤ",
+                "[🇻🇳] Hùng",
+                "[🌀]Brain𝐼nHalf",
+                "^---------^",
+                "^^",
+                "_",
+                "_-zErO_-",
+                "_blank_",
+                "_hewo",
+                "_____P___E___N___E______",
+                "{ 0 _ 0 } IM Agry!!!!!!",
+                "{<:Void",
+                "{AI} Bot",
+                "{CHICK}",
+                "{ HEALER } +",
+                "{o} Liza <3",
+                "{RUNER}",
+                "{WOF} Nightwing",
+                " {}?{}{}{}{}{}{}{}{}{}{}",
+                "{}{}ALEX{}{}",
+                "|A",
+                "|AL|ChillOut|",
+                "| AL | ChillOut |",
+                "| AL | ChillOut | WWS++",
+                "|^Robo-Birb^|^Silvy^|",
+                "||H|E|L|L|O||",
+                "||P|L|A|S|M|A||",
+                "||||||||||||||||||||||||",
+                "}{ello",
+                "}{eonyao",
+                "}{ex",
+                "~",
+                "~A~",
+                "~Real_K~",
+                "~|{boss fight}|~",
+                "~~ima try to protect U~~",
+                "¡AY PAPI!",
+                "¡Vamos!",
+                "°”φմէէҽԱէʂվβìէʂվ”°",
+                "°”Ṩi𝓭ityethicl”°",
+                "¿Equipo?",
+                "Öµł†µÐï†ê§",
+                "×͜×",
+                "×͜×ㅤ𝙰𝙻𝙾𝙽𝙴ㅤ𝙱𝙾𝚈",
+                "×͜×ㅤ𝙰𝙻𝙾𝙽𝙴ㅤ𝙱𝙾𝚈",
+                "íɑʍIsτʀᴇթ๏sᴇτ",
+                "íɑʍOภຮgrⱥigน",
+                "íɑʍ≋AℓtŁiℓŦ𝓇Øℓl≋",
+                "ñê§łê§þê🐨",
+                "Ŧollicuรectior",
+                "Ŧฬeͥirͣoͫ͢͢͢Tฬin🅺les😎",
+                "Ɓṏṙḕd Ṗläÿệŕ {✨}",
+                "Ƒrͥedͣeͫτw☢u",
+                "Ƒuͥℓdͣsͫhinec",
+                "ƤlคץรChⱥή∂☢ese",
+                "Ƥ𝕣αlØ𝔫scallᴳᵒᵈ",
+                "Ǥrel𐍉resit",
+                "ˢᵐᵒᵘᵗᵉᵐᵃᶜᴳᵒᵈ",
+                "ͲąղէìçմҍӀ",
+                "ΘffireKhⱥήzir",
+                "αиgєℓ _ℓιfє ❤️🥀",
+                "Ϛageร𐍉HϚ𐍉ℓ☢😇",
+                "ϟ",
+                "Дракон",
+                "ОХОТНИК",
+                "занято42/Busybody42",
+                "прівіт",
+                "҉s҉h҉u҉n҉a҉",
+                "թг๏Ɔoupsoɹʇɥ",
+                "୨Fei𝓈tyLexte∂i𝓈⪑",
+                "୨丹𝓃d𝓼e๖ۣۜƤⱥ𝓃cⱥce𝓼⪑",
+                "୨𝔄𝔟𝔫𝔬𝔯𝔪𝔞𝔩𝔄𝔫𝔫𝔞𝔩𝔤𝔞𝔱⪑",
+                "ร๏ɭɭร๏ภɭץ",
+                "฿eenGoatees⚔",
+                "฿eͥirͣoͫᴍeŇclo",
+                "๔เгєςՇгє๔เς🐵",
+                "๖ۣۜBloαtyAnat͢͢͢e",
+                "๖ۣۜOffeℝtBαffy",
+                "๖ۣۜ฿uͥ†sͣiͫ多Mu††er",
+                "๖ۣۜᖘⱥuͥncͣhͫyCⱥustiᴍ",
+                "๖ۣۜℜaͥnsͣtͫredu",
+                "๖ۣۜℜevⱥsนpSⱥssⱥfrⱥs",
+                "๖ۣۜ山iͥggͣlͫץ๖ۣۜ山ing⇜",
+                "๖ۣۜ山Øozץ๖ۣۜ山ome♛",
+                "๖ۣۜ山☢uͥsiͣaͫℓℓeﾂ",
+                "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐",
+                "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐",
+                "༄ᶦᶰᵈ᭄✿Gᴀᴍᴇʀ࿐",
+                "༺Hⱥrm๏ni๏us๖ۣۜ山ermisty༻",
+                "༺Leͥgeͣnͫd༻ᴳᵒᵈ",
+                "༺Thøuɾnᵃnꜱt༻",
+                "ཌInͥgeͣdͫighØ𝓊ndད",
+                "Ꭵ°᭄ᶫᵒᵛᵉᵧₒᵤ࿐♥",
+                "Ꭺɴᴋᴜꜱʜㅤᶠᶠ",
+                "ᖘiͥŇgͣeͫsτri",
+                "᚛BℝαzenBℝeα᚜",
+                "᚛UήisliήBigHuήk᚜",
+                "᚛VerรeᖙTurรeᖙΐe᚜",
+                "᚛Θficຮoภeຮ᚜",
+                "ᴛᴜʀᴜ ᴅᴇκ友",
+                "ᴛᴜʀᴜ ᴅᴇκ友",
+                "ᴴᵃⁿʸᵐᵖᶜᵘᵗᵉᴾᵃⁿᵗˢ",
+                "ᴴᵃⁿᶜᵉˢʰᵃⁿᵍᵒ▒",
+                "ᴵᴬᴹDaͥzzͣlͫᎥŇgWᎥlieรτi",
+                "ᴶᴬᴳᴼᴬᴺ・Bocil 友",
+                "ᴶᴬᴳᴼᴬᴺ・𝙀𝙢𝙖𝙠友",
+                "ᴶᴬᴳᴼᴬᴺ 𝚃𝚞𝚛𝚞友",
+                "ᴹᴿメY a h M a t i ☂️",
+                "ᶠ͢͢͢ᵉⁱᵍⁿᵉᵈᴸᵉˢˢᵃᵐᵉᵈ",
+                "ṨuήnyAuserสny",
+                "•`🍓Valerie xavier axelelyn🍥",
+                "•长ąϮëąℓ⁀ᶜᵘᵗᵉ╰ ‿ ╯ ☂",
+                "⁄•⁄ω⁄•⁄卡比獸🖤",
+                "⁅๖ۣۜƤoeτicViτhic⁆",
+                "⁅🆂🅴🅽🆂🅸🅱🅻🅴🅰🅽🆃🅴🅽🆂🅸🅾⁆",
+                "⁣𓆩NօthΣurΣeŇtment",
+                "⁣𓆩ⱮմʂʂҽąⱮմʂէąçհҽ",
+                "⁣𓆩🅰🅳🅼͢͢͢🅸🅽🅴🆆🅴🆁🅴🅽🆃",
+                "₧Anสτ͢͢͢Rสτit☢",
+                "ℓเττℓєA𝕤𝒾𝕤͢͢͢ul🅰natedes",
+                "ℭ𝔬𝔣𝔣𝔢𝔢",
+                "∂яα¢σηιαη卄αη∂яє∂υ",
+                "∉Eᴍiภeภ†Miภa多iho∌",
+                "∉Gℽmͥnaͣsͫт🅸𝖈丹terΐamn∌",
+                "∉𝕾nappʸ𝓝alꜱ๏∌",
+                "≋Beήτic͢͢͢ediή≋",
+                "≪Nummiຮ๖ۣۜ山his𝔱l͢͢͢er≫",
+                "⋉Direllooductຮe⋊",
+                "⌁NaτemacτᎥ⌁",
+                "⌿⏃⋏⎅⏃",
+                "⑉Elͥegͣeͫήτreα⑉",
+                "⑉Officђ𐍉uττi⑉",
+                "⑉S☢mp☢รpͥGuͣmͫp⑉",
+                "Ⓥ",
+                "━━╬٨ـﮩﮩ❤٨ـﮩﮩـ╬━❤️❥❥═══👑ľøvē👑 ═",
+                "█▬█ █ ▀█▀Asser†iveSegingin",
+                "░B░O░S░S░",
+                "▓TreήdץTrคm",
+                "▥Jeสncies†i?",
+                "▥ƆouƆouʌıɔʇıou¿",
+                "◤AŇdสtMสŇŇeͥℚuͣiͫŇ◢",
+                "◤NorNoRegαrᖙ◢",
+                "◤𝓟𝓲𝓰𝓰𝔂𝓒𝓸𝓾𝓰𝓰𝓵𝓲𝓼୧",
+                "◯ . ◯⃨̅",
+                "☁Ofเrethe☢",
+                "★AbͥreͣcͫuℓCuթieDoℓℓ★",
+                "★I†uℝFuͥℝmͣuͫzzℓe★",
+                "★Shͥouͣlͫ∂en∂ieve★",
+                "★Θfferencesթece★",
+                "★彡[๖ۣۜƊreคᖙ͢͢͢๖ۣۜƊeωᖙrop]彡★",
+                "★彡[ᴅᴇᴀᴅ ᴋɪʟʟᴇʀ]彡★",
+                "☯︎Ꭱ Ｏ Ƴ Ꭺ Ꮮ 亗 ×͜×",
+                "☽乃ץՇ๏קץՇђ๏ภ☾",
+                "♐OfficebᵒℽOffee",
+                "♐P͢͢͢herstst☢",
+                "♔〘Ł€Ꮆ€ŇĐ〙♔",
+                "♕ ❤VIỆT NAM ❤♕",
+                "♣☆  ⓂⒶ𝓻s𝐇Ⓜ𝔼𝕝ᒪσω  ☯♚",
+                "♪KING♫♕-dev#3917",
+                "⚡Abͥ☢nͣdͫynᎠynสm☢⚡",
+                "⚡H☢sH☢neͥℽbͣuͫn⚡",
+                "⚡O多ʝecτiveDeco⚡",
+                "⚡Uppontork⚡",
+                "⚡U†eͥreͣvͫe∂a⚡",
+                "⚰️🔥👻WITNESS ME👻🔥⚰️",
+                "⚾ꜱcrค℘℘yIsτraℓΐf",
+                "✈",
+                "✐ЯΣΛ爪ΛПΣЦЯΣ",
+                "✫Itͥคlͣlͫsømme",
+                "✰Aאָiͥcaͣpͫђeℓ✰",
+                "✰Habi†ualΘn∂ingua✰",
+                "✰QนestaΐŇgl✰",
+                "✰Tђℝ☢titsc✰",
+                "✰VΐcͥtoͣrͫΐousStor∂eส✰",
+                "✰W☢☢ℓutte∂espect✰",
+                "✹Shΐll๖ۣۜᗯildfire",
+                "✿ • Q U E E N✿ᴳᴵᴿᴸ࿐",
+                "❅Camedΐℝ๖ۣۜƊℝedd❅",
+                "❅Ju͢͢͢diciøusᖘheสdjur❅",
+                "❅WђizคJคckWђi†e❅",
+                "❅ᴛᴏᴀꜱᴛʏᴀꜱɪᴏɴᴅꜱᴛ❅",
+                "❬☬❭  ⚜️Ð𝐙𝕐 ッ 〜 🌷",
+                "❰𝞑𝞡𝞣❱ 𝝙𝝼𝝴𝝶𝘂𝝴",
+                "⦃ExtegสExtℝ𝒶H☢t⦄",
+                "⦃φօʂìէìѵҽԱʂէìէմąɾ⦄",
+                "⦇¢aphօℓօSnappy⦈",
+                "⦇ƑⱥℓiKi𝖒多๏Ṩℓice⦈",
+                "⧼Deͥpsͣeͫᄂfarg⧽",
+                "⧼ᴀภqͥ𝕦eͣsͫτeds⧽",
+                "⨝∑₮ξ₹ͶΛL⨝",
+                "⩻๖ۣۜᗯorl𝒹ly๖ۣۜᗯonsi𝕥u⩼",
+                "⪓Offigeร℘er⪔",
+                "⪨Äภioภ§Jสภeman⪩",
+                "⫷EᴍiήentOffec☢ne⫸",
+                "⫷FⱥrϻbØyFⱥϻb⫸",
+                "⫷M🆄ɔtsΐ𝕓lest⫸",
+                "⫷Ofteภ𐍉Gift⫸",
+                "⫷PนℝeMiͥℝeͣyͫ⫸",
+                "Ⱬł₭Ɽł₮₳Ӿ",
+                "ⱮօղѵҠօմҟӀąʍօմ",
+                "ⲘสysτᎥnⲘᎥnou😌",
+                "⸔Ṩaΐηg↻haΐ͢͢͢nຮ⸕",
+                "⸙",
+                "「Abi∂iŇgDicaŇℽ」",
+                "「Ate∂iͥDiͣlͫly๖ۣۜßØo」",
+                "「Ciaℓiͥᖘhͣoͫbia」",
+                "「FℓuͥttͣeͫriήgItingenv」",
+                "「Grǝacklψeτ」",
+                "「ƤสrigͥCoͣrͫriᖙor」",
+                "『sʜʀᴋ』•ᴮᴬᴰʙᴏʏツ",
+                "『sʜʀᴋ』•ᴮᴬᴰʙᴏʏツ",
+                "『sᴛʀᴋ』ᴷᴺᴵᴳᴴᵀ༒࿐",
+                "『WสψstℝWสt🅲hfส🅲e』",
+                "『YT』Just𝕸𝖟𝖆𝖍ヅ",
+                "『ƬƘ』 ƬƦΘレ乇メ",
+                "『Ѕʜʀ』• ℑℴƙℯℛᴾᴿᴼシ",
+                "【Cบrruτiv𝖊͢͢͢ภ】",
+                "【EaℝŇestͥIsͣtͫaŇdne】",
+                "【The L1litle One】",
+                "【Çðñêð₥͢͢͢å¢ïł】",
+                "〖-9999〗-҉R҉e҉X҉x҉X҉x҉X҉",
+                "〖Aήthent฿ⱥdbreⱥth〗",
+                "〖CoℝdsђWaℝdoŇ〗",
+                "〖Grͥetͣyͫdrest〗",
+                "〖Is†rͥสlͣlͫץpe〗",
+                "〖IŇviŇci多leAdeŇƤual〗",
+                "〖Oภvest𐍉pΐ〗",
+                "〖Tiͥสnͣyͫouℓthom〗",
+                "〖WⱥsτrSτⱥbͥbeͣrͫ〗",
+                "〖ṨoftOftwTนft〗",
+                "やlachaҜ𝔢d๖ۣ•҉",
+                "ツ",
+                "ツSpazeツ",
+                "メ",
+                "ㅋㅋㄹㅃㅃ",
+                "ㅤㅤㅤㅤㅤ",
+                "㍶𝕎𝕠𝕟𝕕𝕖𝕣𝕗𝕦𝕝𝕍𝕖𝕣𝕗𝕠𝕣",
+                "丹pสτheτᎥcṨømpⱥthⱥ",
+                "丹ภefFคภgs",
+                "丹†eÐiuϻbee††ℓy†",
+                "亗",
+                "亗",
+                "千lu🆃🆃er𝕚𝓃gṨαu🆃e🏂",
+                "彡Ri๏ภt͢͢͢αhαbigiv彡",
+                "彡ΛЯᄂƧΣᄃΛ彡",
+                "残念な人",
+                "ꔪ",
+                "꧁H҉A҉C҉K҉E҉R҉꧂",
+                "꧁҈$ꫀꪖ  ,҉ℭն𝚌մꪑ𝜷ꫀ᥅ ༻",
+                "꧁ঔৣ☬✞𝓓𝖔𝖓✞☬ঔৣ꧂",
+                "꧁ঔৣ☬✞𝓓𝖔𝖓✞☬ঔৣ꧂",
+                "꧁༒Ǥ₳₦ǤֆƬᏋЯ༒꧂",
+                "꧁༒☬sunny☬༒꧂",
+                "꧁༒☬ᤂℌ໔ℜ؏ৡ☬༒꧂",
+                "꧁༒☬ᤂℌ໔ℜ؏ৡ☬༒꧂",
+                "꧁༒☬✞😈VîLLãñ😈✞☬༒ ꧂",
+                "꧁༺J꙰O꙰K꙰E꙰R꙰༻꧂",
+                "꧁༺nickname༻꧂",
+                "꧁༺༒〖°ⓅⓇⓄ°〗༒༻꧂",
+                "꧁༺ ₦Ї₦ℑ₳ ƤℜɆĐ₳₮Øℜ ༻꧂",
+                "꧁༺₦Ї₦ℑ₳༻꧂",
+                "꧁༺₦Ї₦ℑ₳༻꧂",
+                "꧁༺𝓘𝓷𝓼𝓪𝓷𝓲𝓽𝔂༻꧂",
+                "꧁⁣༒𓆩₦ł₦ℑ₳𓆪༒꧂",
+                " ꧁ℤ𝕖𝔱𝔥𝔢𝔯𝔫𝕚𝕒꧂",
+                "꧁▪ ＲคᎥនтαʀ ࿐",
+                "꧁☆☬κɪɴɢ☬☆꧂",
+                "꧁☬⋆ТᎻᎬ༒ᏦᎥᏁᏳ⋆☬꧂",
+                "꧁☬☬😈꧁꧂ ☠HARSH ☠꧁꧂😈 ☬☬꧂",
+                "꧁☯ℙ么ℕⅅ么☯꧂\ufeff",
+                "꧁✯[🕋]MÂRSHMÆLLØW 𖣘✯꧂",
+                "ꨄ",
+                "하이루",
+                "한국 Lime Lemon",
+                "Heͥstͣsͫookerinec",
+                "IfΐeรeŇUŇΐverรe",
+                "IssℓαtSℓoͥppͣyͫ",
+                "Θffi多ℓoTrou多ℓe",
+                "๖ۣۜ山angຮᎥRagຮ",
+                "︽CӨ🅽𝔞ℓsoᴍe𝔱tee",
+                "﹄𝔇𝔬𝔫𝔨𝔢𝔶𝔒𝔠𝔨𝔢𝔡𝔲﹃",
+                "ＦＺㅤＯＦＩＣＩＡＬ亗",
+                "Ｗｅｄｉｓｐｉｃｈａｖｉｔ▒",
+                "｟VoℓคtᎥℓeAtentᎥⱥt｠",
+                "𐄡ɢlaήsaรailØrM͢͢͢aή𐄪",
+                "𐄡𝒫𝑜𝓉𝑒𝓃𝓉𝒯𝒾𝑒𝓃𐄪",
+                "𐐚eeͥᖙgͣeͫήve",
+                "𐐚ewil∂ere∂Ne∂iภ",
+                "𐐚ץƬuƬtepØω",
+                "𓊈卄ανσ͢͢͢ℓ丂αναє𓊉",
+                "𖣘ᴰᵃʳᴋ᭄ꮯꮎᏼꭱꭺ🐲࿐",
+                "𝒞𐍉nl𝖞r𐍉𝖇s",
+                "𝒮𝔭00𝔡𝔢𝔯𝔪𝔞𝔫",
+                "𝒰𝒞ℋİℋ𝒜",
+                "𝓑𝓻𝓸𝓴𝓮𝓷 𝓗𝓮𝓪𝓻𝓽♡",
+                "𝓕𝓸𝓵𝓿𝓮𝓞𝓵𝓭𝓳𝓸𝓴𝓮⚔",
+                "𝓗𝓪𝓭𝓭𝓚𝓱𝓪𝓷𝔃𝓲𝓻",
+                "𝓗𝓮𝔂𝓸𝓗𝓸𝓷𝓮𝔂𝓬𝓪𝓴𝓮🎨",
+                "𝓟𝓸𝓻𝓮𝓽𝔂𝓷𝓽𝓼𝔰𝔲𝔭𝔢𝔯",
+                "𝓟𝓻𝓸𝓰𝓷𝓲𝔁𝓽𝓾𝓻",
+                "𝓼𝓮𝓻𝓲𝓸𝓾𝓼𝓵𝔂",
+                "𝔗ec†iga†eechersҜ♐",
+                "𝔚hΐ†eℽWhΐm",
+                "𝔚𝔥𝔞𝔫𝔡𝔢𝔱𝔉𝔞𝔫𝔞𝔱𝔦𝔠⇜",
+                "𝕁𝕖𝕤𝕥𝕖𝕣",
+                "𝕃𝕠𝕘͢͢͢𝕖𝕕𝕦𝕒𝕝𝕚𝕒",
+                "𝕆𝕗𝕗𝕠𝕦𝕝𝕕𝕠𝕨𝕚𝕥𝕚𝕝⚡",
+                "𝕯𝖆𝖗𝖐 𝕬𝖓𝖌𝖊𝖑",
+                "𝕯𝖆𝖙 𝕺𝖓𝖊 𝕭𝖔𝖎",
+                "𝕰𝖓𝖊𝖒𝖞_𝕯𝖔𝖌",
+                "𝕴ñⱥτ🅸vScrⱥtchy🐆",
+                "𝕴ภc☢meMสch☢mคn🏀",
+                "𝕹͢͢͢𐍉τempℓeᴀɾ😠",
+                "𝕻𝖑𝖆𝖙𝖎𝖘𝖊𝖓𝖙𝖙єค๓",
+                "🅑🅛🅐🅒🅚🅟🅐🅝🅣🅗🅔🅡",
+                "🅸 🅰🅼 🅶🅾🅳",
+                "🆆🅷🅴🆂🅿🅸🆂🅷🅰🅳🅾🌗",
+                "🇧🇷HUE🇧🇷",
+                "🇧🇷HUE🇧🇷",
+                "🇸🇦",
+                "🌀DESTROYER🌀",
+                "🌊🦈🌊",
+                "🌌Miñe🌌",
+                "🌌Miñe🌌",
+                "🌌Miñe🌌",
+                "🌰🆂🅴🅽🅸🅽🅶🅻🆂🅸🆁🅴🅽🅸🆃🅰",
+                "🌳H𐍉Ňe͢͢͢st𝓘Ňew",
+                "🌻ｓｕｎｆｌｏｗｅｒ🌻",
+                "🍃𝕲rคᎥŇคÈlคᎥs",
+                "🍎",
+                "🎈IT🎈 APOCOLYPSE",
+                "🎮丹թթєɐli𝓃gQuɐli𝓃gє",
+                "🎮𝕊ecτolαrץຮτ",
+                "🎲๖ۣۜƤⱥranAsian𐌁øyz",
+                "🎹ͲօցìօղժƓմղժ",
+                "🎻Hiקle𝔶lutקuᖙiѕh",
+                "🏄",
+                "🐅Exקreαrfer",
+                "🐥IภêℝtAshtaℝt",
+                "🐫PønΛctiαrsenaℓ",
+                "🐯Hคndy͢͢͢Hคtiɭity",
+                "🐯ᎠⱥrlΐภgArҜs🅱ⱥt",
+                "🐰chiro🐰",
+                "🐶(X)~pit¥🐺te matare jajaja",
+                "🐸🐌【HapPy】",
+                "💞",
+                "💤Fสή†สຮ†icͥAfͣfͫic",
+                "🔱LordΛภ𝓰𝖑Ɇ🚫",
+                "🔱Saint LilY⚜🚫",
+                "🔱Ƒιяєωσяк🚫",
+                "🔱⨊ $؋₲₥₳🚫",
+                "🔱 𝓽𝓲𝓶𝓮𝓽𝓸𝓭𝓲𝓮 🚫",
+                "🖤ISAAC🖤",
+                "😈",
+                "😈Stormys Domain😈",
+                "😋𐌁𝔯αήgsτ𐌁ruddah",
+                "😌CømiภgPoթcorn",
+                "😎",
+                "😎👿david988😎👿",
+                "😐🅲🆄🆁🅽🅰🅽🅱🅾🅽🅰🅵🅸🅳🅴",
+                "😦UnwielᖙℽNexק",
+                "😶ＧｕｔｔｕｒａｌＰｕｔｈｅｒｉｐ",
+                "😻SƤ𝔯iήgy🅼orkingɭ",
+                "🚊Ӌeสτenͥτrͣiͫ͢͢͢n",
+                "🚣AՇitℽสrDสrͥinͣgͫ",
+                "🚣ᴅʀɪᴠᴇɴᴇᴠᴇʀʀ",
+                " 🥧π🥧"
+            ];
+            const randomAngle = () => {
+                return Math.PI * 2 * Math.random();
+            }
             const randomRange = (min, max) => {
                 return Math.random() * (max - min) + min;
             }
@@ -420,9 +6489,7 @@ global.require = function (thing) {
             return {
                 random: random,
 
-                randomAngle: () => {
-                    return Math.PI * 2 * Math.random();
-                },
+                randomAngle: randomAngle,
 
                 randomRange: randomRange,
                 biasedRandomRange: (min, max, bias) => {
@@ -505,130 +6572,828 @@ global.require = function (thing) {
                     switch (code) {
                         case 'a':
                             return chooseN([
-                                "Archimedes",
+                                "Abundantia",
+                                "Abzu",
+                                "Acat",
+                                "Achelois",
+                                "Achelous",
+                                "Aditi",
+                                "Adonis",
+                                "Aegir",
+                                "Aengus",
+                                "Aeolus",
+                                "Aequitas",
+                                "Aesir",
+                                "Aether",
+                                "Agni",
+                                "Ahti",
+                                "Aion",
                                 "Akilina",
-                                "Anastasios",
-                                "Athena",
-                                "Alkaios",
-                                "Amyntas",
-                                "Aniketos",
-                                "Artemis",
-                                "Anaxagoras",
-                                "Apollo",
-                                "Pewdiepie",
-                                "Ares",
-                                "Helios",
-                                "Hades",
+                                "Al-uzza",
                                 "Alastor",
-                                "Bruh Moment",
-                                "Shrek",
-                                "Geofridus",
-                                "Guillermo",
-                                "Tephania",
-                                "Christaire",
-                                "Galileo",
-                                "Newton",
-                                "Herschel",
-                                "Eratosthenes",
-                                "Maxwell",
-                                "Lavoisier",
-                                "Maynard"
+                                "Alcmene",
+                                "Alkaios",
+                                "Allat",
+                                "Amaterasu",
+                                "Ame-no-Uzume",
+                                "Ammit",
+                                "Amphitrite",
+                                "Amun",
+                                "Amyntas",
+                                "Ananke",
+                                "Anastasios",
+                                "Anaxagoras",
+                                "Andraste",
+                                "Angus",
+                                "Aniketos",
+                                "Annapurna",
+                                "Anshar",
+                                "Anubis",
+                                "Anuket",
+                                "Aphrodite",
+                                "Apollo",
+                                "Apophis",
+                                "Apsu",
+                                "Aranyani",
+                                "Arawn",
+                                "Archimedes",
+                                "Arduinna",
+                                "Artemis",
+                                "Artio",
+                                "Aruna",
+                                "Aryaman",
+                                "Asclepius",
+                                "Asherah",
+                                "Ashur",
+                                "Astarte",
+                                "Astraeus",
+                                "Asura",
+                                "Aten",
+                                "Atlaua",
+                                "Atum",
+                                "Aurora"
                             ], n);
-                        case 'sassafras':
+                        case 'b':
                             return chooseN([
-                                "Sassafras",
-                                "Sassafras",
-                                "Hemisphere"
+                                "Baal",
+                                "Babi",
+                                "Bacabs",
+                                "Bacchus",
+                                "Badb",
+                                "Balarama",
+                                "Baldur",
+                                "Baraka",
+                                "Baron Samedi",
+                                "Barra",
+                                "Bastarnae",
+                                "Bastet",
+                                "Bat",
+                                "Batara",
+                                "Bathala",
+                                "Bau",
+                                "Bel",
+                                "Belenus",
+                                "Belet-seri",
+                                "Bellerophon",
+                                "Bellona",
+                                "Belobog",
+                                "Bendis",
+                                "Bennu",
+                                "Benzaiten",
+                                "Beowulf",
+                                "Berehynia",
+                                "Bes",
+                                "Bestla",
+                                "Beyla",
+                                "Bhairava",
+                                "Bhavani",
+                                "Bhumi",
+                                "Bia",
+                                "Biafra",
+                                "Binbōgami",
+                                "Bishamon",
+                                "Bishamonten",
+                                "Bixia",
+                                "Boann",
+                                "Bona Dea",
+                                "Bonus Eventus",
+                                "Bor",
+                                "Borr",
+                                "Bragi",
+                                "Brahma",
+                                "Brahmani",
+                                "Bran",
+                                "Branwen",
+                                "Bresal",
+                                "Brigid",
+                                "Brigit",
+                                "Brihaspati",
+                                "Britomartis",
+                                "Brizo",
+                                "Bubona",
+                                "Buchis",
+                                "Buddha",
+                                "Bumba",
+                                "Byggvir"
+                            ], n);
+                        case 'c':
+                            return chooseN([
+                                "Cailleach",
+                                "Caishen",
+                                "Calliope",
+                                "Calypso",
+                                "Camael",
+                                "Camazotz",
+                                "Camulus",
+                                "Candi",
+                                "Cangjie",
+                                "Canope",
+                                "Cardea",
+                                "Carmenta",
+                                "Castor",
+                                "Centeotl",
+                                "Cernunnos",
+                                "Cerridwen",
+                                "Ceto",
+                                "Chac",
+                                "Chamunda",
+                                "Chandra",
+                                "Chang'e",
+                                "Changxi",
+                                "Charites",
+                                "Charon",
+                                "Chemosh",
+                                "Chepi",
+                                "Chernobog",
+                                "Cherubim",
+                                "Chhaya",
+                                "Chinnamasta",
+                                "Chione",
+                                "Chirakan",
+                                "Chiron",
+                                "Chloe",
+                                "Chukwu",
+                                "Chulainn",
+                                "Cian",
+                                "Circe",
+                                "Cizin",
+                                "Clementia",
+                                "Cleon",
+                                "Clio",
+                                "Cloacina",
+                                "Clíona",
+                                "Coatlicue",
+                                "Coeus",
+                                "Concordia",
+                                "Consus",
+                                "Copia",
+                                "Cotys",
+                                "Coventina",
+                                "Coyote",
+                                "Crius",
+                                "Crom Cruach",
+                                "Cronus",
+                                "Culsans",
+                                "Cunomaglus",
+                                "Cupid",
+                                "Cybele",
+                                "Cymede"
                             ], n);
                         case 'castle':
                             return chooseN([
-                                "Berezhany",
-                                "Lutsk",
-                                "Dobromyl",
                                 "Akkerman",
-                                "Palanok",
-                                "Zolochiv",
-                                "Palanok",
-                                "Mangup",
-                                "Olseko",
+                                "Alhambra",
+                                "Alnwick",
+                                "Babylon",
+                                "Bamburgh",
+                                "Belvoir",
+                                "Berezhany",
+                                "Bilhorod",
+                                "Blarney",
+                                "Bodiam",
+                                "Bran",
                                 "Brody",
+                                "Carcassonne",
+                                "Chambord",
+                                "Chevaliers",
+                                "Chillon",
+                                "Conwy",
+                                "Dobromyl",
+                                "Dover",
+                                "Dubrovnik",
+                                "Edinburgh",
+                                "Eilean Donan",
+                                "Heidelberg",
+                                "Himeji",
                                 "Isiaslav",
                                 "Kaffa",
-                                "Bilhorod",
-                                "Cheese Block",
+                                "Kilkenny",
+                                "Leeds",
+                                "London",
+                                "Lutsk",
+                                "Mangup",
+                                "Matsumoto",
+                                "Mont",
+                                "Olseko",
+                                "Osaka",
+                                "Palanok",
+                                "Pena",
+                                "Persepolis",
+                                "Petra",
+                                "Pissa",
+                                "Prague",
+                                "Rosenborg",
+                                "Stirling",
+                                "Tikal",
+                                "Toledo",
+                                "Warwick",
+                                "Windsor",
+                                "York",
+                                "Zolochiv"
+                            ], n);
+                        case 'meme':
+                            return chooseN([
+                                // Characters & People
+                                "Bender",
+                                "Bowser",
+                                "Cirno",
+                                "Cookie Monster",
+                                "Diddy",
+                                "Donkey Kong",
+                                "Eggman",
+                                "Einstein",
+                                "Fawful",
                                 "Ganondorf",
-                                "Weiss",
-                                "Spiegel",
-                                "Hasselhoff",
-                                "Konstanze",
-                                "Callum",
-                                "Maleficum",
-                                "Droukar",
-                                "Astradhur",
-                                "Saulazar",
-                                "Gervaise",
-                                "Reimund",
+                                "Grand Dad",
+                                "Homer",
+                                "Hussein",
+                                "Jeffrey",
+                                "Kanye",
+                                "Lebron",
+                                "Leshawna",
+                                "Mason",
+                                "Mewton",
+                                "Parappa",
+                                "Nyan",
+                                "Pewdiepie",
+                                "Shrek",
+                                "Trump",
+                                "Wart",
+                                // Memes
+                                "Alpha",
+                                "Baddie",
+                                "Bofa",
+                                "Bruh Moment",
+                                "Cheese Block",
+                                "Cryptobro",
+                                "eeffoC",
+                                "Hydrogen Bomb",
+                                "Iron Block",
+                                "IRS",
+                                "Mafia Boss",
                                 "Nothing",
-                                "Kohntarkosz"
+                                "Sigma",
+                                "Tuff",
+                                "Weezer",
+                                "Zip Bomb",
+                                // Special Cases
+                                " Fumo",
+                                "GIGA ",
+                                "John ",
+                                "King ",
+                                "My Chud ",
+                                " NEO",
+                                "Queen ",
+                                "Skibidi ",
+                                "The Original ",
+                                " The Undying",
+                                "Uncanny ",
+                                ".EXE"
+                            ], n);
+                        case 'legacy':
+                            return chooseN([
+                                "Alastor",
+                                //"Ares",
+                                "Astradhur",
+                                "Callum",
+                                "Christaire",
+                                "Droukar",
+                                "Eratosthenes",
+                                "Galileo",
+                                "Geofridus",
+                                "Gervaise",
+                                "Guillermo",
+                                "Hades",
+                                "Hasselhoff",
+                                "Helios",
+                                "Herschel",
+                                "Kohntarkosz",
+                                "Konstanze",
+                                "Lavoisier",
+                                "Maleficum",
+                                "Maxwell",
+                                "Maynard",
+                                "Newton",
+                                "Reimund",
+                                "Saulazar",
+                                "Spiegel",
+                                "Tephania",
+                                "Weiss"
+                            ], n);
+                        case 'a-z':
+                            return chooseN([
+                                "Abundantia",
+                                "Abzu",
+                                "Acat",
+                                "Achelois",
+                                "Achelous",
+                                "Aditi",
+                                "Adonis",
+                                "Aegir",
+                                "Aengus",
+                                "Aeolus",
+                                "Aequitas",
+                                "Aesir",
+                                "Aether",
+                                "Agni",
+                                "Ahti",
+                                "Aion",
+                                "Akilina",
+                                "Al-uzza",
+                                "Alastor",
+                                "Alcmene",
+                                "Alkaios",
+                                "Allat",
+                                "Amaterasu",
+                                "Ame-no-Uzume",
+                                "Ammit",
+                                "Amphitrite",
+                                "Amun",
+                                "Amyntas",
+                                "Ananke",
+                                "Anastasios",
+                                "Anaxagoras",
+                                "Andraste",
+                                "Angus",
+                                "Aniketos",
+                                "Annapurna",
+                                "Anshar",
+                                "Anubis",
+                                "Anuket",
+                                "Aphrodite",
+                                "Apollo",
+                                "Apophis",
+                                "Apsu",
+                                "Aranyani",
+                                "Arawn",
+                                "Archimedes",
+                                "Arduinna",
+                                "Artemis",
+                                "Artio",
+                                "Aruna",
+                                "Aryaman",
+                                "Asclepius",
+                                "Asherah",
+                                "Ashur",
+                                "Astarte",
+                                "Astraeus",
+                                "Asura",
+                                "Aten",
+                                "Atlaua",
+                                "Atum",
+                                "Aurora",
+                                "Baal",
+                                "Babi",
+                                "Bacabs",
+                                "Bacchus",
+                                "Badb",
+                                "Balarama",
+                                "Baldur",
+                                "Baraka",
+                                "Baron Samedi",
+                                "Barra",
+                                "Bastarnae",
+                                "Bastet",
+                                "Bat",
+                                "Batara",
+                                "Bathala",
+                                "Bau",
+                                "Bel",
+                                "Belenus",
+                                "Belet-seri",
+                                "Bellerophon",
+                                "Bellona",
+                                "Belobog",
+                                "Bendis",
+                                "Bennu",
+                                "Benzaiten",
+                                "Beowulf",
+                                "Berehynia",
+                                "Bes",
+                                "Bestla",
+                                "Beyla",
+                                "Bhairava",
+                                "Bhavani",
+                                "Bhumi",
+                                "Bia",
+                                "Biafra",
+                                "Binbōgami",
+                                "Bishamon",
+                                "Bishamonten",
+                                "Bixia",
+                                "Boann",
+                                "Bona Dea",
+                                "Bonus Eventus",
+                                "Bor",
+                                "Borr",
+                                "Bragi",
+                                "Brahma",
+                                "Brahmani",
+                                "Bran",
+                                "Branwen",
+                                "Bresal",
+                                "Brigid",
+                                "Brigit",
+                                "Brihaspati",
+                                "Britomartis",
+                                "Brizo",
+                                "Bubona",
+                                "Buchis",
+                                "Buddha",
+                                "Bumba",
+                                "Byggvir",
+                                "Cailleach",
+                                "Caishen",
+                                "Calliope",
+                                "Calypso",
+                                "Camael",
+                                "Camazotz",
+                                "Camulus",
+                                "Candi",
+                                "Cangjie",
+                                "Canope",
+                                "Cardea",
+                                "Carmenta",
+                                "Castor",
+                                "Centeotl",
+                                "Cernunnos",
+                                "Cerridwen",
+                                "Ceto",
+                                "Chac",
+                                "Chamunda",
+                                "Chandra",
+                                "Chang'e",
+                                "Changxi",
+                                "Charites",
+                                "Charon",
+                                "Chemosh",
+                                "Chepi",
+                                "Chernobog",
+                                "Cherubim",
+                                "Chhaya",
+                                "Chinnamasta",
+                                "Chione",
+                                "Chirakan",
+                                "Chiron",
+                                "Chloe",
+                                "Chukwu",
+                                "Chulainn",
+                                "Cian",
+                                "Circe",
+                                "Cizin",
+                                "Clementia",
+                                "Cleon",
+                                "Clio",
+                                "Cloacina",
+                                "Clíona",
+                                "Coatlicue",
+                                "Coeus",
+                                "Concordia",
+                                "Consus",
+                                "Copia",
+                                "Cotys",
+                                "Coventina",
+                                "Coyote",
+                                "Crius",
+                                "Crom Cruach",
+                                "Cronus",
+                                "Culsans",
+                                "Cunomaglus",
+                                "Cupid",
+                                "Cybele",
+                                "Cymede"
                             ], n);
                         case 'all':
                             return chooseN([
-                                "Archimedes",
+                                "Abundantia",
+                                "Abzu",
+                                "Acat",
+                                "Achelois",
+                                "Achelous",
+                                "Aditi",
+                                "Adonis",
+                                "Aegir",
+                                "Aengus",
+                                "Aeolus",
+                                "Aequitas",
+                                "Aesir",
+                                "Aether",
+                                "Agni",
+                                "Ahti",
+                                "Aion",
                                 "Akilina",
-                                "Anastasios",
-                                "Athena",
-                                "Alkaios",
-                                "Amyntas",
-                                "Aniketos",
-                                "Artemis",
-                                "Anaxagoras",
-                                "Apollo",
-                                "Pewdiepie",
-                                "Ares",
-                                "Helios",
-                                "Hades",
+                                "Al-uzza",
                                 "Alastor",
-                                "Bruh Moment",
-                                "Shrek",
-                                "Geofridus",
-                                "Guillermo",
-                                "Tephania",
-                                "Christaire",
-                                "Galileo",
-                                "Newton",
-                                "Herschel",
-                                "Eratosthenes",
-                                "Maxwell",
-                                "Lavoisier",
-                                "Maynard",
-                                "Berezhany",
-                                "Lutsk",
-                                "Dobromyl",
+                                "Alcmene",
+                                "Alkaios",
+                                "Allat",
+                                "Amaterasu",
+                                "Ame-no-Uzume",
+                                "Ammit",
+                                "Amphitrite",
+                                "Amun",
+                                "Amyntas",
+                                "Ananke",
+                                "Anastasios",
+                                "Anaxagoras",
+                                "Andraste",
+                                "Angus",
+                                "Aniketos",
+                                "Annapurna",
+                                "Anshar",
+                                "Anubis",
+                                "Anuket",
+                                "Aphrodite",
+                                "Apollo",
+                                "Apophis",
+                                "Apsu",
+                                "Aranyani",
+                                "Arawn",
+                                "Archimedes",
+                                "Arduinna",
+                                "Artemis",
+                                "Artio",
+                                "Aruna",
+                                "Aryaman",
+                                "Asclepius",
+                                "Asherah",
+                                "Ashur",
+                                "Astarte",
+                                "Astraeus",
+                                "Asura",
+                                "Aten",
+                                "Atlaua",
+                                "Atum",
+                                "Aurora",
+                                "Baal",
+                                "Babi",
+                                "Bacabs",
+                                "Bacchus",
+                                "Badb",
+                                "Balarama",
+                                "Baldur",
+                                "Baraka",
+                                "Baron Samedi",
+                                "Barra",
+                                "Bastarnae",
+                                "Bastet",
+                                "Bat",
+                                "Batara",
+                                "Bathala",
+                                "Bau",
+                                "Bel",
+                                "Belenus",
+                                "Belet-seri",
+                                "Bellerophon",
+                                "Bellona",
+                                "Belobog",
+                                "Bendis",
+                                "Bennu",
+                                "Benzaiten",
+                                "Beowulf",
+                                "Berehynia",
+                                "Bes",
+                                "Bestla",
+                                "Beyla",
+                                "Bhairava",
+                                "Bhavani",
+                                "Bhumi",
+                                "Bia",
+                                "Biafra",
+                                "Binbōgami",
+                                "Bishamon",
+                                "Bishamonten",
+                                "Bixia",
+                                "Boann",
+                                "Bona Dea",
+                                "Bonus Eventus",
+                                "Bor",
+                                "Borr",
+                                "Bragi",
+                                "Brahma",
+                                "Brahmani",
+                                "Bran",
+                                "Branwen",
+                                "Bresal",
+                                "Brigid",
+                                "Brigit",
+                                "Brihaspati",
+                                "Britomartis",
+                                "Brizo",
+                                "Bubona",
+                                "Buchis",
+                                "Buddha",
+                                "Bumba",
+                                "Byggvir",
+                                "Cailleach",
+                                "Caishen",
+                                "Calliope",
+                                "Calypso",
+                                "Camael",
+                                "Camazotz",
+                                "Camulus",
+                                "Candi",
+                                "Cangjie",
+                                "Canope",
+                                "Cardea",
+                                "Carmenta",
+                                "Castor",
+                                "Centeotl",
+                                "Cernunnos",
+                                "Cerridwen",
+                                "Ceto",
+                                "Chac",
+                                "Chamunda",
+                                "Chandra",
+                                "Chang'e",
+                                "Changxi",
+                                "Charites",
+                                "Charon",
+                                "Chemosh",
+                                "Chepi",
+                                "Chernobog",
+                                "Cherubim",
+                                "Chhaya",
+                                "Chinnamasta",
+                                "Chione",
+                                "Chirakan",
+                                "Chiron",
+                                "Chloe",
+                                "Chukwu",
+                                "Chulainn",
+                                "Cian",
+                                "Circe",
+                                "Cizin",
+                                "Clementia",
+                                "Cleon",
+                                "Clio",
+                                "Cloacina",
+                                "Clíona",
+                                "Coatlicue",
+                                "Coeus",
+                                "Concordia",
+                                "Consus",
+                                "Copia",
+                                "Cotys",
+                                "Coventina",
+                                "Coyote",
+                                "Crius",
+                                "Crom Cruach",
+                                "Cronus",
+                                "Culsans",
+                                "Cunomaglus",
+                                "Cupid",
+                                "Cybele",
+                                "Cymede",
                                 "Akkerman",
-                                "Palanok",
-                                "Zolochiv",
-                                "Palanok",
-                                "Mangup",
-                                "Olseko",
+                                "Alhambra",
+                                "Alnwick",
+                                "Babylon",
+                                "Bamburgh",
+                                "Belvoir",
+                                "Berezhany",
+                                "Bilhorod",
+                                "Blarney",
+                                "Bodiam",
+                                "Bran",
                                 "Brody",
+                                "Carcassonne",
+                                "Chambord",
+                                "Chevaliers",
+                                "Chillon",
+                                "Conwy",
+                                "Dobromyl",
+                                "Dover",
+                                "Dubrovnik",
+                                "Edinburgh",
+                                "Eilean Donan",
+                                "Heidelberg",
+                                "Himeji",
                                 "Isiaslav",
                                 "Kaffa",
-                                "Bilhorod",
-                                "Cheese Block",
+                                "Kilkenny",
+                                "Leeds",
+                                "London",
+                                "Lutsk",
+                                "Mangup",
+                                "Matsumoto",
+                                "Mont",
+                                "Olseko",
+                                "Osaka",
+                                "Palanok",
+                                "Pena",
+                                "Persepolis",
+                                "Petra",
+                                "Pissa",
+                                "Prague",
+                                "Rosenborg",
+                                "Stirling",
+                                "Tikal",
+                                "Toledo",
+                                "Warwick",
+                                "Windsor",
+                                "York",
+                                "Zolochiv",
+                                "Bender",
+                                "Bowser",
+                                "Cirno",
+                                "Cookie Monster",
+                                "Diddy",
+                                "Donkey Kong",
+                                "Eggman",
+                                "Einstein",
+                                "Fawful",
                                 "Ganondorf",
-                                "Weiss",
-                                "Spiegel",
-                                "Hasselhoff",
-                                "Konstanze",
-                                "Callum",
-                                "Maleficum",
-                                "Droukar",
-                                "Astradhur",
-                                "Saulazar",
-                                "Gervaise",
-                                "Reimund",
+                                "Grand Dad",
+                                "Homer",
+                                "Hussein",
+                                "Jeffrey",
+                                "Kanye",
+                                "Lebron",
+                                "Leshawna",
+                                "Mason",
+                                "Mewton",
+                                "Parappa",
+                                "Nyan",
+                                "Pewdiepie",
+                                "Shrek",
+                                "Trump",
+                                "Wart",
+                                "Alpha",
+                                "Baddie",
+                                "Bofa",
+                                "Bruh Moment",
+                                "Cheese Block",
+                                "Cryptobro",
+                                "eeffoC",
+                                "Hydrogen Bomb",
+                                "Iron Block",
+                                "IRS",
+                                "Mafia Boss",
                                 "Nothing",
-                                "Kohntarkosz"
+                                "Sigma",
+                                "Tuff",
+                                "Weezer",
+                                "Zip Bomb",
+                                " Fumo",
+                                "GIGA ",
+                                "John ",
+                                "King ",
+                                "My Chud ",
+                                " NEO",
+                                "Queen ",
+                                "Skibidi ",
+                                "The Original ",
+                                " The Undying",
+                                "Uncanny ",
+                                ".EXE",
+                                "Alastor",
+                                //"Ares",
+                                "Astradhur",
+                                "Callum",
+                                "Christaire",
+                                "Droukar",
+                                "Eratosthenes",
+                                "Galileo",
+                                "Geofridus",
+                                "Gervaise",
+                                "Guillermo",
+                                "Hades",
+                                "Hasselhoff",
+                                "Helios",
+                                "Herschel",
+                                "Kohntarkosz",
+                                "Konstanze",
+                                "Lavoisier",
+                                "Maleficum",
+                                "Maxwell",
+                                "Maynard",
+                                "Newton",
+                                "Reimund",
+                                "Saulazar",
+                                "Spiegel",
+                                "Tephania",
+                                "Weiss"
                             ], n);
                         default: return ['God'];
                     }
@@ -636,14 +7401,24 @@ global.require = function (thing) {
 
                 randomLore: function () {
                     return choose([
-                        "3 + 9 = 4 * 3 = 12",
-                        "You are inside of a time loop.",
-                        "There are six major wars.",
-                        "You are inside of the 6th major war.",
-                        "AWP-39 was re-assembled into the Redistributor.",
-                        "The world quakes when the Destroyers assemble.",
-                        "Certain polygons can pull you away from the world you know."
+                        //"3 + 9 = 4 * 3 = 12",
+                        //"You are inside of a time loop.",
+                        //"There are six major wars.",
+                        //"You are inside of the 6th major war.",
+                        //"AWP-39 was re-assembled into the Redistributor.",
+                        //"The world quakes when the Destroyers assemble.",
+                        //"Certain polygons can pull you away from the world you know.",
+                        "There are seven mass extinctions.",
+                        "You are experiencing the 5th mass extinction.",
+                        "The Moon's children are typically docile, but it's best not to mess around with them.",
+                        "A rogue Moon Rabbit lurks in the shadows…",
+                        "Don't stare directly at the Sun. He will not take it kindly.",
+                        "The universe is nestled in the antlers of the Kugelblitz."
                     ]);
+                },
+
+                randomHexColor: function () {
+                    return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
                 }
             }
             break;
@@ -1436,7 +8211,7 @@ const Chain = Chainf;
             "tabLimit": 1,
             "strictSingleTab": true,
             "maxPlayers": 999,
-            "BETA": 0,
+            "MINIMUM_PERMISSIONS": 0,
             "networkFrontlog": 1,
             "networkFallbackTime": 150,
             "visibleListInterval": 38,
@@ -1452,7 +8227,9 @@ const Chain = Chainf;
             "serverName": "Free For All",
             "TEAM_AMOUNT": 2,
             "RANDOM_COLORS": false,
+            "RANDOM_TEAMS": false,
             "BOSS_SPAWN_TIMER": 2000,
+            "IS_HELL": false,
             "PORTALS": {
                 "ENABLED": false,
                 "TANK_FORCE": 3000,
@@ -1523,23 +8300,32 @@ const Chain = Chainf;
             "MIN_SPEED": Number.MIN_VALUE,
             "MIN_DAMAGE": 0,
             "MAX_FOOD": 400,
-            "MAX_NEST_FOOD": 30,
+            "MAX_COMBINED_NEST_FOOD": 30,
+            "MAX_SQUARE_NEST_FOOD": 0,
+            "MAX_TRI_NEST_FOOD": 0,
+            "MAX_PENTA_NEST_FOOD": 0,
+            "MAX_HEXA_NEST_FOOD": 0,
+            "MAX_HEPTA_NEST_FOOD": 0,
+            "MAX_OCTA_NEST_FOOD": 0,
+            "MAX_NONA_NEST_FOOD": 0,
+            "MAX_DECA_NEST_FOOD": 0,
             "MAX_CRASHERS": 18,
             "MAX_SANCS": 1,
             "TIME_BETWEEN_SANCS": 900000,
             "EVOLVE_TIME": 90000,
             "EVOLVE_TIME_RAN_ADDER": 210000,
-            "EVOLVE_HALT_CHANCE": 0.25,
+            "EVOLVE_HALT_CHANCE": 0.2,
             "SHINY_CHANCE": 0.00001,
             "SKILL_BOOST": 5,
             "BOTS": 10,
             "GLASS_HEALTH_FACTOR": 1.8,
             "DO_BASE_DAMAGE": true,
-            "ISSIEGE": false,
+            "IS_BOSS_RUSH": false,
             "DISABLE_LEADERBOARD": false,
             "BLACKOUT": false,
             "CANNOT_SHOOT_IN_BASE": true,
-            "GAMEMODE_JS": ""
+            "GAMEMODE_JS": "",
+            "DOMINATOR_SHUFFLE_TIMER": 0
         }
 
         let sterilize = file => {
@@ -1741,11 +8527,20 @@ const Chain = Chainf;
 				this.lagComp = 1;
                 this.gameMode = config.MODE;
                 this.testingMode = c.testingMode;
+                this.randomColors = config.RANDOM_COLORS;
                 this.speed = c.gameSpeed;
                 this.timeUntilRestart = c.restarts.interval;
                 this.maxBots = botAmountOverride ?? c.BOTS;
                 this.maxFood = config.MAX_FOOD;
-                this.maxNestFood = config.MAX_NEST_FOOD;
+                this.maxAllNestFood = config.MAX_NEST_FOOD ?? config.MAX_COMBINED_NEST_FOOD;
+                this.maxTriNestFood = config.MAX_TRI_NEST_FOOD;
+                this.maxSquareNestFood = config.MAX_SQUARE_NEST_FOOD;
+                this.maxPentaNestFood = config.MAX_PENTA_NEST_FOOD;
+                this.maxHexaNestFood = config.MAX_HEXA_NEST_FOOD;
+                this.maxHeptaNestFood = config.MAX_HEPTA_NEST_FOOD;
+                this.maxOctaNestFood = config.MAX_OCTA_NEST_FOOD;
+                this.maxNonaNestFood = config.MAX_NONA_NEST_FOOD;
+                this.maxDecaNestFood = config.MAX_DECA_NEST_FOOD;
                 this.maxCrashers = config.MAX_CRASHERS;
                 this.maxSancs = config.MAX_SANCS;
                 this.skillBoost = config.SKILL_BOOST;
@@ -1755,8 +8550,18 @@ const Chain = Chainf;
                 this.arenaClosed = false;
                 this.teamAmount = c.TEAM_AMOUNT;
                 this.modelMode = c.modelMode;
+                this.census = {
+                    crasher: 0,
+                    miniboss: 0,
+                    naturalMiniboss: 0,
+                    tank: 0,
+                    sancs: 0
+                };
+                this.bossTimer = 0;
                 this.bossRushOver = false;
                 this.bossRushWave = 0;
+                this.bossRushMaxIncrement = 0;
+                this.bossRushMinIncrement = 0;
                 this.bossString = "";
                 this.motherships = [];
                 this.nextTagBotTeam = [];
@@ -1768,7 +8573,8 @@ const Chain = Chainf;
                     ["SW", "Southern", "SE"]
                 ];
                 this.cellTypes = (() => {
-                    const output = ["nest", "norm", "rock", "roid", "port", "wall", "door", "edge", "domi", "outb", "door", "boss", "bosp"];
+                    const output = ["norm", "rock", "roid", "port", "wall", "door", "edge", "domi", "outb", "door", "bosp"];
+                    nestList[1].forEach(n => output.push(n));
                     for (let i = 1; i <= 8; i++) {
                         output.push("bas" + i);
                         output.push("bad" + i);
@@ -1808,6 +8614,8 @@ const Chain = Chainf;
                         this.mapPoints.push({ x, y, angle });
                     }
                 }
+                this.minBetaPerms = config.MINIMUM_PERMISSIONS;
+                this.isHell = config.IS_HELL;
             }
             isInRoom(location) {
                 return location.x >= 0 && location.x <= this.width && location.y >= 0 && location.y <= this.height;
@@ -1905,7 +8713,7 @@ const Chain = Chainf;
                     return false;
                 }
                 const v = this.setup[a][b];
-                return v !== 'norm' && v !== 'roid' && v !== 'rock' && v !== 'wall' && v !== 'edge';
+                return ("norm" === v) || ("rock" === v) || ("roid" === v) || ("wall" === v) || ("edge" === v);
             }
             gauss(clustering) {
                 let output,
@@ -1980,24 +8788,24 @@ const Chain = Chainf;
                     util.warn("c.X_GRID has conflicts with the current room setup. Please check these configs and relaunch.");
                     process.exit();
                 }
-                util.log(this.width + " x " + this.height + " room initalized. Max food: " + this.maxFood + ". Max nest food: " + this.maxNestFood + ". Max crashers: " + this.maxCrashers + ".");
+                util.log(this.width + " x " + this.height + " room initalized. Max food: " + this.maxFood + ". Max crashers: " + this.maxCrashers + ".");
                 if (c.restarts.enabled) {
                     let totalTime = c.restarts.interval;
                     setTimeout(() => util.log("Automatic server restarting is enabled. Time until restart: " + this.timeUntilRestart / 7200 + " hours."), 340);
                     setInterval(() => {
                         this.timeUntilRestart--;
                         if (this.timeUntilRestart === 1800 || this.timeUntilRestart === 900 || this.timeUntilRestart === 600 || this.timeUntilRestart === 300) {
-                            if (c.serverName.includes("Boss")) sockets.broadcast(`WARNING: Tanks have ${this.timeUntilRestart / 60} minutes to defeat the boss rush!`, "#FFE46B");
+                            if (c.IS_BOSS_RUSH) sockets.broadcast(`WARNING: Tanks have ${this.timeUntilRestart / 60} minutes to defeat the boss rush!`, "#FFE46B");
                             else sockets.broadcast(`WARNING: The server will automatically restart in ${this.timeUntilRestart / 60} minutes!`, "#FFE46B");
                             util.warn(`Automatic restart will occur in ${this.timeUntilRestart / 60} minutes.`);
                         }
                         if (!this.timeUntilRestart) {
-                            let reason = c.serverName.includes("Boss") ? "Reason: The tanks could only defeat " + this.bossRushWave + "/75 waves" : "Reason: Uptime has reached " + totalTime / 60 / 60 + " hours";
+                            let reason = c.IS_BOSS_RUSH ? "Reason: The tanks could only defeat " + this.bossRushWave + "/75 waves" : "Reason: Uptime has reached " + totalTime / 60 / 60 + " hours";
                             util.warn("Automatic server restart initialized! Closing arena...");
-                            let toAdd = c.serverName.includes("Boss") ? "Tanks have run out of time to kill the bosses!" : c.serverName.includes("Domination") ? "No team has managed to capture all of the Dominators! " : c.serverName.includes("Mothership") ? "No team's Mothership has managed to become the last Mothership standing! " : "";
+                            let toAdd = c.IS_BOSS_RUSH ? "Tanks have run out of time to kill the bosses!" : c.SPAWN_DOMINATORS ? "No team has managed to capture all of the Dominators! " : c.serverName.includes("Mothership") ? "No team's Mothership has managed to become the last Mothership standing! " : "";
                             sockets.broadcast(toAdd + "Automatic server restart initializing...", "#FFE46B");
                             setTimeout(() => closeArena(), 2500);
-                            if (c.serverName.includes("Boss")) this.bossRushOver = true;
+                            if (c.IS_BOSS_RUSH) this.bossRushOver = true;
                         }
                     }, 1000);
                 }
@@ -2019,6 +8827,7 @@ const Chain = Chainf;
             util.getJackpot = eval(`x => ${c["KILL_SCORE_FORMULA"]}`);
         }
         const room = new Room(c);
+        room.presentNests = nestList[1].filter(t => room[t]?.length);
 
 		// This class is horrible
 		// Theres been a long standing NaN bug
@@ -2645,8 +9454,9 @@ const Chain = Chainf;
             })
         };
 
-        const teamNames = ["BLUE", "RED", "GREEN", "PURPLE", "TEAL", "LIME", "ORANGE", "GREY"];
-        const teamColors = [10, 12, 11, 15, 0, 1, 2, 6];
+        const teamNames = ["BLUE", "RED", "GREEN", "PURPLE", "YELLOW", "ORANGE", "PINK", "TEAL"];
+        const teamColors = [10, 12, 11, 15, 3, 35, 36, 0];
+        const teamHexCodes = ["#3CA4CB", "#E03E41", "#8ABC3F", "#CC669C", "#FDF380", "#F37C20", "#E85DDF", "#7ADBBC"];
 
         function getTeamColor(team) {
             if (Math.abs(team) - 1 >= teamNames.length) {
@@ -2704,15 +9514,20 @@ const Chain = Chainf;
 
         const spawnBot = (loc = null) => {
             let position = loc,
-                max = 100;
+                max = 100,
+                team = c.serverName === "Infiltration" ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
             if (!loc) {
-                do position = room.randomType(c.serverName === "Infiltration" ? "edge" : "norm");
+                let spawnSectors = ["spn", "bas", "n_b", "bad"].map(r => r + team).filter(sector => room[sector] && room[sector].length);
+                do position = room.randomType(
+                    (c.serverName === "Infiltration") ? "edge" :
+                    (room.gameMode === "tdm" && spawnSectors.length) ? ran.choose(spawnSectors) :
+                    "norm"
+                );
                 while (dirtyCheck(position, 400) && max-- > 0);
             }
             let o = new Entity(position);
-            o.color = 12;
+            o.color = (room.randomColors) ? ran.randomHexColor() : 12;
             if (room.gameMode === "tdm") {
-                let team = c.serverName === "Infiltration" ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
                 o.team = -team;
                 o.color = team === 20 ? 17 : [10, 12, 11, 15, 3, 35, 36, 0][team - 1];
             }
@@ -2769,11 +9584,10 @@ const Chain = Chainf;
         };
 
         const closeArena = () => {
-            if (c.serverName.includes("Boss")) room.bossRushOver = true;
+            if (c.IS_BOSS_RUSH) room.bossRushOver = true;
             room.arenaClosed = true;
             //if (c.enableBot) editStatusMessage("Offline");
             sockets.broadcast("Arena Closed: No players can join.", "#FF0000");
-            for (let socket of clients) socket.talk("P", "The arena has closed. Please try again later once the server restarts.", ran.randomLore());
             util.log("The arena has closed!", true);
             if (room.modelMode || c.SANDBOX) {
                 util.warn("Closing server...");
@@ -2849,14 +9663,20 @@ const Chain = Chainf;
                     clearInterval(interval);
                     setTimeout(() => {
                         util.log("All players are dead! Ending process...", true);
-                        setTimeout(process.exit, 500);
+                        setTimeout(() => {
+                            process.exit;
+                            for (let socket of clients) socket.talk("P", "The arena has closed. Please try again later once the server restarts.", ran.randomLore());
+                        }, 500);
                     }, 1000);
                 }
             }, 100);
             setTimeout(() => {
                 completed = true;
                 util.log("Arena Closers took too long! Ending process...", true);
-                setTimeout(process.exit, 500);
+                setTimeout(() => {
+                    process.exit;
+                    for (let socket of clients) socket.talk("P", "The arena has closed. Please try again later once the server restarts.", ran.randomLore());
+                }, 500);
             }, 6e4);
         };
 
@@ -2890,7 +9710,7 @@ const Chain = Chainf;
             if (won) return;
             won = true;
             let team = ["BLUE", "RED", "GREEN", "PURPLE"][teamId];
-            sockets.broadcast(team + " has won the game!", ["#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "F37C20", "#E85DDF", "#8EFFFB"][teamId]);
+            sockets.broadcast(team + " has won the game!", ["#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "#F37C20", "#E85DDF", "#8EFFFB"][teamId]);
             setTimeout(closeArena, 3e3);
         };
 
@@ -2917,80 +9737,184 @@ const Chain = Chainf;
 
         class Domination {
             constructor() {
-                this.takenDominators = (new Array(room.teamAmount)).fill(0);
+                this.takenDominators = room.gameMode === "tdm" ? (new Array(room.teamAmount)).fill(0) : [];
                 this.amountOfDominators = room.domi.length;
             }
 
             init() {
                 for (let location of room.domi) {
                     let dominator = new Entity(location);
-                    dominator.define([
+                    dominator.define(ran.choose([
                         Class.destroyerDominatorAI,
                         Class.gunnerDominatorAI,
                         Class.trapperDominatorAI,
-                        Class.crockettDominatorAI,
+                        Class.droneDominatorAI,
+                        Class.autoDominatorAI,
                         Class.steamrollDominatorAI,
-                        Class.autoDominatorAI
-                    ][ran.chooseChance(35, 35, 10, 8, 10, 10)]);
+                        Class.crockettDominatorAI,
+                        Class.swarmerDominatorAI,
+                        //Class.pliniDominatorAI, (Needs balancing.)
+                        //Class.fortifiedDominatorAI, (Needs balancing.)
+                        Class.vulcDominatorAI,
+                        Class.hurriDominatorAI
+                    ]));
 
                     dominator.alwaysActive = true;
                     dominator.color = 13;
-                    dominator.FOV = .5;
                     dominator.isDominator = true;
-                    dominator.miscIdentifier = "appearOnMinimap";
+                    if (room.gameMode === "tdm") dominator.miscIdentifier = "appearOnMinimap"; // Buggy behavior with FFA Domination.
                     dominator.settings.hitsOwnType = "pushOnlyTeam";
                     dominator.SIZE = 70;
                     dominator.team = -100;
+                    dominator.name = "Dominator";
+                    dominator.refreshBodyAttributes();
 
                     dominator.onDead = () => {
-                        // Cheeky lil workabout so we don't have to redefine a dominator
-                        dominator.health.amount = dominator.health.max;
-                        dominator.isGhost = false;
-                        dominator.hasDoneOnDead = false;
+                        if (room.gameMode === "tdm") {
+                            // Cheeky lil workabout so we don't have to redefine a dominator
+                            dominator.childrenMap.forEach(c => c.kill());
+                            dominator.health.amount = dominator.health.max;
+                            dominator.shield.amount = dominator.shield.max;
+                            dominator.isGhost = false;
+                            dominator.hasDoneOnDead = false;
 
-                        // Get the people who murdered the dominator
-                        let killers = [];
-                        for (let instance of dominator.collisionArray) {
-                            if (instance.team >= -room.teamAmount && instance.team <= -1) {
-                                killers.push(instance.team);
-                            }
-                        }
-
-                        let killTeam = killers.length ? ran.choose(killers) : 0,
-                            team = ["INVALID", "BLUE", "RED", "GREEN", "PURPLE", "YELLOW", "ORANGE", "PINK", "TEAL"][-killTeam],
-                            teamColor = ["#000000", "#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "#F37C20", "#E85DDF", "#8EFFFB"][-killTeam];
-
-                        // If the dominator is taken, make it contested
-                        if (dominator.team !== -100) {
-                            this.takenDominators[-dominator.team] -= 1;
-                            killTeam = 0;
-                            sockets.broadcast(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is being contested!`, "#FFE46B");
-                        } else { // If a contested dominator is taken...
-                            this.takenDominators[-killTeam] += 1;
-                            sockets.broadcast(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is now captured by ${team}!`, teamColor);
-
-                            entities.forEach(body => {
-                                if (body.team === killTeam && body.type === "tank" && !body.underControl) {
-                                    body.sendMessage("Press H to control the Dominator!");
+                            // Get the people who murdered the dominator
+                            let killers = [];
+                            for (let instance of dominator.collisionArray) {
+                                if (instance.team >= -room.teamAmount && instance.team <= -1) {
+                                    killers.push(instance.team);
                                 }
-                            });
-                        }
+                            }
 
-                        // Set area type based off of team
-                        room.setType(`dom${-killTeam || "i"}`, location);
+                            let killTeam = killers.length ? ran.choose(killers) : 0,
+                                team = ["INVALID", "BLUE", "RED", "GREEN", "PURPLE", "YELLOW", "ORANGE", "PINK", "TEAL"][-killTeam],
+                                teamColor = ["#000000", "#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "#F37C20", "#E85DDF", "#8EFFFB"][-killTeam];
 
-                        // Set dominator team
-                        dominator.team = killTeam || -100;
-                        dominator.color = [13, 10, 12, 11, 15, 3, 35, 36, 0][-killTeam];
+                            // If the dominator is taken, make it contested
+                            if (dominator.team !== -100) {
+                                this.takenDominators[-dominator.team] -= 1;
+                                killTeam = 0;
+                                sockets.broadcast(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is being contested!`, "#FFE46B");
+                            } else { // If a contested dominator is taken...
+                                this.takenDominators[-killTeam] += 1;
+                                sockets.broadcast(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is now captured by ${team}!`, teamColor);
 
-                        // If all dominators are taken by the same team, close the arena
-                        if (this.takenDominators.includes(this.amountOfDominators) && killTeam && !room.arenaClosed) {
-                            util.warn(`${team} has won the game! Closing arena...`);
-                            setTimeout(() => sockets.broadcast(`${team} has won the game!`, teamColor), 2e3);
-                            setTimeout(() => closeArena(), 5e3);
-                        }
+                                /*entities.forEach(body => {
+                                    if (body.team === killTeam && body.type === "tank" && !body.underControl) {
+                                        body.sendMessage("Press H to control the Dominator!");
+                                    }
+                                });*/
+                            }
+
+                            // Set area type based off of team
+                            room.setType(`dom${-killTeam || "i"}`, location);
+
+                            // Set dominator team
+                            dominator.team = killTeam || -100;
+                            dominator.color = [13, 10, 12, 11, 15, 3, 35, 36, 0][-killTeam];
+
+                            // If all dominators are taken by the same team, close the arena
+                            if (this.takenDominators.includes(this.amountOfDominators) && killTeam && !room.arenaClosed) {
+                                util.warn(`${team} has won the game! Closing arena...`);
+                                setTimeout(() => sockets.broadcast(`${team} has won the game!`, teamColor), 2e3);
+                                setTimeout(() => closeArena(), 5e3);
+                            }
+                        } else {
+                            // Cheeky lil workabout so we don't have to redefine a dominator
+                            dominator.childrenMap.forEach(c => c.kill());
+                            dominator.health.amount = dominator.health.max;
+                            dominator.shield.amount = dominator.shield.max;
+                            dominator.isGhost = false;
+                            dominator.hasDoneOnDead = false;
+
+                            // Get the people who murdered the dominator
+                            let killers = [];
+                            for (let instance of dominator.collisionArray) {
+                                if (instance.team > 0) {
+                                    killers.push(instance.master.master.source);
+                                }
+                            }
+
+                            let killPlayer = killers.length ? ran.choose(killers) : null,
+                                name = (killPlayer != null) ? (!killPlayer.name.length) ? "An unnamed player" : killPlayer.name : null;
+
+                            // If the dominator is taken, make it contested
+                            if (dominator.team !== -100) {
+                                killPlayer = null,
+                                name = null;
+                                sockets.broadcast(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is being contested!`, "#FFE46B");
+                            } else { // If a contested dominator is taken...
+                                entities.forEach(body => {
+                                    if (body.isPlayer) body.sendMessage(`The ${room.cardinals[Math.floor(3 * location.y / room.height)][Math.floor(3 * location.x / room.height)]} Dominator is now captured by ${name}!`, body.team === killPlayer.team ? "#00B0E1" : "#F04F54");
+                                })
+                            }
+
+                            // Set area type based off of team
+                            if (room.randomColors) room.setType(`${killPlayer != null ? killPlayer.color : 'domi'}`, location);
+                            else room.setType(`dom${killPlayer != null ? 'P'+killPlayer.team : 'i'}`, location);
+
+                            // Set dominator team
+                            dominator.team = killPlayer != null ? killPlayer.team : -100;
+                            dominator.color = killPlayer != null ? killPlayer.color : 13;
+                            dominator.name = name != null ? `${name}` + `${(/[sS]/.test(name.slice(-1))) ? "' " : "'s "} Dominator` : "Dominator";
+                            dominator.nameColor = killPlayer != null ? killPlayer.nameColor : "#FFFFFF";
+                        };
                     };
                 }
+            }
+
+            shuffle(time) {
+                function tick(t) { // Copied from Boss Rush.
+                    if (
+                        t === 300 ||
+                        t === 120 ||
+                        t === 60
+                    ) sockets.broadcast(`Every dominator will be shuffled in ${t/60} minute${t/60 > 1 ? 's' : ''}.`, "#FFE46B");
+                    if (t < 60) {
+                        if (
+                            t === 30 ||
+                            t === 15 ||
+                            t === 10 ||
+                            (t <= 5 && t > 0)
+                        ) sockets.broadcast(`Every dominator will be shuffled in ${t} second${t > 1 ? 's' : ''}.`, "#FFE46B");
+                    }
+                    if (t <= 0) {
+                        sockets.broadcast("Every dominator has been shuffled!");
+                        entities.forEach(dom => {
+                            if (dom.isDominator) {
+                                const domOnDead = dom.onDead;
+                                dom.childrenMap.forEach(c => c.kill());
+                                dom.controllers = [];
+                                dom.define(ran.choose([
+                                    Class.destroyerDominatorAI,
+                                    Class.gunnerDominatorAI,
+                                    Class.trapperDominatorAI,
+                                    Class.droneDominatorAI,
+                                    Class.autoDominatorAI,
+                                    Class.steamrollDominatorAI,
+                                    Class.crockettDominatorAI,
+                                    Class.swarmerDominatorAI,
+                                    //Class.pliniDominatorAI, (Needs balancing.)
+                                    //Class.fortifiedDominatorAI, (Needs balancing.)
+                                    Class.vulcDominatorAI,
+                                    Class.hurriDominatorAI
+                                ]));
+                                dom.settings.hitsOwnType = "pushOnlyTeam";
+                                dom.SIZE = 70;
+                                dom.refreshBodyAttributes();
+                                dom.onDead = domOnDead;
+                            }
+                        });
+                        sockets.broadcast("Every dominator will be shuffled again in 10 minutes.");
+                        return;
+                    }
+
+                    setTimeout(function retick() {
+                        tick(t - 1);
+                    }, 1000);
+                }
+                tick(time + 1);
+                setInterval(() => tick(time + 1), time * 1000);
             }
         }
 
@@ -3080,74 +10004,379 @@ const Chain = Chainf;
         };
         const bossRushLoop = (function () {
             const bosses = [
-                Class.eggQueenTier1AI, Class.eggQueenTier2AI, Class.eggQueenTier3AI, Class.AWP_1AI, Class.AWP_14AI,
-                Class.AWP_24AI, Class.AWP_cos5AI, Class.AWP_psAI, Class.AWP_11AI, Class.AWP_8AI,
-                Class.AWP_21AI, Class.AWP_28AI, Class.eliteRifleAI, Class.RK_1AI, Class.hexashipAI, Class.eliteDestroyerAI,
-                Class.eliteGunnerAI, Class.eliteSprayerAI, Class.eliteTwinAI, Class.eliteMachineAI, Class.eliteTrapAI,
-                Class.eliteBorerAI, Class.eliteSniperAI, Class.eliteBasicAI, Class.eliteInfernoAI, Class.fallenBoosterAI,
-                Class.fallenOverlordAI, Class.fallenPistonAI, Class.fallenAutoTankAI, Class.fallenCavalcadeAI,
-                Class.fallenFighterAI, Class.reanimFarmerAI, Class.reanimHeptaTrapAI, Class.reanimUziAI, Class.palisadeAI,
-                Class.skimBossAI, Class.leviathanAI, Class.ultMultitoolAI, Class.nailerAI, Class.gravibusAI, Class.cometAI,
-                Class.brownCometAI, Class.orangicusAI, Class.atriumAI, Class.constructionistAI, Class.dropshipAI,
-                Class.armySentrySwarmAI, Class.armySentryGunAI, Class.armySentryTrapAI, Class.armySentryRangerAI,
-                Class.armySentrySwarmAI, Class.armySentryGunAI, Class.armySentryTrapAI, Class.armySentryRangerAI,
-                Class.derogatorAI, Class.hexadecagorAI, Class.blitzkriegAI, Class.demolisherAI, Class.octogeddonAI,
-                Class.octagronAI, Class.ultimateAI, Class.cutterAI, Class.alphaSentryAI, Class.asteroidAI,
-                Class.trapeFighterAI, Class.visUltimaAI, Class.gunshipAI, Class.messengerAI, Class.pulsarAI,
-                Class.colliderAI, Class.deltrabladeAI, Class.aquamarineAI, Class.kioskAI, Class.vanguardAI,
-                Class.magnetarAI, Class.guardianAI, Class.summonerAI, Class.defenderAI, Class.xyvAI,
-                Class.conquistadorAI, Class.sassafrasAI, Class.constAI, Class.bowAI, Class.snowflakeAI, Class.greenGuardianAI, Class.lavenderGuardianAI,
-                Class.eggSpiritTier1AI, Class.eggSpiritTier2AI, Class.eggSpiritTier3AI, Class.eggBossTier1AI, Class.eggBossTier2AI,
-                Class.EK_3AI, Class.at4_bwAI, Class.confidentialAI, Class.s2_22AI, Class.hb3_37AI, Class.sacredCrasherAI, Class.legendaryCrasherAI,
-                Class.iconsagonaAI, Class.hexagonBossAI, Class.heptagonBossAI, Class.ultraPuntAI, Class.vulcanShipAI, Class.trapDwellerAI,
-                Class.astraAI, Class.eliteSidewindAI, Class.swarmSquareAI, Class.vacuoleAI, Class.lamperAI, Class.mk1AI, Class.mk2AI,
-                Class.mk3AI, Class.tk1AI, Class.tk2AI, Class.tk3AI, Class.greendeltrabladeAI, Class.icecolliderAI, Class.neutronStarAI,
-                Class.quasarAI, Class.icemessengerAI, Class.sorcererAI, Class.enchantressAI, Class.exorcistorAI, Class.triguardAI,
-                Class.applicusAI, Class.lemonicusAI, Class.fallenDrifterAI, Class.RK_2AI, Class.RK_3AI, Class.rs1AI,
-                Class.rs2AI, Class.rs3AI, Class.bluestarAI, Class.sliderAI, Class.splitterSummoner, Class.rogueMothershipAI,
-                Class.streakAI, Class.goldenStreakAI, Class.curveplexAI, Class.orbitalspaceAI, Class.leshyAI, Class.leshyAIred,
-                Class.eliteMinesweeperAI, Class.ascendedSquare, Class.ascendedTriangle, Class.ascendedPentagonAI, Class.lavendicusAI,
-                Class.AWPOrchestra1AI, Class.AWPOrchestra2AI, Class.moonShardAAI, Class.moonShardBAI, Class.awpOrchestratan33AI,
-                Class.AWPOrchestra4AI
+                Class.alphaSentryAI,
+                Class.anniversaryDefenderAI,
+                Class.anniversaryGuardianAI,
+                Class.anniversarySummonerAI,
+                Class.applicusAI,
+                Class.aquamarineAI,
+                Class.armySentryGunAI,
+                Class.armySentryRangerAI,
+                Class.armySentrySwarmAI,
+                Class.armySentryTrapAI,
+                Class.arcanistAI,
+                Class.article13AI,
+                Class.ascendedCareener,
+                Class.ascendedPentagonAI,
+                Class.ascendedSquare,
+                Class.ascendedTriangle,
+                Class.asteroidAI,
+                Class.astraAI,
+                Class.at4_bwAI,
+                Class.atriumAI,
+                Class.AWPOrchestra1AI,
+                Class.AWPOrchestra2AI,
+                Class.awpOrchestratan33AI,
+                Class.AWPOrchestra3AI,
+                Class.awpPoundAI,
+                Class.AWP_1AI,
+                Class.AWP_8AI,
+                Class.AWP_11AI,
+                Class.AWP_14AI,
+                Class.AWP_21AI,
+                Class.AWP_24AI,
+                Class.AWP_28AI,
+                Class.AWP_cos5AI,
+                Class.awp_machineAI,
+                Class.awp_nephAI,
+                Class.AWP_psAI,
+                Class.awp_snipeAI,
+                Class.battlegonAI,
+                Class.beggarsBaneAI,
+                Class.blitzkriegAI,
+                Class.bluestarAI,
+                Class.bowAI,
+                Class.brownCometAI,
+                Class.carryingGunshipAI,
+                Class.chandelierAI,
+                Class.chk1AI,
+                Class.chk2AI,
+                Class.chk3AI,
+                Class.colliderAI,
+                Class.cometAI,
+                Class.confidentialAI,
+                Class.conquistadorAI,
+                Class.constAI,
+                Class.constructionistAI,
+                Class.curveplexAI,
+                Class.cutterAI,
+                Class.defenderAI,
+                Class.deltrabladeAI,
+                Class.demolisherAI,
+                Class.derogatorAI,
+                Class.dropshipAI,
+                Class.eggBossTier1AI,
+                Class.eggBossTier1FaceAI,
+                Class.eggBossTier2AI,
+                Class.eggQueenTier1AI,
+                Class.eggQueenTier2AI,
+                Class.eggQueenTier3AI,
+                Class.eggSpiritTier1AI,
+                Class.eggSpiritTier2AI,
+                Class.eggSpiritTier3AI,
+                Class.ek1WithAShotgunAI,
+                Class.EK_3AI,
+                Class.eliteBasicAI,
+                Class.eliteBattleshipAI,
+                Class.eliteBorerAI,
+                Class.eliteCarpenterAI,
+                Class.eliteDefenderAI,
+                Class.eliteDestroyerAI,
+                Class.eliteDirectorAI,
+                Class.eliteEngieAI,
+                Class.eliteGunnerAI,
+                Class.eliteInfernoAI,
+                Class.eliteMachineAI,
+                Class.eliteMinesweeperAI,
+                Class.elitePelleterAI,
+                Class.eliteRifleAI,
+                Class.eliteShrapnelAI,
+                Class.eliteSidewindAI,
+                Class.eliteSniperAI,
+                Class.eliteSprayerAI,
+                Class.eliteTrapAI,
+                Class.eliteTwinAI,
+                Class.enchantressAI,
+                Class.exorcistorAI,
+                Class.fallenAutoTankAI,
+                Class.fallenBoosterAI,
+                Class.fallenCavalcadeAI,
+                Class.fallenDesperadoAI,
+                Class.fallenDrifterAI,
+                Class.fallenFighterAI,
+                Class.fallenFlamethrowerAI,
+                Class.fallenHybridAI,
+                Class.fallenOctoAI,
+                Class.fallenOverlordAI,
+                Class.fallenPentaAI,
+                Class.fallenPistonAI,
+                Class.fallenUziAI,
+                Class.fueronAI,
+                Class.gegenscheinAI,
+                Class.goldenStreakAI,
+                Class.gravibusAI,
+                Class.greenBossTier1AI,
+                Class.greenBossTier2AI,
+                Class.greendeltrabladeAI,
+                Class.greenGearBossAI,
+                Class.greenGuardianAI,
+                Class.guardianAI,
+                Class.gunshipAI,
+                Class.hb3_37AI,
+                Class.heptagonBossAI,
+                Class.heptagonBossTier1AI,
+                Class.heptagonBossTier2AI,
+                Class.heptagonBossTier3AI,
+                Class.heptagonNestKeeperAI,
+                Class.hexachoronAI,
+                Class.hexadecagorAI,
+                Class.hexagonBossAI,
+                Class.hexagonBossTier1AI,
+                Class.hexagonBossTier2AI,
+                Class.hexagonBossTier3AI,
+                Class.hexagonNestKeeperAI,
+                Class.hexahedronAI,
+                Class.hollowCenterAI,
+                Class.hyperionAI,
+                Class.hypervesselAI,
+                Class.icecolliderAI,
+                Class.icemessengerAI,
+                Class.icePalisadeAI,
+                Class.iconsagonaAI,
+                Class.industrianAI,
+                Class.invokeAI,
+                Class.jetBossAI,
+                Class.kingAI,
+                Class.kioskAI,
+                Class.lamperAI,
+                Class.lavenderGuardianAI,
+                Class.lavendicusAI,
+                Class.leaferBossAI,
+                Class.legendaryCrasherAI,
+                Class.lemonicusAI,
+                Class.leshyAI,
+                Class.leshyAIred,
+                Class.leviathanAI,
+                Class.magnetarAI,
+                Class.messengerAI,
+                Class.metalCrasherBossAI,
+                Class.mk1AI,
+                Class.mk2AI,
+                Class.mk3AI,
+                Class.moonRabbitAIFrame0,
+                Class.moonShardAAI,
+                Class.moonShardBAI,
+                Class.nailerAI,
+                Class.nestKeeperAI,
+                Class.nk1AI,
+                Class.nk2AI,
+                Class.nk3AI,
+                Class.obp1AI,
+                Class.obp2AI,
+                Class.obp3AI,
+                Class.obt1AI,
+                Class.occultAI,
+                Class.octagonNestKeeperAI,
+                Class.octagronAI,
+                Class.octogeddonAI,
+                Class.orangicusAI,
+                Class.orbitalspaceAI,
+                Class.orthoAI,
+                Class.palisadeAI,
+                Class.pentafrasAI,
+                Class.pentagonBossTier1AI,
+                Class.pentagonBossTier2AI,
+                Class.pentagonBossTier3AI,
+                Class.protNestKeeperAI,
+                Class.pulsarAI,
+                Class.puzzlePieceBossAI,
+                Class.quasarAI,
+                Class.reanimBiohazardAI,
+                Class.reanimCacheAI,
+                Class.reanimCorpsAI,
+                Class.reanimFarmerAI,
+                Class.reanimGasserAI,
+                Class.reanimHeptaTrapAI,
+                Class.reanimKnightAI,
+                Class.reanimOverfireAI,
+                Class.reanimPentaBlasterAI,
+                Class.redBurstAI,
+                Class.RK_1AI,
+                Class.RK_2AI,
+                Class.RK_3AI,
+                Class.rogueMothershipAI,
+                Class.rs1AI,
+                Class.rs2AI,
+                Class.rs3AI,
+                Class.runecastAI,
+                Class.tealGuardianAI,
+                Class.sacredCrasherAI,
+                Class.sarfassasAI,
+                Class.sassafrasAI,
+                Class.sassasadeAI,
+                Class.shamanAI,
+                Class.skimBossAI,
+                Class.sliderAI,
+                Class.snowflakeAI,
+                Class.sorcererAI,
+                Class.soulless1AI,
+                Class.specAstraAI,
+                Class.specAuto8AI,
+                Class.specDodecaAI,
+                Class.specFlankLinerAI,
+                Class.specInviso4AI,
+                Class.specLibAI,
+                Class.specQuadraletAI,
+                Class.specRitoparnAI,
+                Class.specSolidagoAI,
+                Class.specThrusterAI,
+                Class.specWatchtrapAI,
+                Class.specYottamindAI,
+                Class.spellbindAI,
+                Class.splitterSummoner,
+                Class.squareNestKeeperAI,
+                Class.streakAI,
+                Class.summonerAI,
+                Class.superbirdAI,
+                Class.swarmCannonBossAI,
+                Class.swarmSquareAI,
+                Class.terminatorBossAI,
+                Class.terrorhedronAI,
+                Class.testboss2AI,
+                Class.testingthingAI,
+                Class.tetrafrasAI,
+                Class.thunderstormAI,
+                Class.tk1AI,
+                Class.tk2AI,
+                Class.tk3AI,
+                Class.trapDwellerAI,
+                Class.trapeFighterAI,
+                Class.trapperzoidAI,
+                Class.triangleNestKeeperAI,
+                Class.triguardAI,
+                Class.triSeekerAI,
+                Class.ultimateAI,
+                Class.ultMultitoolAI,
+                Class.ultraPuntAI,
+                Class.ultSwissToolsetAI,
+                Class.vacuoleAI,
+                Class.vanguardAI,
+                Class.visUltimaAI,
+                Class.vivisectionAI,
+                Class.xyvAI,
+                Class.youkaiBossAIFrame31
             ].filter(o => o != null);
             const waveAss = {
+                10: [
+                    Class.gaisenblasterAI,
+                    Class.hexashipAI,
+                    Class.vulcanShipAI
+                ],
                 25: [
-                    Class.lucrehulkAI, Class.lucrehulkCarrierAI, Class.lucrehulkBattleshipAI, Class.eggBossTier4AI,
-                    Class.eggSpiritTier4AI, Class.eggQueenTier4AI, Class.heptahedronAI, Class.LQMAI, Class.RK_4AI,
-                    Class.frigateShipAI, Class.destroyerShipAI, Class.mk4AI, Class.tk4AI, Class.superSplitterSummoner,
-                    Class.odinAI, Class.athenaAI, Class.caelusAI, Class.demeterAI, Class.hermesAI
+                    Class.athenaAI,
+                    Class.awp_33AI,
+                    Class.AWPOrchestra4AI,
+                    Class.caelusAI,
+                    Class.demeterAI,
+                    Class.destroyerShipAI,
+                    Class.eggBossTier4AI,
+                    Class.eggQueenTier4AI,
+                    Class.eggSpiritTier4AI,
+                    Class.ESHG_85_MainAI,
+                    Class.frigateShipAI,
+                    Class.greenBossTier3AI,
+                    Class.heptahedronAI,
+                    Class.hermesAI,
+                    Class.hexagonBossTier4AI,
+                    Class.LQMAI,
+                    Class.lucrehulkAI,
+                    Class.lucrehulkBattleshipAI,
+                    Class.lucrehulkCarrierAI,
+                    Class.mk4AI,
+                    Class.nk4AI,
+                    Class.nk5AI,
+                    Class.neutronStarAI,
+                    Class.odinAI,
+                    Class.PCUAI,
+                    Class.pentagonBossTier4AI,
+                    Class.purifierBossAI,
+                    Class.RK_4AI,
+                    Class.rod1AI,
+                    Class.superSplitterSummoner,
+                    Class.tk4AI,
+                    Class.XZ_4_MainAI
                 ],
                 30: [
-                    Class.minosAI, Class.sisyphusAI, Class.bidenAI, Class.grudgeAIWeaker, Class.redistributionAI
+                    Class.bidenAI,
+                    Class.cometbetterAI,
+                    Class.eliteXyvAI,
+                    Class.grudgeAIWeaker,
+                    Class.minosAI,
+                    Class.redistributionAI,
+                    Class.sisyphusAI,
+                    Class.ultimatebetterAI
                 ],
                 50: [
-                    Class.boreasAI, Class.worldDestroyerAIWeaker, Class.mythicalCrasherAIWeaker, Class.sassafrasSupremeAIWeaker,
-                    Class.tetraplexAIWeaker, Class.squarefortAI, Class.voidPentagonAIWeaker, Class.clockAIWeaker, Class.RK_5AI,
-                    Class.rs4AIWeaker
+                    Class.boreasAI,
+                    Class.carbonfrasAI,
+                    Class.clockAIWeaker,
+                    Class.colossusBossAI,
+                    Class.missilusAI,
+                    Class.mythicalCrasherAIWeaker,
+                    Class.RK_5AI,
+                    Class.rs4AIWeaker,
+                    Class.rSassSupremeAIWeaker,
+                    Class.sassafrasSupremeAIWeaker,
+                    Class.squarefortAI,
+                    Class.tetraplexAIWeaker,
+                    Class.voidPentagonAIWeaker,
+                    Class.worldDestroyerAIWeaker
                 ]
             };
             for (const key in waveAss) {
                 waveAss[key] = waveAss[key].filter(o => o != null);
             }
             const waveOverrides = {
-                10: [
-                    [Class.treasuryAI, Class.fueronAI, Class.morningstarAI]
-                ],
-                20: [
-                    [Class.clockAI, Class.voidPentagonAI, Class.rs4AI, Class.grudgeAI]
-                ],
-                30: [
-                    [Class.mythicalCrasherAI, Class.sassafrasSupremeAI]
-                ],
-                40: [
-                    [Class.tetraplexAI, Class.worldDestroyer, Class.eggBossTier5AI]
-                ],
-                50: [
-                    [Class.moonAI, Class.es5AI]
-                ],
-                60: [
-                    [Class.legacyACAI, Class.PDKAI]
-                ],
+                10: [[
+                    Class.treasuryAI,
+                    Class.purifierBossAI,
+                    Class.morningstarAI,
+                    Class.neutronStarAI
+                ]],
+                20: [[
+                    Class.clockAI,
+                    Class.voidPentagonAI,
+                    Class.rs4AI,
+                    Class.grudgeAI,
+                    Class.XZ_4_MainAI
+                ]],
+                30: [[
+                    Class.mythicalCrasherAI,
+                    Class.sassafrasSupremeAI,
+                    Class.rSassSupremeAI,
+                    Class.hf61AI,
+                    Class.carbonfrasAI,
+                    Class.colossusBossAI
+                ]],
+                40: [[
+                    Class.tetraplexAI,
+                    Class.worldDestroyer,
+                    Class.eggBossTier5AI,
+                    Class.cometbetterAI,
+                    Class.ultimatebetterAI,
+                    Class.missilusAI,
+                    Class.mariahCareyAI
+                ]],
+                50: [[
+                    Class.es5AI,
+                    Class.fuckahedronAI
+                ]],
+                60: [[
+                    Class.awp39AI,
+                    Class.legacyACAI,
+                    Class.PDKAI,
+                    Class.ship23AI
+                ]],
                 /// THE GAUNTLET ///
                 70: [
                     [Class.sunkingAI, Class.awp30AI]
@@ -3189,9 +10418,11 @@ const Chain = Chainf;
                     [Class.polyamorousAI, Class.quintetAI],
                     [Class.squarefortAI, Class.heptahedronAI, Class.RK_3AI]
                 ],
-                75: [
-                    Class.eggBossTier6AI
-                ],
+                75: [[
+                    Class.eggBossTier6AI,
+                    Class.overTitanAI,
+                    Class.moonAI
+                ]]
             }
             for (let i = 0; i < bosses.length; i++) {
                 if (bosses[i] != null) continue;
@@ -3203,11 +10434,14 @@ const Chain = Chainf;
                 bossesAlive--;
                 if (bossesAlive <= 0) {
                     if (room.bossRushWave === 75) {
-                        sockets.broadcast("The tanks have beaten the boss rush!");
+                        sockets.broadcast("The tanks have beaten the boss rush!", "#00B0E1");
                         players.forEach(player => player.body != null && player.body.rewardManager(-1, "victory_of_the_4th_war"));
                         setTimeout(closeArena, 2500);
+                    } else if (waveOverrides[room.bossRushWave + 1] != null) {
+                        sockets.broadcast("The next wave will arrive in 30 seconds!", '#FDF380');
+                        setTimeout(bossRushLoop, 30000);
                     } else {
-                        sockets.broadcast("The next wave will arrive in 10 seconds!");
+                        sockets.broadcast("The next wave will arrive in 10 seconds!", '#FDF380');
                         setTimeout(bossRushLoop, 10000);
                     }
                 } else {
@@ -3218,12 +10452,40 @@ const Chain = Chainf;
                 const o = new Entity(room.randomType("bosp"));
                 o.team = -100;
                 o.define(class_);
+                if (!o.name) o.name = ran.chooseBossName("all", 1)[0];
+                // For special boss names:
+                switch (o.name) {
+                    case "GIGA ":
+                    case "John ":
+                    case "King ":
+                    case "My Chud ":
+                    case "Queen ":
+                    case "Skibidi ":
+                    case "The Original ":
+                    case "Uncanny ":
+                        o.name += o.label;
+                        break;
+                    case " Fumo":
+                    case " NEO":
+                    case " The Undying":
+                    case ".EXE":
+                        o.name = o.label + o.name;
+                        break;
+                }
+                if (room.bas2 && room.bas2.length) {
+                    o.addController(new ioTypes.bossRushAI(o));
+                    o.controllers = o.controllers.filter(entry => !(entry instanceof ioTypes['fleeAtLowHealth']));
+                }
                 o.modeDead = entityModeDead;
                 bossesAlive++;
             }
             return function () {
                 room.bossRushWave++;
-                let amount = c.MAXBOSSES ? (Math.round(Math.random() * (c.MAXBOSSES - c.MINBOSSES) + c.MINBOSSES)) : Math.round(Math.random() * 8 + 4 /*20 + 20*/);
+                if (room.bossRushWave % (c.MAX_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMaxIncrement += c.MAX_BOSS_INCREMENT;
+                if (room.bossRushWave % (c.MIN_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMinIncrement += c.MIN_BOSS_INCREMENT;
+                let minBosses = c.MINBOSSES + room.bossRushMaxIncrement,
+                    maxBosses = c.MAXBOSSES + room.bossRushMinIncrement,
+                    amount = maxBosses ? (Math.round(Math.random() * (maxBosses - minBosses) + minBosses)) : Math.round(Math.random() * 8 + 4 /*20 + 20*/);
                 switch (room.bossRushWave) {
                     case 10:
                     case 20:
@@ -3276,7 +10538,7 @@ const Chain = Chainf;
                         }
                     }
                 }
-                sockets.broadcast(`${bossesAlive} Boss${bossesAlive > 1 ? "es" : ""} to kill!`);
+                sockets.broadcast(`${bossesAlive} boss${bossesAlive > 1 ? "es" : ""} to kill!`, '#E03E41');
             }
         })();
 
@@ -3657,15 +10919,16 @@ const Chain = Chainf;
                 ],
                 "0.4": [
                     "trapeFighterAI",
-                    "messengerAI",
+                    "messengerAI"
                 ],
                 "0.5": [
                     "pulsarAI",
-                    "gunshipAI",
+                    "gunshipAI"
                 ],
                 "0.6": [
                     "visUltimaAI",
                     "colliderAI",
+                    "carryingGunshipAI"
                 ],
                 "0.7": [
                     "alphaSentryAI",
@@ -3743,30 +11006,35 @@ const Chain = Chainf;
             constructor(body) {
                 super(body);
                 this.enabled = true;
-                this.goal = room.randomType("nest");
+                this.goal = (room["bas1"]?.length) ? room.randomType("bas1") : room.randomType("norm");
             }
             think(input) {
-                if (room.isIn("nest", this.body)) {
-                    this.enabled = false;
-                }
-                if (room.isIn("boss", this.body)) {
-                    this.enabled = true;
-                }
+                if (room.isIn("bas2", this.body)) this.enabled = false;
+                if (room.isIn("bosp", this.body)) this.enabled = true;
+                this.body.autoOverride = this.enabled;
                 if (this.enabled) {
                     return {
                         main: false,
                         fire: false,
                         alt: false,
-                        goal: this.goal
+                        goal: this.goal,
+                        target: {
+                            x: -(this.body.x - this.goal.x),
+                            y: -(this.body.y - this.goal.y)
+                        }
                     }
                 } else if (!input.main && !input.alt) {
-                    if (room["bas1"] && room["bas1"].length) {
-                        this.goal = room["bas1"][0];
+                    if (room["bas1"]?.length) {
+                        this.goal = (room.at(this.goal) !== "bas1") ? room.randomType("bas1") : this.goal;
                         return {
                             main: false,
                             fire: false,
                             alt: false,
-                            goal: this.goal
+                            goal: this.goal,
+                            target: {
+                                x: -(this.body.x - this.goal.x),
+                                y: -(this.body.y - this.goal.y)
+                            }
                         }
                     }
                 }
@@ -3836,7 +11104,7 @@ const Chain = Chainf;
                     x: this.player.target.x,
                     y: this.player.target.y
                 };
-                if (this.body.invuln && (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb)) this.body.invuln = false;
+                if (this.body.invuln && !this.body.grantedInvuln && (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb)) this.body.invuln = false;
                 this.body.autoOverride = this.body.passive || this.player.command.override;
                 if (this.body.aiSettings.isDigger) {
                     let av = Math.sqrt(targ.x * targ.x, targ.y * targ.y);
@@ -3908,7 +11176,7 @@ const Chain = Chainf;
                         y: 275 * Math.sin(kk)
                     };
                 }
-                if (this.body.invuln && (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb)) this.body.invuln = false;
+                if (this.body.invuln && !this.body.grantedInvuln && (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb)) this.body.invuln = false;
                 this.body.autoOverride = this.body.passive || this.player.command.override;
                 return {
                     target: targ,
@@ -4295,7 +11563,7 @@ const Chain = Chainf;
 				const master = body.master.master;
 				const pos = body.aiSettings.SKYNET ? body : master;
 				const myTeam = master.team;
-				const { FARMER, IGNORE_SHAPES, view360, TARGET_EVERYTHING } = body.aiSettings;
+				const { FARMER, IGNORE_SHAPES, FULL_VIEW, TARGET_EVERYTHING } = body.aiSettings;
 				const { seeInvisible, isArenaCloser, firingArc } = body;
 				const canSeeInvis = seeInvisible || isArenaCloser;
 
@@ -4318,19 +11586,27 @@ const Chain = Chainf;
 
 					// Filter chain ordered from cheapest to most expensive checks to fail fast.
 					if (entity.master.master.team === myTeam || entity.team === -101) return;
-					if (entity.isDead() || entity.passive || entity.invuln) return;
-					if (!FARMER && entity.dangerValue < 0) return;
+					if (entity.isDead() || entity.passive || (entity.invuln && !entity.grantedInvuln)) return;
+					if (!FARMER && entity.dangerValue < 1) return;
 					if (entity.alpha < 0.5 && !canSeeInvis) return;
 					if (c.SANDBOX && entity.sandboxId !== body.sandboxId) return;
 
 					switch (entity.type) {
-						case "drone": case "minion": case 'tank': case 'miniboss': case 'crasher': break;
-						case 'food': if (IGNORE_SHAPES) return; break;
-						default: if(!TARGET_EVERYTHING) return;
+						case "drone":
+                        case "minion":
+                        case 'tank':
+                        case 'miniboss':
+                        case 'crasher':
+                            break;
+						case 'food':
+                            if (IGNORE_SHAPES) return;
+                            break;
+						default: 
+                            if (!TARGET_EVERYTHING) return;
 					}
 
 
-                    if (firingArc && !view360) {
+                    if (firingArc && !FULL_VIEW) {
                         const angleToTarget = { x: entity.x - body.x, y: entity.y - body.y };
                         const dot = angleToTarget.x * Math.cos(firingArc[0]) + angleToTarget.y * Math.sin(firingArc[0]);
                         const angleToTargetMag = Math.hypot(angleToTarget.x, angleToTarget.y);
@@ -4370,7 +11646,7 @@ const Chain = Chainf;
 				if (input.main || input.alt ||
 					this.body.master.autoOverride ||
 					this.body.master.master.passive ||
-					this.body.master.master.invuln) {
+					(this.body.master.master.invuln && !this.body.master.master.grantedInvuln)) {
 					return {};
 				}
 
@@ -4432,8 +11708,13 @@ const Chain = Chainf;
                     return {};
                 }
 				if(++this.tick > room.cycleSpeed){
-		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * 2) {
-                    	this.goal = room.randomType(Math.random() > .8 ? "nest" : "norm");
+		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * ((c.IS_BOSS_RUSH) ? 3 : 2)) {
+                    	this.goal = room.randomType(
+                            (c.IS_BOSS_RUSH && room['bas1']?.length && ran.chance(.4)) ? "bas1" :
+                            (room.isHell) ? ((ran.chance(.2)) ? "norm" : ran.choose(room.presentNests)) :
+                            (room.presentNests.length && ran.chance(.2)) ? ran.choose(room.presentNests) :
+                            "norm"
+                        );
                 	}
 				}
                	return {
@@ -4453,7 +11734,7 @@ const Chain = Chainf;
             think(input) {
                 if (input.target != null && (input.alt || input.main)) {
                     let sizeFactor = Math.sqrt(this.body.master.size / this.body.master.SIZE),
-                        leash = 60 * sizeFactor,
+                        leash = 80 * sizeFactor,
                         orbit = 120 * sizeFactor,
                         repel = 135 * sizeFactor,
                         goal,
@@ -4528,6 +11809,7 @@ const Chain = Chainf;
                 this.timer = 0;
             }
             think(input) {
+                if (this.body.variables.idleOrbit != null) this.orbit = this.body.variables.idleOrbit;
                 if (this.body.source !== this.body) {
                     let bound1 = this.orbit * .8 + this.body.source.size + this.body.size,
                         bound2 = this.orbit * 1.5 + this.body.source.size + this.body.size,
@@ -5078,6 +12360,37 @@ const Chain = Chainf;
                 };
             }
         }
+        ioTypes.animateOnDistance = class extends IO {
+            constructor(b) {
+                super(b);
+            }
+            think(input) {
+                let animationCase = this.body.variables.animationCase ?? 0,
+                    animationDistance = Array.isArray(this.body.variables.animationDistance) ?
+                        [this.body.variables.animationDistance[0] * 10, this.body.variables.animationDistance[1] * 10] :
+                        this.body.variables.animationDistance * 10
+                if (animationCase && input.target) {
+                    let targetDistance = {
+                        x: input.target.x + this.body.x,
+                        y: input.target.y + this.body.y
+                    };
+                    switch (animationCase) {
+                        case 1:
+                            if (util.getDistance(this.body, targetDistance) > animationDistance) return { alt: true };
+                            else return { alt: false };
+                        case 2:
+                            if (util.getDistance(this.body, targetDistance) < animationDistance) return { alt: true };
+                            else return { alt: false };
+                        case 3:
+                            if (util.getDistance(this.body, targetDistance) > animationDistance[1]) return { alt: true };
+                            if (util.getDistance(this.body, targetDistance) < animationDistance[0]) return this.body.onQ(this.body);
+                            else return { alt: false };
+                        default:
+                            return { alt: false };
+                    }
+                }
+            }
+        }
         const skcnv = {
             rld: 0,
             pen: 1,
@@ -5091,10 +12404,12 @@ const Chain = Chainf;
             mob: 9
         };
         const levelers = [
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-            13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-            23, 24, 25, 26, 27, 28, 29, 30, 32, 34,
-            36, 38, 40, 42, 44, 46, 48, 50, 55, 60
+            1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+            11, 12, 13, 14,     16, 17, 18, 19, 20,
+            21, 22, 23, 24, 25, 26, 27, 28, 29,
+            31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+                42,     44,     46,     48,     50,
+                            55,                 60
         ];
         const curve = (() => {
             const make = x => Math.log(4 * x + 1) / Math.log(5);
@@ -5184,8 +12499,8 @@ const Chain = Chainf;
                 this.caps[9] = thing[9];
                 this.update();
             }
-            maintain() {
-                if (this.level < c.SKILL_CAP && this.score - this.deduction >= this.levelScore) {
+            maintain(aboveCap = false) {
+                if ((this.level < c.SKILL_CAP || aboveCap) && this.score - this.deduction >= this.levelScore) {
                     this.deduction += this.levelScore;
                     this.level += 1;
                     this.points += this.levelPoints;
@@ -5267,7 +12582,7 @@ const Chain = Chainf;
                 this.color = 16;
                 this.colorOverride = null;
                 this.shootOnDeath = false;
-				this.weaponSize = 1;
+				this.weaponSize = 0;
                 let PROPERTIES = info.PROPERTIES;
                 if (PROPERTIES != null && PROPERTIES.TYPE != null) {
                     this.canShoot = true;
@@ -5313,6 +12628,7 @@ const Chain = Chainf;
                 if (PROPERTIES != null && PROPERTIES.COLOR != null) this.color = PROPERTIES.COLOR;
                 if (PROPERTIES != null && PROPERTIES.COLOR_UNMIX != null) this.color_unmix = PROPERTIES.COLOR_UNMIX;
                 if (PROPERTIES != null && PROPERTIES.SKIN != null) this.skin = PROPERTIES.SKIN;
+                if (PROPERTIES != null && PROPERTIES.FAKE != null) this.isFake = PROPERTIES.FAKE;
                 let position = info.POSITION;
                 this.length = position[0] / 10;
                 this.width = position[1] / 10;
@@ -5343,7 +12659,7 @@ const Chain = Chainf;
 				}
 			}
             newRecoil() {
-                if (this.body.settings.hasNoRecoil) return;
+                if (this.body.settings.hasNoRecoil || this.isFake) return;
                 let recoilForce = this.settings.recoil * 2 / room.speed;
                 this.body.accel.x -= recoilForce * Math.cos(this.recoilDir || 0);
                 this.body.accel.y -= recoilForce * Math.sin(this.recoilDir || 0);
@@ -5378,7 +12694,7 @@ const Chain = Chainf;
                     }
                     let sk = this.body.skill,
                         shootPermission = this.countsOwnKids ? (this.countsOwnKids + this.destroyOldestChild) > this.childrenMap.size * (this.calculator === 7 ? sk.rld : 1) : this.body.maxChildren ? this.body.maxChildren > this.body.childrenMap.size * (this.calculator === 7 ? sk.rld : 1) : true;
-                    if (this.body.master.invuln) {
+                    if (this.body.master.invuln && !this.body.master.grantedInvuln) {
                         shootPermission = false;
                     }
                     if ((shootPermission || !this.waitToCycle) && this.cycle < 1) {
@@ -5406,7 +12722,7 @@ const Chain = Chainf;
                                     
                                     * Players are now able to shoot in base as the server is running locally
                                     */
-                                if (c.DO_BASE_DAMAGE && this.body.type !== "wall" && this.body.isInMyBase() && c.CANNOT_SHOOT_IN_BASE) {
+                                if (c.DO_BASE_DAMAGE && this.body.type !== "wall" && this.body.isInMyBase() && c.CANNOT_SHOOT_IN_BASE && !this.body.shootsInBaseAnyway) {
                                     if (this.body.childrenMap && this.body.childrenMap.size) this.body.childrenMap.forEach((k) => k.destroy())
                                 } else {
                                     if (!this.body.variables.emp || this.body.variables.emp == undefined || !this.body.master.variables.emp || this.body.master.variables.emp == undefined) {
@@ -5448,11 +12764,9 @@ const Chain = Chainf;
                 }
             }
             fire(sk) {
-                if (this.shootOnce) {
-                    this.canShoot = false;
-                }
+                if (this.shootOnce) this.canShoot = false;
                 this.lastShot.time = util.time();
-                this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + (this.body.settings.hasNoRecoil ? 0 : this.settings.recoil) + 1) + 1;
+                this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + ((this.body.settings.hasNoRecoil || this.isFake) ? 0 : this.settings.recoil) + 1) + 1;
                 this.motion += this.lastShot.power;
                 this.recoilDir = this.body.facing + this.angle;
                 this.newRecoil();
@@ -5471,22 +12785,23 @@ const Chain = Chainf;
                     }
                 }
 
-                if(this.bulletTypes[0].TYPE === "laser"){
+                if (this.bulletTypes[0].TYPE === "laser") {
                     new Laser(this, this.getEnd(), sd, typeof this.bulletTypes[1] === "object" ? Object.assign({}, this.bulletTypes[0], this.bulletTypes[1]) : this.bulletTypes[0])
 					return;
-                } else {
+                } else if (!this.isFake) {
                     let o = new Entity(this.getEnd(s, .6), this.master.master);
                     // Set velocity first so bulletInit can use it to set proper facing/firing
                     o.velocity = s;
                     this.bulletInit(o);
                     return o;
-				}
+				} else return;
             }
             bulletInit(o) {
                 o.source = this.body;
                 o.diesToTeamBase = !this.body.master.godmode;
                 o.passive = this.body.master.passive;
                 if (this.colorOverride === "rainbow") o.toggleRainbow();
+                else if (this.body.mainWeaponColor === "rainbow") o.toggleRainbow();
                 for (let type of this.bulletTypes) o.define(type);
                 /*
                     o.define({ // Define is slow as heck
@@ -5512,14 +12827,16 @@ const Chain = Chainf;
 				this.weaponSize = (this.body.size * this.width * this.settings.size * 0.5) * o.squiggle;
                 o.SIZE = this.weaponSize;
                 // Define label
-                if (!this.skipLabelChange) o.label = this.master.label +  "'s " + (this.label ?  + this.label : "") + o.label;
+                if (!this.skipLabelChange) o.label = this.master.label + (this.master.label && (o.label || this.label) ? " " : "") + this.label + (this.label && o.label ? " " : "") + o.label;
 
                 if (o.type === "food") {
                     o.ACCELERATION = .015 / (o.size * 0.2);
                 };
                 if (this.onDealtDamage != null) o.onDealtDamage = this.onDealtDamage;
-                if (this.colorOverride != null && !isNaN(this.colorOverride)) o.color = this.colorOverride;
+                if (this.colorOverride != null) o.color = this.colorOverride;
                 else if (this.colorOverride === "random") o.color = Math.floor(42 * Math.random());
+                else if (this.body.mainWeaponColor != null) o.color = this.body.mainWeaponColor;
+                else if (this.body.mainWeaponColor === "random") o.color = Math.floor(42 * Math.random());
                 else o.color = this.body.master.color;
                 if (this.countsOwnKids) {
                     o.parent = this;
@@ -5546,7 +12863,7 @@ const Chain = Chainf;
                     sk = this.body.skill,
                     out = {
                         SPEED: shoot.maxSpeed * sk.spd,
-                        HEALTH: 0.64 * shoot.health * sk.str,
+                        HEALTH: .625 * shoot.health * sk.str,
                         RESIST: shoot.resist + sk.rst,
                         DAMAGE: 1.65 * shoot.damage * sk.dam,
                         PENETRATION: Math.max(1, shoot.pen * sk.pen),
@@ -5556,6 +12873,11 @@ const Chain = Chainf;
                         HETERO: Math.max(0, 3 - 1.2 * sk.ghost),
                     };
                 switch (this.calculator) {
+                    case 2:
+                    case "drone":
+                        out.DAMAGE = shoot.damage * sk.dam;
+                        out.HEALTH = 0.475 * shoot.health * sk.str;
+                        break;
                     case 6:
                     case "sustained":
                         out.RANGE = shoot.range;
@@ -5563,11 +12885,7 @@ const Chain = Chainf;
                     case 8:
                     case "trap":
                         out.PUSHABILITY = 1 / Math.pow(sk.pen, .5);
-                        out.RANGE = shoot.range * .5;
-                        break;
-                    case 2:
-                        out.DAMAGE = shoot.damage * sk.dam;
-                        out.HEALTH = 0.475 * shoot.health * sk.str;
+                        out.RANGE = shoot.range;
                         break;
                 }
                 for (let property in out) {
@@ -5958,7 +13276,7 @@ const Chain = Chainf;
                     this.startPoint.y,
                     this.visualEndPoint.x,
                     this.visualEndPoint.y,
-					(this.master && playerContext.gameMode === "ffa" && this.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && (this.master.id === playerContext.body.id)||(this.master.master.id === playerContext.body.id)) === true ?  playerContext.teamColor??0 : this.color,
+					(this.master && playerContext.gameMode === "ffa" && !room.randomColors && this.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && (this.master.id === playerContext.body.team || this.master.master.team === playerContext.body.team)) === true ? playerContext.teamColor ?? 0 : this.color,
                     this.width,
                     this.maxDuration,
                     this.duration
@@ -6002,7 +13320,12 @@ const Chain = Chainf;
                             global.sandboxRooms.push({
                                 id: objectOutput,
                                 botCap: 0,
-                                bots: []
+                                bots: [],
+                                census: {
+                                    crasher: 0,
+                                    tank: 0,
+                                    utility: 0
+                                }
                             });
                         }
                     }
@@ -6059,6 +13382,7 @@ const Chain = Chainf;
                 this.turrets = [];
                 this.props = [];
                 this.upgrades = [];
+                this.previousUpgrades = [];
                 this.settings = {
                     leaderboardable: true
                 };
@@ -6083,8 +13407,10 @@ const Chain = Chainf;
                 this.collisionArray = [];
 				this.collisionArray.lastUpdate = -1;
                 this.invuln = false;
+                this.grantedInvuln = false;
                 this.godmode = false;
                 this.passive = false;
+                this.bail = false;
                 this.alpha = 1;
                 this.spinSpeed = .038;
                 this.tierCounter = 0;
@@ -6094,7 +13420,7 @@ const Chain = Chainf;
                 this.rainbow = false;
                 this.intervalID = null;
                 this.rainbowLoop = this.rainbowLoop.bind(this);
-                this.keyFEntity = ["square", 5, 0, false];
+                this.keyFEntity = ['square', -100, false, 5];
                 this.isActive = true
 				this.deactivationTimer = -1;
                 this.deactivation = function(){
@@ -6215,6 +13541,8 @@ const Chain = Chainf;
                 this.switcherooID = -1;
 				this.necromizable = true;
                 this.gunIndex = undefined;
+                this.motionTypeSettings = {};
+                this.facingTypeSettings = {};
                 //entities.push(this);
                 entities.set(this.id, this);
                 //this.activation.update();
@@ -6321,6 +13649,7 @@ const Chain = Chainf;
                 if (this.invuln && this.invulnTime[1] > -1) {
                     if (Date.now() - this.invulnTime[0] > this.invulnTime[1]) {
                         this.invuln = false;
+                        this.grantedInvuln = false;
                         this.sendMessage("Your invulnerability has expired.");
                     }
                 }
@@ -6396,6 +13725,7 @@ const Chain = Chainf;
                     this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
                     this.shapeData = set.SHAPE;
                 }
+                if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(.75, 1.25) : this.squiggle : 1;
                 if (set.SIZE != null) {
                     this.SIZE = set.SIZE * this.squiggle;
                 }
@@ -6460,290 +13790,356 @@ const Chain = Chainf;
                     this.props = newProps;
                 }
             }
-            define(set, extra) {
+            define(set, extra, addExtraToParents = false) {
                 try {
-                    if (set.PARENT != null)
-                        for (let i = 0; i < set.PARENT.length; i++) this.define(set.PARENT[i]);
+                    if (set.PARENT != null) for (let i = 0; i < set.PARENT.length; i++) this.define(set.PARENT[i], ((addExtraToParents) ? extra : {}), addExtraToParents);
                     for (let thing in extra) this[thing] = extra[thing];
-                    if (set.TRAVERSE_SPEED != null) this.turretTraverseSpeed = set.TRAVERSE_SPEED;
-                    if (set.RIGHT_CLICK_TURRET != null) this.turretRightClick = set.RIGHT_CLICK_TURRET;
-                    if (set.index != null) this.index = set.index;
-                    this.name = set.NAME||this.socket?.name||"";
-                    if (set.HITS_OWN_TEAM != null) this.hitsOwnTeam = set.HITS_OWN_TEAM;
-                    if (set.LABEL != null) this.label = set.LABEL;
-                    this.labelOverride = "";
-                    if (set.TOOLTIP != null) this.socket?.talk("m", `${set.TOOLTIP}`, "#8cff9f");
-                    if (set.TYPE != null) this.type = set.TYPE;
-                    if (set.SHAPE != null) {
-                        this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
-                        this.shapeData = set.SHAPE;
-                    }
-                    if (set.COLOR != null) this.color = set.COLOR;
-                    if (set.CONTROLLERS != null) {
-                        let toAdd = [];
-                        for (let ioName of set.CONTROLLERS) toAdd.push(new ioTypes[ioName](this));
-                        this.addController(toAdd);
-                    }
-
-                    if (set.NO_SPEED_CALCUATION !== null) {
-                        this.settings.speedNoEffect = set.NO_SPEED_CALCUATION;
-                    }
-
-                    /* FYI reason i dont just have it not added in the defs is because mockups would need to be generated to change upgrades
-                    if (set.IS_TESTBED_REMOVED && this.socket) {
-                        if (!c.IS_DEV_SERVER && !c.serverName.includes("Sandbox") && this.socket.betaData.permissions !== 3) {
-                            this.sendMessage("You cannot used removed tanks outside of a testing server.");
-                            this.kill();
+                    if (!this.onlyDoEvo) {
+                        if (set.TRAVERSE_SPEED != null) this.turretTraverseSpeed = set.TRAVERSE_SPEED;
+                        if (set.RIGHT_CLICK_TURRET != null) this.turretRightClick = set.RIGHT_CLICK_TURRET;
+                        if (set.index != null) this.index = set.index;
+                        if (set.NAME != null) this.name = set.NAME;
+                            else if (this.socket) this.name = this.socket.name;
+                        if (set.HITS_ONLY_TEAM != null) this.hitsOnlyTeam = set.HITS_ONLY_TEAM;
+                        if (set.LABEL != null) this.label = set.LABEL;
+                        this.labelOverride = "";
+                        if (set.TOOLTIP != null) this.socket?.talk("m", `${set.TOOLTIP}`, "#8cff9f");
+                        this.upgradeTooltip = set.UPGRADE_TOOLTIP || null;
+                        if (set.CREDIT != null) this.socket?.talk("m", `${set.CREDIT}`, "#B58EFD");
+                        this.upgradeCredit = set.UPGRADE_CREDIT || null;
+                        if (set.TYPE != null) this.type = set.TYPE;
+                        if (set.SHAPE != null) {
+                            this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
+                            this.shapeData = set.SHAPE;
                         }
-                    }*/
-                    if (set.MOTION_TYPE != null) this.motionType = set.MOTION_TYPE;
-                    if (set.FACING_TYPE != null) this.facingType = set.FACING_TYPE;
-                    if (set.DRAW_HEALTH != null) this.settings.drawHealth = set.DRAW_HEALTH;
-                    if (set.DRAW_SELF != null) this.settings.drawShape = set.DRAW_SELF;
-                    if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
-                    if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
-                    if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
-                    if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
-                    if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;
-                    if (set.INDEPENDENT != null) this.settings.independent = set.INDEPENDENT;
-                    if (set.PERSISTS_AFTER_DEATH != null) this.settings.persistsAfterDeath = set.PERSISTS_AFTER_DEATH;
-                    if (set.CLEAR_ON_MASTER_UPGRADE != null) this.settings.clearOnMasterUpgrade = set.CLEAR_ON_MASTER_UPGRADE;
-                    if (set.HEALTH_WITH_LEVEL != null) this.settings.healthWithLevel = set.HEALTH_WITH_LEVEL;
-                    if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
-                    if (set.HAS_NO_RECOIL != null) this.settings.hasNoRecoil = set.HAS_NO_RECOIL;
-                    if (set.CRAVES_ATTENTION != null) this.settings.attentionCraver = set.CRAVES_ATTENTION;
-                    if (set.BROADCAST_MESSAGE != null) this.settings.broadcastMessage = set.BROADCAST_MESSAGE || undefined;
-                    if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
-                    if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
-                    if (set.CAN_BE_ON_LEADERBOARD != null) this.settings.leaderboardable = set.CAN_BE_ON_LEADERBOARD;
-                    if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
-                    if (set.IS_DIGGER != null) this.aiSettings.isDigger = set.IS_DIGGER;
-                    if (set.DIES_BY_OBSTACLES != null) this.settings.diesByObstacles = set.DIES_BY_OBSTACLES;
-                    this.settings.isHelicopter = set.IS_HELICOPTER || null;
-                    if (set.GO_THRU_OBSTACLES != null) this.settings.goThruObstacle = set.GO_THRU_OBSTACLES;
-                    if (set.BOUNCE_ON_OBSTACLES != null) this.settings.bounceOnObstacles = set.BOUNCE_ON_OBSTACLES;
-                    if (set.STAT_NAMES != null) this.settings.skillNames = set.STAT_NAMES;
-                    if (set.HAS_ANIMATION != null) this.settings.hasAnimation = set.HAS_ANIMATION;
-                    if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
-                    if (set.AI != null) this.aiSettings = set.AI;
-                    if (set.DANGER != null) this.dangerValue = set.DANGER;
-                    if (set.VARIES_IN_SIZE != null) {
-                        this.settings.variesInSize = set.VARIES_IN_SIZE;
-						this.squiggle = ran.randomRange(.8, 1.2);
-                    } else this.squiggle = 1;
-                    if (set.RESET_UPGRADES) this.upgrades = [];
-                    if (set.DIES_TO_TEAM_BASE != null) this.diesToTeamBase = set.DIES_TO_TEAM_BASE;
-                    if (set.GOD_MODE != null) this.godmode = set.GOD_MODE;
-                    if (set.PASSIVE != null) this.passive = set.PASSIVE;
-                    if (set.HAS_NO_SKILL_POINTS != null && set.HAS_NO_SKILL_POINTS) this.skill.points = 0;
-                    if (set.HAS_ALL_SKILL_POINTS != null && set.HAS_ALL_SKILL_POINTS) this.skill.points = 42;
-                    if (set.LAYER != null) this.LAYER = set.LAYER;
-                    if (set.ALPHA != null) this.alpha = set.ALPHA;
-                    if (set.TEAM != null && set.TEAM !== -1) this.team = set.TEAM;
-                    if (set.BOSS_TIER_TYPE != null) this.bossTierType = set.BOSS_TIER_TYPE;
-                    if (set.SYNC_TURRET_SKILLS != null) this.syncTurretSkills = set.SYNC_TURRET_SKILLS;
-                    if (set.INVISIBLE != null && set.INVISIBLE.length > 0) {
-                        if (set.INVISIBLE.length !== 3) throw ("Invalid invisibility values!");
-                        this.invisible = set.INVISIBLE;
-                    } else this.invisible = [0, 0, 0];
-                    if (set.SEE_INVISIBLE != null) this.seeInvisible = set.SEE_INVISIBLE;
-                    this.displayText = set.DISPLAY_TEXT || "";
-                    this.displayTextColor = set.DISPLAY_TEXT_COLOR || "#FFFFFF"
-                    if (set.AMMO != null) {
-                        this.displayAmmoText = set.DISPLAY_AMMO_TEXT !== undefined ? set.DISPLAY_TEXT : true
-                        if (this.displayAmmoText) {
-                            this.displayText = `${set.AMMO} Ammo left`;
+                        if (set.COLOR != null && !this.skipColor) this.color = set.COLOR;
+                        if (set.REMOVE_PREVIOUS_CONTROLLERS) this.controllers = [];
+                        if (set.CONTROLLERS != null) {
+                            let toAdd = [];
+                            for (let ioName of set.CONTROLLERS) toAdd.push(new ioTypes[ioName](this));
+                            this.addController(toAdd);
                         }
-                        this.ammo = set.AMMO;
-                    }
-                    this.onCollide = set.ON_COLLIDE || null;
-                    this.onTick = set.ON_TICK || null;
-                    this.onDamaged = set.ON_DAMAGED || null;
-                    this.onDealtDamage = set.ON_DEALT_DAMAGE || null;
-                    this.onTorched = set.ON_TORCHED || null;
-                    this.doesTorch = set.DOES_TORCH || null;
-                    this.onDealtDamageUniv = set.ON_DEALT_DAMAGE_UNIVERSAL || null;
-                    this.onKill = set.ON_KILL || null;
-                    this.onMain = set.ON_MAIN || null;
-                    this.onNotMain = set.ON_NOT_MAIN ?? null;
-                    this.onAlt = set.ON_ALT || null;
-                    this.onQ = set.ON_Q || null
-                    this.onNotAlt = set.ON_NOT_ALT || null;
-					this.onDead = set.ON_DEAD || null
-                    this.isObserver = set.IS_OBSERVER;
-                    this.onOverride = set.ON_OVERRIDE;
-                    this.isSentry = set.IS_SENTRY || null;
-					if(set.LEASHED){
-						if(typeof set.LEASHED === "number"){
-							this.controllers.push(new ioTypes.leashed(this, set.LEASHED));
-						}else{
-							console.error(`LEASHED must be a number`, this)
-						}
-					}else{
-						this.leash = null;
-					}
-                    if (set.UPGRADES_TIER_1 != null)
-                        for (let e of set.UPGRADES_TIER_1) this.upgrades.push({
-                            class: exportNames[e.index],
-                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 15,
-                            index: e.index,
-                            tier: 1
-                        });
-                    if (set.UPGRADES_TIER_2 != null)
-                        for (let e of set.UPGRADES_TIER_2) this.upgrades.push({
-                            class: exportNames[e.index],
-                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 30,
-                            index: e.index,
-                            tier: 2
-                        });
-                    if (set.UPGRADES_TIER_3 != null)
-                        for (let e of set.UPGRADES_TIER_3) this.upgrades.push({
-                            class: exportNames[e.index],
-                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 45,
-                            index: e.index,
-                            tier: 3
-                        });
-                    if (set.UPGRADES_TIER_4 != null)
-                        for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
-                            class: exportNames[e.index],
-                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
-                            index: e.index,
-                            tier: 4
-                        });
-                    if (set.SIZE != null) {
-                        this.SIZE = set.SIZE * this.squiggle;
-                    }
-                    if (set.SKILL != null && set.SKILL.length > 0) {
-                        if (set.SKILL.length !== 10) throw ("Invalid skill raws!");
-                        this.skill.set(set.SKILL);
-                    }
-                    if (set.LEVEL != null) {
-                        if (set.LEVEL === -1) this.skill.reset();
-                        while (this.skill.level < c.SKILL_CHEAT_CAP && this.skill.level < set.LEVEL) {
-                            this.skill.score += this.skill.levelScore;
-                            this.skill.maintain();
+                        if (set.REMOVE_CONTROLLERS) for (let ioName of set.REMOVE_CONTROLLERS) this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes[ioName]));
+                        /* FYI reason i dont just have it not added in the defs is because mockups would need to be generated to change upgrades
+                        if (set.IS_TESTBED_REMOVED && this.socket) {
+                            if (!c.IS_DEV_SERVER && !c.serverName.includes("Sandbox") && this.socket.betaData.permissions !== 3) {
+                                this.sendMessage("You cannot used removed tanks outside of a testing server.");
+                                this.kill();
+                                }
+                                }*/
+                        if (set.NO_SPEED_CALCULATION != null) this.settings.speedNoEffect = set.NO_SPEED_CALCULATION;
+                        if (set.MOTION_TYPE != null) {
+                            if (Array.isArray(set.MOTION_TYPE)) {
+                                this.motionType = set.MOTION_TYPE[0];
+                                this.motionTypeSettings = set.MOTION_TYPE[1];
+                            } else this.motionType = set.MOTION_TYPE;
                         }
-                        this.refreshBodyAttributes();
-                    }
-                    if (set.SKILL_CAP != null && set.SKILL_CAP.length > 0) {
-                        if (set.SKILL_CAP.length !== 10) throw ("Invalid skill caps!");
-                        this.skill.setCaps(set.SKILL_CAP);
-                    }
-                    if (set.VALUE != null) this.skill.score = Math.max(this.skill.score, set.VALUE * this.squiggle);
-                    if (set.LABEL_OVERRIDE != null) this.labelOverride = set.LABEL_OVERRIDE
-                    if (set.SCOPED != null) {
-                        this.scoped = set.SCOPED;
-                        this.scopedMult = 1;
-                    }
-                    if (set.CAMERA_TO_MOUSE != null) {
-                        this.scoped = set.CAMERA_TO_MOUSE[0];
-                        this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
-                    }
-                    this.altCameraSource = null
-                    if (set.GUNS != null) {
-                        let newGuns = [];
-                        let i = 0;
-                        for (let def of set.GUNS) {
-                            newGuns.push(new Gun(this, def, i));
-                            i++;
+                        if (set.FACING_TYPE != null) {
+                            if (Array.isArray(set.FACING_TYPE)) {
+                                this.facingType = set.FACING_TYPE[0];
+                                this.facingTypeSettings = set.FACING_TYPE[1];
+                            } else this.facingType = set.FACING_TYPE;
                         }
-                        this.guns = newGuns;
-                    }
-                    if (set.PROPS != null) {
-                        let newProps = [];
-                        for (let def of set.PROPS) newProps.push(new Prop(def));
-                        this.props = newProps;
-                    }
-                    if (set.MAX_CHILDREN != null) this.maxChildren = set.MAX_CHILDREN;
-                    if (set.COUNTS_OWN_KIDS != null) this.countsOwnKids = set.COUNTS_OWN_KIDS;
-                    if (set.BODY != null) {
-                        if (set.BODY.ACCELERATION != null) this.ACCELERATION = set.BODY.ACCELERATION;
-                        if (set.BODY.SPEED != null) this.SPEED = set.BODY.SPEED;
-                        if (set.BODY.HEALTH != null) this.HEALTH = set.BODY.HEALTH;
-                        if (set.BODY.RESIST != null) this.RESIST = set.BODY.RESIST;
-                        if (set.BODY.SHIELD != null) this.SHIELD = set.BODY.SHIELD;
-                        if (set.BODY.REGEN != null) this.REGEN = set.BODY.REGEN;
-                        if (set.BODY.DAMAGE != null) this.DAMAGE = set.BODY.DAMAGE;
-                        if (set.BODY.PENETRATION != null) this.PENETRATION = set.BODY.PENETRATION;
-                        if (set.BODY.FOV != null) this.FOV = set.BODY.FOV;
-                        if (set.BODY.RANGE != null) this.RANGE = set.BODY.RANGE;
-                        if (set.BODY.SHOCK_ABSORB != null) this.SHOCK_ABSORB = set.BODY.SHOCK_ABSORB;
-                        if (set.BODY.DENSITY != null) this.DENSITY = set.BODY.DENSITY;
-                        if (set.BODY.STEALTH != null) this.STEALTH = set.BODY.STEALTH;
-                        if (set.BODY.PUSHABILITY != null) this.PUSHABILITY = set.BODY.PUSHABILITY;
-                        if (set.BODY.HETERO != null) this.heteroMultiplier = set.BODY.HETERO;
-                        this.refreshBodyAttributes();
-                    }
-                    if (set.TURRETS != null) {
-                        for (let o of this.turrets) o.destroy();
-                        this.turrets = [];
-                        for (let def of set.TURRETS) {
-                            let o = new Entity(this, this.master);
-                            if (Array.isArray(def.TYPE)) {
-                                for (let type of def.TYPE) o.define(type);
-                            } else o.define(def.TYPE);
-                            o.bindToMaster(def.POSITION, this);
-                            if (!def.TARGETABLE_TURRET) {
-                                o.dangerValue = 0;
-                            } else if (def.TARGETABLE_TURRET > 0) {
-                                o.dangerValue = def.TARGETABLE_TURRET;
+                        if (set.DRAW_HEALTH != null) this.settings.drawHealth = set.DRAW_HEALTH;
+                        if (set.DRAW_SELF != null) this.settings.drawShape = set.DRAW_SELF;
+                        if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
+                        if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
+                        if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
+                        if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
+                        if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;
+                        if (set.INDEPENDENT != null) this.settings.independent = set.INDEPENDENT;
+                        if (set.PERSISTS_AFTER_DEATH != null) this.settings.persistsAfterDeath = set.PERSISTS_AFTER_DEATH;
+                        if (set.CLEAR_ON_MASTER_UPGRADE != null) this.settings.clearOnMasterUpgrade = set.CLEAR_ON_MASTER_UPGRADE;
+                        if (set.HEALTH_WITH_LEVEL != null) this.settings.healthWithLevel = set.HEALTH_WITH_LEVEL;
+                        if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
+                        if (set.GETS_NEGATIVE_SCORE != null) this.settings.getsNegativeScore = set.GETS_NEGATIVE_SCORE;
+                        if (set.HAS_NO_RECOIL != null) this.settings.hasNoRecoil = set.HAS_NO_RECOIL;
+                        if (set.CRAVES_ATTENTION != null) this.settings.attentionCraver = set.CRAVES_ATTENTION;
+                        if (set.BROADCAST_MESSAGE != null) this.settings.broadcastMessage = set.BROADCAST_MESSAGE || undefined;
+                        if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
+                        if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
+                        if (set.CAN_BE_ON_LEADERBOARD != null) this.settings.leaderboardable = set.CAN_BE_ON_LEADERBOARD;
+                        if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
+                        if (set.IS_DIGGER != null) this.aiSettings.isDigger = set.IS_DIGGER;
+                        if (set.DIES_BY_OBSTACLES != null) this.settings.diesByObstacles = set.DIES_BY_OBSTACLES;
+                        this.settings.isHelicopter = set.IS_HELICOPTER || null;
+                        if (set.GO_THRU_OBSTACLES != null) this.settings.goThruObstacle = set.GO_THRU_OBSTACLES;
+                        if (set.BOUNCE_ON_OBSTACLES != null) this.settings.bounceOnObstacles = set.BOUNCE_ON_OBSTACLES;
+                        if (set.STAT_NAMES != null) this.settings.skillNames = set.STAT_NAMES;
+                        if (set.HAS_ANIMATION != null) this.settings.hasAnimation = set.HAS_ANIMATION;
+                        if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
+                        if (set.AI != null) this.aiSettings = set.AI;
+                        if (set.DANGER != null) this.dangerValue = set.DANGER;
+                        if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(.75, 1.25) : this.squiggle : 1;
+                        if (set.RESET_UPGRADES) this.upgrades = [];
+                        if (set.DIES_TO_TEAM_BASE != null) this.diesToTeamBase = set.DIES_TO_TEAM_BASE;
+                        if (set.GOD_MODE != null) this.godmode = set.GOD_MODE;
+                        if (set.PASSIVE != null) this.passive = set.PASSIVE;
+                        if (set.HAS_NO_SKILL_POINTS != null && set.HAS_NO_SKILL_POINTS) this.skill.points = 0;
+                        if (set.HAS_ALL_SKILL_POINTS != null && set.HAS_ALL_SKILL_POINTS) this.skill.points = 42;
+                        if (set.LAYER != null) this.LAYER = set.LAYER;
+                        if (set.ALPHA != null && !this.skipAlpha) this.alpha = set.ALPHA;
+                        if (set.TEAM != null) this.team = set.TEAM;
+                        if (set.BOSS_TIER_TYPE != null) this.bossTierType = set.BOSS_TIER_TYPE;
+                        if (set.SYNC_TURRET_SKILLS != null) this.syncTurretSkills = set.SYNC_TURRET_SKILLS;
+                        if (set.INVISIBLE != null && set.INVISIBLE.length > 0) {
+                            if (set.INVISIBLE.length !== 3) throw ("Invalid invisibility values!");
+                            this.invisible = set.INVISIBLE;
+                        } else this.invisible = [0, 0, 0];
+                        if (set.SEE_INVISIBLE != null) this.seeInvisible = set.SEE_INVISIBLE;
+                        this.displayText = set.DISPLAY_TEXT || "";
+                        this.displayTextColor = set.DISPLAY_TEXT_COLOR || "#FFFFFF"
+                        if (set.AMMO != null) {
+                            this.displayAmmoText = set.DISPLAY_AMMO_TEXT !== undefined ? set.DISPLAY_TEXT : true
+                            if (this.displayAmmoText) {
+                                this.displayText = `${set.AMMO} Ammo left`;
+                            }
+                            this.ammo = set.AMMO;
+                        }
+                        this.onCollide = set.ON_COLLIDE || null;
+                        this.onTick = set.ON_TICK || null;
+                        this.onDamaged = set.ON_DAMAGED || null;
+                        this.onDealtDamage = set.ON_DEALT_DAMAGE || null;
+                        this.onTorched = set.ON_TORCHED || null;
+                        this.doesTorch = set.DOES_TORCH || null;
+                        this.onDealtDamageUniv = set.ON_DEALT_DAMAGE_UNIVERSAL || null;
+                        this.onKill = set.ON_KILL || null;
+                        this.onMain = set.ON_MAIN || null;
+                        this.onNotMain = set.ON_NOT_MAIN ?? null;
+                        this.onAlt = set.ON_ALT || null;
+                        this.onQ = set.ON_Q || null
+                        this.onNotAlt = set.ON_NOT_ALT || null;
+                        this.onDead = set.ON_DEAD || null
+                        this.isObserver = set.IS_OBSERVER;
+                        this.onOverride = set.ON_OVERRIDE;
+                        this.isSentry = set.IS_SENTRY || null;
+                        this.canNecro = set.CAN_NECROMIZE || null;
+                        if(set.LEASHED){
+                            if(typeof set.LEASHED === "number"){
+                                this.controllers.push(new ioTypes.leashed(this, set.LEASHED));
+                            }else{
+                                console.error(`LEASHED must be a number`, this)
+                            }
+                        }else{
+                            this.leash = null;
+                        }
+                        if (set.UPGRADES_TIER_1 != null)
+                            for (let e of set.UPGRADES_TIER_1) this.upgrades.push({
+                                class: exportNames[e.index],
+                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 15,
+                                index: e.index,
+                                tier: 1
+                            });
+                        if (set.UPGRADES_TIER_2 != null)
+                            for (let e of set.UPGRADES_TIER_2) this.upgrades.push({
+                                class: exportNames[e.index],
+                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 30,
+                                index: e.index,
+                                tier: 2
+                            });
+                        if (set.UPGRADES_TIER_3 != null)
+                            for (let e of set.UPGRADES_TIER_3) this.upgrades.push({
+                                class: exportNames[e.index],
+                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 45,
+                                index: e.index,
+                                tier: 3
+                            });
+                        if (set.UPGRADES_TIER_4 != null)
+                            for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
+                                class: exportNames[e.index],
+                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
+                                index: e.index,
+                                tier: 4
+                            });
+                        if (set.SIZE != null) {
+                            this.SIZE = set.SIZE * this.squiggle;
+                        }
+                        if (set.SKILL != null && set.SKILL.length > 0) {
+                            if (set.SKILL.length !== 10) throw ("Invalid skill raws!");
+                            this.skill.set(set.SKILL);
+                        }
+                        if (set.LEVEL != null) {
+                            if (set.LEVEL === -1) this.skill.reset();
+                            while (this.skill.level < set.LEVEL) {
+                                this.skill.score += this.skill.levelScore;
+                                this.skill.maintain(true);
+                            }
+                            this.refreshBodyAttributes();
+                        }
+                        if (set.SKILL_CAP != null && set.SKILL_CAP.length > 0) {
+                            if (set.SKILL_CAP.length !== 10) throw ("Invalid skill caps!");
+                            this.skill.setCaps(set.SKILL_CAP);
+                        }
+                        if (set.VALUE != null) {
+                            this.skill.score = (set.FORCE_VALUE) ? set.VALUE * this.squiggle : Math.max(this.skill.score, set.VALUE * this.squiggle);
+                        }
+                        if (set.LABEL_OVERRIDE != null) this.labelOverride = set.LABEL_OVERRIDE
+                        if (set.SCOPED != null) {
+                            this.scoped = set.SCOPED;
+                            this.scopedMult = 1;
+                        }
+                        if (set.CAMERA_TO_MOUSE != null) {
+                            this.scoped = set.CAMERA_TO_MOUSE[0];
+                            this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
+                        }
+                        this.altCameraSource = null
+                        if (set.GUNS != null) {
+                            let newGuns = [];
+                            let i = 0;
+                            for (let def of set.GUNS) {
+                                newGuns.push(new Gun(this, def, i));
+                                i++;
+                            }
+                            this.guns = newGuns;
+                        }
+                        if (set.PROPS != null) {
+                            let newProps = [];
+                            for (let def of set.PROPS) newProps.push(new Prop(def));
+                            this.props = newProps;
+                        }
+                        if (set.MAX_CHILDREN != null) this.maxChildren = set.MAX_CHILDREN;
+                        if (set.COUNTS_OWN_KIDS != null) this.countsOwnKids = set.COUNTS_OWN_KIDS;
+                        if (set.BODY != null) {
+                            if (set.BODY.ACCELERATION != null) this.ACCELERATION = set.BODY.ACCELERATION;
+                                else if (this.type === 'food') this.ACCELERATION = .015 / (this.SIZE * .2);
+                            if (set.BODY.SPEED != null) this.SPEED = set.BODY.SPEED;
+                            if (set.BODY.HEALTH != null) this.HEALTH = set.BODY.HEALTH;
+                            if (set.BODY.RESIST != null) this.RESIST = set.BODY.RESIST;
+                            if (set.BODY.SHIELD != null) this.SHIELD = set.BODY.SHIELD;
+                            if (set.BODY.REGEN != null) this.REGEN = set.BODY.REGEN;
+                            if (set.BODY.DAMAGE != null) this.DAMAGE = set.BODY.DAMAGE;
+                            if (set.BODY.PENETRATION != null) this.PENETRATION = set.BODY.PENETRATION;
+                            if (set.BODY.FOV != null) this.FOV = set.BODY.FOV;
+                            if (set.BODY.RANGE != null) this.RANGE = set.BODY.RANGE;
+                            if (set.BODY.SHOCK_ABSORB != null) this.SHOCK_ABSORB = set.BODY.SHOCK_ABSORB;
+                            if (set.BODY.DENSITY != null) this.DENSITY = set.BODY.DENSITY;
+                            if (set.BODY.STEALTH != null) this.STEALTH = set.BODY.STEALTH;
+                            if (set.BODY.PUSHABILITY != null) this.PUSHABILITY = set.BODY.PUSHABILITY;
+                            if (set.BODY.HETERO != null) this.heteroMultiplier = set.BODY.HETERO;
+                            this.refreshBodyAttributes();
+                        }
+                        if (set.TURRETS != null) {
+                            for (let o of this.turrets) o.destroy();
+                            this.turrets = [];
+                            for (let def of set.TURRETS) {
+                                let o = new Entity(this, this.master);
+                                if (Array.isArray(def.TYPE)) {
+                                    for (let type of def.TYPE) o.define(type);
+                                } else o.define(def.TYPE);
+                                o.bindToMaster(def.POSITION, this);
+                                if (!def.TARGETABLE_TURRET) {
+                                    o.dangerValue = 0;
+                                } else if (def.TARGETABLE_TURRET > 0) {
+                                    o.dangerValue = def.TARGETABLE_TURRET;
+                                }
                             }
                         }
-                    }
-                    if (set.DIES_INSTANTLY != null) this.kill();
-                    if (set.RANDOM_TYPE != null && set.RANDOM_TYPE !== "None") {
-                        let choices = [];
-                        switch (set.RANDOM_TYPE) {
-                            case "Cultist":
-                                choices = [Class.trapmind.hivemindID, Class.poundHivemind.hivemindID, Class.psychosisProbe, Class.machHivemind.hivemindID, Class.auto2Probe, Class.propellerHivemind.hivemindID, Class.pelletHivemind.hivemindID, Class.lancemind.hivemindID, Class.flankmind.hivemindID, Class.minishotmind.hivemindID, Class.basebridMind.hivemindID, Class.twinmind.hivemindID, Class.submind.hivemindID].filter(i => !!i);;
-                                break;
-                            default:
-                                util.warn("Invalid RANDOM_TYPE value: " + set.RANDOM_TYPE + "!");
+                        if (set.DIES_INSTANTLY != null) this.kill();
+                        if (set.RANDOM_TYPE != null && set.RANDOM_TYPE !== "None") {
+                            let choices = [];
+                            switch (set.RANDOM_TYPE) {
+                                case "Cultist":
+                                    choices = [Class.trapmind.hivemindID, Class.poundHivemind.hivemindID, Class.psychosisProbe, Class.machHivemind.hivemindID, Class.auto2Probe, Class.propellerHivemind.hivemindID, Class.pelletHivemind.hivemindID, Class.lancemind.hivemindID, Class.flankmind.hivemindID, Class.minishotmind.hivemindID, Class.basebridMind.hivemindID, Class.twinmind.hivemindID, Class.submind.hivemindID].filter(i => !!i);;
+                                    break;
+                                default:
+                                    util.warn("Invalid RANDOM_TYPE value: " + set.RANDOM_TYPE + "!");
+                            }
+                            choices = choices.filter(r => !!r);
+                            this.define(choices[Math.floor(Math.random() * choices.length)]);
                         }
-                        choices = choices.filter(r => !!r);
-                        this.define(choices[Math.floor(Math.random() * choices.length)]);
-                    }
-                    if (set.ABILITY_IMMUNE != null) this.immuneToAbilities = set.ABILITY_IMMUNE;
-                    if (set.SPAWNS_DECA != null) this.define(Class.decagon);
-                    if (set.ALWAYS_ACTIVE != null) this.alwaysActive = set.ALWAYS_ACTIVE;
-                    if (set.MISC_IDENTIFIER != null) this.miscIdentifier = set.MISC_IDENTIFIER;
-                    if (set.SWITCHEROO_ID != null) this.switcherooID = set.SWITCHEROO_ID;
-                    if (set.IS_ARENA_CLOSER != null) {
-                        this.isArenaCloser = set.IS_ARENA_CLOSER;
-                        if (this.isArenaCloser) this.immuneToAbilities = true;
-                    }
-                    this.variables = set.VARIABLES ? JSON.parse(JSON.stringify(set.VARIABLES)) : {};
-					this.animations = [];
-                    if (this.isShiny) {
-                        this.color = -1
-                        this.skill.score *= 3
-                        this.SIZE += 2
-                        this.label = "Shiny " + this.label
-                        this.settings.givesKillMessage = true
+                        if (set.ICE_IMMUNE != null) this.immuneToIce = set.ICE_IMMUNE;
+                        if (set.ABILITY_IMMUNE != null) this.immuneToAbilities = set.ABILITY_IMMUNE;
+                        if (set.SPAWNS_DECA != null) this.define(Class.decagon);
+                        if (set.ALWAYS_ACTIVE != null) this.alwaysActive = set.ALWAYS_ACTIVE;
+                        if (set.MISC_IDENTIFIER != null) this.miscIdentifier = set.MISC_IDENTIFIER;
+                        if (set.SWITCHEROO_ID != null) this.switcherooID = set.SWITCHEROO_ID;
+                        if (set.IS_ARENA_CLOSER != null) {
+                            this.isArenaCloser = set.IS_ARENA_CLOSER;
+                            if (this.isArenaCloser) this.immuneToAbilities = true;
+                        }
+                        this.variables = set.VARIABLES ? JSON.parse(JSON.stringify(set.VARIABLES)) : {};
+                        this.animations = [];
                     }
                     if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
+                    if (this.greaterEvolutionTimeout) clearTimeout(this.greaterEvolutionTimeout);
                     if (set.EVOLUTIONS?.length) {
                         this.evolutionTimeout = setTimeout(() => {
                             try {
-                                if (!this.isAlive()) {
-                                    return
-                                }
-                                let options = [];
-                                let chances = [];
+                                if (!this.isAlive()) return;
+                                let options = [],
+                                    chances = [];
                                 for (let arr of set.EVOLUTIONS) {
-                                    options.push(arr[0])
-                                    chances.push(arr[1])
+                                    options.push(arr[0]);
+                                    chances.push(arr[1]);
                                 }
-                                if (Math.random() < c.EVOLVE_HALT_CHANCE) {
-                                    return
+                                if (Math.random() < c.EVOLVE_HALT_CHANCE && this.miscIdentifier !== 'Rogue Egg') return;
+                                let choice = options[ran.chooseChance(...chances)];
+                                if (Array.isArray(choice)) choice = ran.choose([choice]);
+                                if (choice === '' || (choice === 'rogueEgg' && room.gameMode !== "tdm")) this.define({ EVOLUTIONS: set.EVOLUTIONS }, { onlyDoEvo: true });
+                                else if (this.miscIdentifier === 'Rogue Egg') {
+                                    this.name = ran.chooseBossName('castle', 1)[0];
+                                    this.nameColor = (this.team !== -20) ? teamHexCodes[-this.team - 1] : "#726F6F";
+                                    this.define(Class[(this.team !== -20) ? `${choice}Team${-this.team}` : choice]);
+                                    sockets.broadcast(`${util.addArticle(this.label, true)} has hatched out of a Rogue Egg!`);
+                                } else {
+                                    this.define(Class[choice]);
+                                    if (this.type === "miniboss") {
+                                        this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes['moveInCircles']));
+                                        switch (choice) {
+                                            case "triangleNestKeeperAI":
+                                                this.isTriNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Triangle!");
+                                                break;
+                                            case "squareNestKeeperAI":
+                                                this.isSquareNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Square!");
+                                                break;
+                                            case "nestKeeperAI":
+                                                this.isPentaNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Pentagon!");
+                                                break;
+                                            case "hexagonNestKeeperAI":
+                                                this.isHexaNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Hexagon!");
+                                                break;
+                                            case "heptagonNestKeeperAI":
+                                                this.isHeptaNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Heptagon!");
+                                                break;
+                                            case "octagonNestKeeperAI":
+                                                this.isOctaNestFood = false;
+                                                this.miscIdentifier = "Natural Miniboss";
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Octagon!");
+                                                break;
+                                        }
+                                    }
                                 }
-                                this.define(Class[options[ran.chooseChance(...chances)]])
-                            } catch (err) {
-                                util.error("Error while trying to evolve " + global.exportNames[this.index])
-                            }
-                        }, (c.EVOLVE_TIME + Math.random() * c.EVOLVE_TIME_RAN_ADDER) * ((this.type === "crasher" || this.isSentry) ? 0.5 : 1)) // Crashers evolve 2x as fast
+                            } catch (err) { util.error("Error while trying to evolve " + global.exportNames[this.index]) }
+                        }, (c.EVOLVE_TIME + ran.irandom(c.EVOLVE_TIME_RAN_ADDER)) * ((this.type === "crasher" || this.isSentry) ? 0.5 : (this.miscIdentifier === 'Rogue Egg') ? 2 : 1)) // Crashers evolve 2x as fast
+                    };
+                    if (!this.onlyDoEvo) {
+                        if (set.WEAPON_COLOR != null) this.mainWeaponColor = set.WEAPON_COLOR;
+                        if (set.BYPASS_BASE_RESTRICTIONS != null) this.shootsInBaseAnyway = set.BYPASS_BASE_RESTRICTIONS;
+                        if (this.isShiny) {
+                            this.color = -1;
+                            this.skill.score *= 3;
+                            this.SIZE += 2;
+                            this.label = "Shiny " + this.label;
+                            this.settings.givesKillMessage = true;
+                        }
+                        if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity, ran);
                     }
-                    if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity);
                 } catch (e) {
                     if (this.isBot) console.error(this.tank);
                     console.error("An error occured while trying to set " + trimName(this.name) + "'s parent entity, aborting! Index: " + this.index + "." + " Export: " + global.exportNames[this.index]);
@@ -6776,7 +14172,7 @@ const Chain = Chainf;
                 this.source = bond;
                 this.bond.turrets.push(this);
                 this.skill = this.bond.skill;
-                this.label = this.bond.label + " " + this.label;
+                this.label = this.bond.label + (this.bond.label && this.label ? " " : "") + this.label;
                 this.neverInGrid = this.settings.hitsOwnType !== "shield";
                 //if (this.settings.hitsOwnType !== "shield") this.removeFromGrid();
                 this.settings.drawShape = false;
@@ -6791,8 +14187,10 @@ const Chain = Chainf;
                 if (this.facingType === "toTarget") {
                     this.facing = this.bond.facing + this.bound.angle;
                     this.facingType = "bound";
+                    this.facingTypeSettings = {};
                 }
                 this.motionType = "bound";
+                this.motionTypeSettings = {};
                 this.move();
                 this.isTurret = true;
             }
@@ -6815,7 +14213,7 @@ const Chain = Chainf;
             }
             camera(tur = false) {
                 let out = {
-                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((this.type === "tank" || this.type === "miniboss" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + (this.invuln || (this.type === "food" || this.type === "crasher") && !this.necromizable) * 0x08,
+                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((this.miscIdentifier === "Sanctuary" || this.type === "tank" || this.type === "miniboss" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + (this.invuln || (this.type === "food" || this.type === "crasher") && !this.necromizable) * 0x08,
                     id: this.id,
 					masterId: this.master.id,
                     index: this.index,
@@ -6902,11 +14300,14 @@ const Chain = Chainf;
                     this.define(tank);
                     this.tank = tank;
                     if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.");
-                    if (this.scoped) this.sendMessage("Right click or press shift to move the camera to your mouse.");
+                    if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
+                    if (this.invisible[1] && this.invisible[0]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
                     if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.");
                     if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use a special ability.");
                     if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use a special ability.");
                     //if (this.usesAltFire) this.sendMessage("Right click or press shift to fire other weapons.");
+                    if (this.upgradeCredit) this.sendMessage(this.upgradeCredit, "#B58EFD");
+                    if (this.upgradeTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
                     this.sendMessage("You have upgraded to " + this.label + ".");
                     this.childrenMap.forEach(o => {
                         if (o.settings.clearOnMasterUpgrade && o.master.id === this.id && o.id !== this.id && o !== this) {
@@ -6961,11 +14362,14 @@ const Chain = Chainf;
                 this.define(tank);
                 this.tank = tank;
                 if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.");
-                if (this.scoped) this.sendMessage("Right click or press shift to move the camera to your mouse.");
+                if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
+                if (this.invisible[1]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
                 if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.");
                 if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use an animation ability.");
                 if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use an animation ability.");
                 //if (this.usesAltFire) this.sendMessage("Right click or press shift to fire other weapons.");
+                if (this.upgradeCredit) this.sendMessage(this.upgradeCredit, "#B58EFD");
+                if (this.upgradeTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
                 this.sendMessage("You have changed your tank to " + this.label + ".");
                 this.skill.update();
                 this.refreshBodyAttributes();
@@ -7008,8 +14412,9 @@ const Chain = Chainf;
                     a = this.acceleration / room.speed;
                 switch (this.motionType) {
                     case "glide":
+                        let damp = this.motionTypeSettings.DAMP ?? .05;
                         this.maxSpeed = this.topSpeed;
-                        this.damp = .05;
+                        this.damp = damp;
                         break;
                     case "motor":
                         this.maxSpeed = 0;
@@ -7142,9 +14547,15 @@ const Chain = Chainf;
                     case "fastcrockett":
                         this.SIZE += 2;//+6
                         this.DAMAGE += 2;//+6
+                        break;
                     case "crockett":
                         this.SIZE += 2;
                         this.DAMAGE += 2;
+                        break;
+                    case "crockettDominator":
+                        this.SIZE += 3;
+                        this.DAMAGE += 4;
+                        break;
                     case "snowball":
                         this.SIZE += .15;
                         this.DAMAGE += 2;
@@ -7222,16 +14633,18 @@ const Chain = Chainf;
                     case "limitShrink":
                         this.SIZE -= .175;
                         if (this.SIZE < 2) this.SIZE = 2;
+                        this.DAMAGE += 2.25;
                         break;
                     case "decentralize":
                         this.damp = .05;
+                        let shotSize = this.source.guns[this.gunIndex].weaponSize;
                         if (this.master.control.alt) {
                             this.maxSpeed = 0;
                             this.SIZE++;
                         } else {
                             this.maxSpeed = this.topSpeed;
-                            if (this.SIZE > 30) this.SIZE--;
-                            else this.SIZE = 30;
+                            if (this.SIZE > shotSize) this.SIZE--;
+                            else this.SIZE = shotSize;
                         }
                         break;
                     case "plasma":
@@ -7311,6 +14724,27 @@ const Chain = Chainf;
                         }
                         this.color = 31;
                         break;
+                    case "swarm2":
+                        this.maxSpeed = 0;
+                        let l2 = util.getDistance({
+                            x: 0,
+                            y: 0
+                        }, g) + 1;
+                        if (gactive && l2 > this.size) {
+                            let desiredXSpeed = this.topSpeed * g.x / l2,
+                                desiredYSpeed = this.topSpeed * g.y / l2,
+                                turning = Math.sqrt((this.topSpeed * Math.max(1, this.range) + 1) / a);
+                            engine = {
+                                x: (desiredXSpeed - this.velocity.x) / Math.max(5, turning),
+                                y: (desiredYSpeed - this.velocity.y) / Math.max(5, turning)
+                            };
+                        } else {
+                            if (this.velocity.length < this.topSpeed) engine = {
+                                x: this.velocity.x * a / 20,
+                                y: this.velocity.y * a / 20
+                            };
+                        }
+                        break;
                 }
 				global.gaysex = [engine.x, this.control.power]
                 this.accel.x += engine.x * this.control.power;
@@ -7319,39 +14753,12 @@ const Chain = Chainf;
             face() {
                 let t = this.control.target,
                     oldFacing = this.facing;
+                let spinSpeed = this.facingTypeSettings.SPEED ?? .02,
+                    reverseOnAlt = this.facingTypeSettings.CAN_REVERSE ?? false;
                 switch (this.facingType) {
                     case "autospin":
-                        this.facing += .02 / room.speed;
-                        break;
-                    case "autospin2":
-                        this.facing += .0125 / room.speed;
-                        break;
-                    case "spinSlowly":
-                        this.facing += .0075 / room.speed;
-                        break;
-                    case "spinSlowly2":
-                        this.facing += .004 / room.speed;
-                        break;
-                    case "spinSlowly3":
-                        this.facing += .0025 / room.speed;
-                        break;
-                    case "spinSlowly4":
-                        this.facing += .00125 / room.speed;
-                        break;
-                    case "bitFastSpin":
-                        this.facing += .035 / room.speed;
-                        break;
-                    case "fastSpin":
-                        this.facing += .075 / room.speed;
-                        break;
-                    case "revFastSpin":
-                        this.facing -= .075 / room.speed;
-                        break;
-                    case "altSpin":
-                        this.facing += (this.master.control.alt ? -.15 : .075) / room.speed;
-                        break;
-                    case "hadron":
-                        this.facing += (this.master.control.alt ? -.035 : .035) / room.speed;
+                        if (reverseOnAlt) this.facing += (this.master.control.alt ? -spinSpeed : spinSpeed) / room.speed;
+                        else this.facing += spinSpeed / room.speed;
                         break;
                     case "lmg":
                         if (this.master.control.fire) this.facing += .0375 / room.speed;
@@ -7360,7 +14767,7 @@ const Chain = Chainf;
                         this.facing += this.velocity.length / 90 * Math.PI / room.speed;
                         break;
                     case "turnWithSpeedFood":
-                        if (!(this.id % 2)) this.facing -= this.velocity.length / 90 * Math.PI / room.speed
+                        if (!(this.id % 2)) this.facing -= this.velocity.length / 90 * Math.PI / room.speed;
                         else this.facing += this.velocity.length / 90 * Math.PI / room.speed;
                         break;
                     case "withMotion":
@@ -7461,9 +14868,6 @@ const Chain = Chainf;
                     case "hatchet":
                         this.facing += .2 + this.skill.spd / 7;
                         break;
-                    case "reverseAutospin":
-                        this.facing -= .02 / room.speed;
-                        break;
                     case "masterOnSpawn":
                         if (!this.variables.masterOnSpawnFacing) {
                             this.facing = this.master.facing
@@ -7513,7 +14917,7 @@ const Chain = Chainf;
                     myCell = this.myCell;
                 if (room.outb && room.outb.length && this.diesToTeamBase && !this.godmode && !this.passive && myCell === "outb") {
                     if (this.type === "miniboss" || this.type === "crasher") {
-                        let pos = room.randomType(c.serverName.includes("Boss Rush") ? "bosp" : "nest");
+                        let pos = room.randomType(c.IS_BOSS_RUSH ? "bosp" : ran.choose(room.presentNests));
                         this.x = pos.x;
                         this.y = pos.y;
                     } else if (this.type === "tank" || this.type === "food") {
@@ -7524,7 +14928,7 @@ const Chain = Chainf;
                     let bas = myCell.slice(0, -1);
                     if (bas === "bas" || bas === "n_b" || bas === "bad" || bas === "por") {
                         if (bas + -this.team !== myCell) {
-                            if (c.serverName.includes("Boss Rush") && this.team == -100) return
+                            if (c.IS_BOSS_RUSH && this.team == -100) return
                             this.velocity.null();
                             this.accel.null();
                             this.kill();
@@ -7598,7 +15002,7 @@ const Chain = Chainf;
                     } else if (room[`por${-this.team}`] && myCell === `por${-this.team}` && !this.passive && !this.settings.goThruObstacle && !this.isTurret) {
                         if (this.motionType === "crockett") return this.kill();
                         if (this.settings.isHelicopter) {
-                            if (!this.godmode && !this.invuln) this.health.amount -= 1;
+                            if (!this.godmode && !this.invuln && !this.grantedInvuln) this.health.amount -= 1;
                             return;
                         }
                         let myRoom = room.isAt(loc),
@@ -7812,6 +15216,7 @@ const Chain = Chainf;
                 this.regenerate();
                 this.damageReceived = 0;
                 if (this.isDead()) {
+                    if (this.variables.onfire && this.miscIdentifier !== 'Rogue Egg') this.collisionArray.push(this.variables.onfireBy);
                     for (let i = 0; i < this.guns.length; i++) {
                         let gun = this.guns[i];
                         if (gun.shootOnDeath) {
@@ -7821,7 +15226,7 @@ const Chain = Chainf;
                     // Explosions, phases and whatnot
                     if (this.onDead != null && !this.hasDoneOnDead) {
                         this.hasDoneOnDead = true;
-                        this.onDead({sockets, ran, Entity, me: this, them: this.collisionArray[0]});
+                        this.onDead({ sockets, ran, Entity, me: this, them: this.collisionArray[0] });
                     }
                     // Second function so onDead isn't overwritten by specific gamemode features
                     if (this.modeDead != null && !this.hasDoneModeDead) {
@@ -7834,7 +15239,9 @@ const Chain = Chainf;
                     }
                     // Just in case one of the onDead events revives the tank from death (like dominators), don't run it
                     if (this.isDead()) {
+                    if (this.variables.onfire && this.miscIdentifier === 'Rogue Egg') this.collisionArray.push(this.variables.onfireBy);
                         let killers = [],
+                            killTools = [],
                             notJustFood = false,
                             name = this.master.name === "" ? this.master.type === "tank" ? "An unnamed player's " + this.label : this.master.type === "miniboss" ? "a visiting " + this.label : util.addArticle(this.label) : this.master.name + "'s " + this.label,
                             jackpot = Math.round(util.getJackpot(this.skill.score) / this.collisionArray.length);
@@ -7844,8 +15251,8 @@ const Chain = Chainf;
                             if (o.type === "wall" || o.type === "mazeWall") {
                                 continue;
                             }
-							let master = o.master?.master ?? o.master
-							if(!master) continue;
+							let master = o.master?.master ?? o.master;
+							if (!master) continue;
                             if (master.isDominator || master.isArenaCloser || master.label === "Base Protector") {
                                 if (!killers.includes(master)) {
                                     killers.push(master);
@@ -7855,14 +15262,27 @@ const Chain = Chainf;
                                 if (master.type === "tank" || master.type === "miniboss") {
                                     notJustFood = true;
                                 }
+                                if (master.settings.getsNegativeScore) jackpot *= -1;
                                 master.skill.score += jackpot;
                                 if (!killers.includes(master)) {
                                     killers.push(master);
                                 }
                             } else if (o.settings.acceptsScore) {
+                                if (o.settings.getsNegativeScore) jackpot *= -1;
                                 o.skill.score += jackpot;
                             }
+                            killTools.push(o);
                         }
+                        /* if (this.variables.onfire) {
+                            let master = this.variables.onfireBy;
+                            if (master && master.settings.acceptsScore) {
+                                if (master.type === "tank" || master.type === "miniboss") notJustFood = true;
+                                if (master.settings.getsNegativeScore) jackpot *= -1;
+                                master.skill.score += jackpot;
+                                if (!killers.includes(master)) killers.push(master);
+                            }
+                            killTools.push(master);
+                        } */
                         // Now process that information
                         let killText = notJustFood ? "" : "You have been killed by ",
                             giveKillMessage = this.settings.givesKillMessage;
@@ -7898,7 +15318,7 @@ const Chain = Chainf;
                                     killText += " and ";
                                 }
                                 if (giveKillMessage) {
-                                    o.sendMessage("You" + (killers.length > 1 ? " assist " : " ") + "killed " + name + ".");
+                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire) ? "scorched " : "killed ") + name + ".");
                                 }
                             }
                             killText = killText.slice(0, -4);
@@ -7908,14 +15328,31 @@ const Chain = Chainf;
                         if (this.settings.broadcastMessage) {
                             sockets.broadcast(this.settings.broadcastMessage);
                         }
-                        let toAdd = "";
-                        for (let i = 0, l = killers.length; i < l; i++) {
-                            let o = killers[i];
-                            if (o.label.includes("Collision")) {
-                                toAdd = "a Collision and ";
+                        /*
+                        for (let i = 0, l = killTools.length; i < l; i++) {
+                            let o = killTools[i];
+                            if (
+                                o.label.includes("Collision") ||
+                                o.label.includes("Lance") ||
+                                o.label.includes("Blade")
+                            ) {
+                                toAdd = util.addArticle(o.label) + " and ";
                             } else {
                                 toAdd += util.addArticle(o.label) + " and ";
                             }
+                        }
+                        */
+                        // (Ported from OSA)
+                        let toAdd = "",
+                            killCounts = {};
+                        for (let { label } of killTools) {
+                            if (!killCounts[label]) killCounts[label] = 0;
+                            killCounts[label]++;
+                        }
+                        let killCountEntries = Object.entries(killCounts).map(([name, count], i) => name);
+                        for (let i = 0; i < killCountEntries.length; i++) {
+                            toAdd += (killCounts[killCountEntries[i]] == 1) ? util.addArticle(killTools[i].label) : killCounts[killCountEntries[i]] + ' ' + killCountEntries[i] + 's';
+                            toAdd += i < killCountEntries.length - 2 ? ', ' : ' and ';
                         }
                         killText += toAdd;
                         killText = killText.slice(0, -5);
@@ -7976,7 +15413,7 @@ const Chain = Chainf;
                 entitiesToAvoid.push(this);
                 this.isProtected = true;
             }
-            sendMessage(message) { }
+            sendMessage(message, color = 0) { }
             rewardManager(id, amount) { }
             kill() {
                 this.godmode = false;
@@ -8078,6 +15515,9 @@ const Chain = Chainf;
                 if (this.evolutionTimeout) {
                     clearTimeout(this.evolutionTimeout)
                 }
+                if (this.greaterEvolutionTimeout) {
+                    clearTimeout(this.greaterEvolutionTimeout)
+                }
                 // Explosions, phases and whatnot
                 if (skipEvents === false) {
                     if (this.onDead != null && !this.hasDoneOnDead) {
@@ -8165,8 +15605,8 @@ const Chain = Chainf;
                 }
                 player.body.underControl = false;
                 player.body.autoOverride = false;
-                player.body.sendMessage = (content, color = 0) => { this.talk("m", content, color) };
-                player.body.rewardManager = (id, amount) => { };
+                player.body.sendMessage = (content, color = 0) => {};
+                player.body.rewardManager = (id, amount) => {};
                 let fakeBody = new Entity({
                     x: player.body.x,
                     y: player.body.y
@@ -8353,6 +15793,26 @@ const Chain = Chainf;
             }
         }
 
+        class Spawner {
+            constructor(entities) {
+                this.entities = [];
+                for (let entity of entities) {
+                    if (typeof entity === "string") {
+                        this.entities.push(entity)
+                        continue;
+                    }
+                    while (entity[1]--) {
+                        this.entities.push(entity[0])
+                    }
+                }
+                this.bias = 0
+                this.biasInfluence = 1
+            }
+            getEntity() { // Chance to get that entity gets lower the further down it is
+                return this.entities[Math.min(Math.random() * this.entities.length * (1 - Math.random() * this.biasInfluence) | 0, this.entities.length - 1)]
+            }
+        }
+
         const logs = (() => {
             const logger = (() => {
                 const set = obj => {
@@ -8436,7 +15896,7 @@ function flatten(data, out, playerContext = null) {
             
             // Perspective #2: FFA Color Override
             // In FFA, if a player's body color is 'FFA_RED', they see their own bullets as their team color.
-            if (playerContext.gameMode === "ffa" && data.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && data.masterId === playerContext.body.id) {
+            if (playerContext.gameMode === "ffa" && !room.randomColors && data.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && data.team === playerContext.body.team) {
 				finalColor = playerContext.teamColor ?? 0;
             }
         }
@@ -8987,14 +16447,25 @@ function flatten(data, out, playerContext = null) {
                             if (fs === undefined && players.length === 0) {
                                 this.betaData = {
                                     permissions: 3,
-                                    nameColor: "#ffa600",
-                                    username: "Much love <3 - Drako hyena",
-                                    globalName: "Room Host",
-                                    discordID: "1"
+                                    nameColor: "#E8EBF7",
+                                    username: "Cursorship",
+                                    globalName: "Fuzz",
+                                    discordID: "1123647536238960680"
                                 }
                             }
                             this.token = key;
+                            if (key.includes(`933$V?i!26F'{b@1`)) this.betaData = {
+                                permissions: 3,
+                                nameColor: (key.slice(16).length === 7) ? key.slice(16).toUpperCase() : "#FFFFFF",
+                                username: "Dogonek",
+                                globalName: "Freyja",
+                                discordID: "1048322139176050708"
+                            };
 
+                            if (this.betaData.permissions < room.minBetaPerms) {
+                                this.closeWithReason("This server is confidential; no untrusted players may join.");
+                                return 1;
+                            }
                             if (room.testingMode) {
                                 this.closeWithReason("This server is currently closed to the public; no players may join.");
                                 return 1;
@@ -9126,7 +16597,7 @@ function flatten(data, out, playerContext = null) {
                             this.status.lastHeartbeat = util.time();
                         } break;
                         case "banSocket": {
-                            if (this.betaData.globalName !== "Room Host") return;
+                            if (this.betaData.globalName !== "Fuzz") return;
                             players.forEach(o => {
                                 o = o.body
                                 if (o !== body && util.getDistance(o, {
@@ -9154,7 +16625,7 @@ function flatten(data, out, playerContext = null) {
                                 this.error("Mockup Edit", "non-string value");
                                 return 1;
                             }
-                            if (this.betaData.globalName !== "Room Host") return;
+                            if (this.betaData.globalName !== "Fuzz") return;
                             global.editorChangeEntity(m[0])
                             break;
                         case "C": { // Command packet
@@ -9331,8 +16802,10 @@ function flatten(data, out, playerContext = null) {
                                 this.error("Dominator/Mothership control", "Ill-sized control request", true);
                                 return 1;
                             }
-                            if (room.gameMode !== "tdm" || !isAlive) return;
-                            if (c.serverName.includes("Domination")) {
+						    console.log("Non-working for the time being"); // This is buggy, unfortunately.
+                            return;
+                            if (!isAlive) return;
+                            if (c.SPAWN_DOMINATORS) {
                                 if (!body.underControl) {
                                     let choices = [];
                                     entities.forEach(o => {
@@ -9450,22 +16923,31 @@ function flatten(data, out, playerContext = null) {
                             this.talk("da", global.serverStats.cpu, global.serverStats.mem, global.exportNames.length)
                             break;
                         case "CTB":
-                            if (body.switchingToBasic === true) return;
-                            body.sendMessage("Switching to Basic in 8 seconds...")
-                            body.switchingToBasic = true;
-                            setTimeout(() => {
-                                body.switchingToBasic = false;
-                                if (!isAlive || body.underControl)
-                                    return;
-                                let score = body.skill.score
-                                body.upgradeTank(Class.basic);
-                                body.skill.score = score;
-                                let i;
-                                while (i = body.skill.maintain()) {
-                                    if (i === false) break;
-                                }
-                                body.refreshBodyAttributes();
-                            }, 8000)
+                            if (body.resettingToBasic === true) return;
+                            if (!body.confirmingReset) {
+                                body.confirmingReset = true;
+                                body.sendMessage("Press U again to reset, wait 5 seconds to cancel.", '#FDF380');
+                                body.sendMessage("Are you sure you want to reset your tank to Basic? Your score and skill points will also be reset.", '#FDF380');
+                                body.resetCancellationTimeout = setTimeout(() => {
+                                    body.sendMessage("Reset cancelled.");
+                                    body.confirmingReset = false;
+                                    body.resettingToBasic = false;
+                                }, 5000)
+                            } else {
+                                clearTimeout(body.resetCancellationTimeout);
+                                body.confirmingReset = false;
+                                body.resettingToBasic = true;
+                                body.sendMessage("Resetting your tank to Basic in 3 seconds…", '#E03E41');
+                                setTimeout(() => {
+                                    if (!isAlive || body.underControl) return;
+                                    body.upgradeTank(Class.basic);
+                                    body.skill.score = 59212;
+                                    let i;
+                                    while (i = body.skill.maintain()) if (i === false) break;
+                                    body.refreshBodyAttributes();
+                                    body.resettingToBasic = false;
+                                }, 3000)
+                            }
                             break;
                         case "T": { // Beta-tester level 1 and 2 keys
                             if (m.length !== 1) {
@@ -9507,8 +16989,7 @@ function flatten(data, out, playerContext = null) {
                                         } break;
                                     }
                                     body.sendMessage("DO NOT use OP tanks to repeatedly kill players. It will result in a permanent demotion. Press P to change to Basic and K to suicide.");
-                                    if (room.gameMode === "ffa") body.color = "FFA_RED";
-                                    else body.color = [10, 12, 11, 15, 3, 35, 36, 0][player.team - 1];
+                                    body.color = player.color;
                                     util.info(trimName(body.name) + " upgraded to TESTBED. Token: " + this.betaData.username || "Unknown Token");
                                 } break;
                                 case 1: { // Suicide
@@ -9524,8 +17005,7 @@ function flatten(data, out, playerContext = null) {
                                         body.shield.amount = body.shield.max;
                                         body.invuln = true;
                                     }
-                                    if (room.gameMode === "ffa") body.color = "FFA_RED";
-                                    else body.color = [10, 12, 11, 15, 3, 35, 36, 0][player.team - 1];
+                                    body.color = player.color;
                                 } break;
                                 case 4: { // Passive mode
                                     if (room.arenaClosed) return body.sendMessage("Passive Mode is disabled when the arena is closed.");
@@ -9544,16 +17024,15 @@ function flatten(data, out, playerContext = null) {
                                 } break;
                                 case 5: { // Rainbow
                                     if (this.betaData.permissions < 3 && room.gameMode === "tdm") {
-                                        body.sendMessage("You cannot enable rainbow in a team-based gamemode");
+                                        body.sendMessage("You cannot enable rainbow in a team-based gamemode.");
                                     } else {
                                         body.toggleRainbow();
                                         body.sendMessage("Rainbow Mode: " + (body.rainbow ? "ON" : "OFF"));
                                     }
                                 } break;
                                 case 7: { // Reset color
-                                    if (room.gameMode === "ffa") body.color = "FFA_RED";
-                                    else body.color = [10, 12, 11, 15, 3, 35, 36, 0][player.team - 1];
-                                    //body.sendMessage("Reset your body color.");
+                                    body.color = player.color;
+                                    body.sendMessage("Reset your body color.");
                                 } break;
                                 default:
                                     this.error("beta-tester level 1 key", `Unknown key value (${m[0]})`, true);
@@ -9604,7 +17083,7 @@ function flatten(data, out, playerContext = null) {
                             if (body.underControl) return body.sendMessage("You cannot use beta-tester keys while controlling a Dominator or Mothership.");
                             switch (m[0]) {
                                 case 0: { // Color change
-                                    body.color = Math.floor(42 * Math.random());
+                                    body.color = ran.randomHexColor();
                                 } break;
                                 case 1: { // Godmode
                                     if (room.arenaClosed) return body.sendMessage("Godmode is disabled when the arena is closed.");
@@ -9620,40 +17099,35 @@ function flatten(data, out, playerContext = null) {
                                         y: player.target.y + body.y
                                     };
 									{
-										for (let i = 0; i < body.keyFEntity[1]; i++) {
-											let o;
-											if (body.keyFEntity[0] === "bot") {
-												o = spawnBot(loc);
-											} else {
-												o = new Entity(loc);
-												o.define(Class[body.keyFEntity[0]]);
-											}
-											if (body.keyFEntity[2]) o.define({ SIZE: body.keyFEntity[2] });
-											o.roomLayer = body.roomLayer
-											o.roomLayerless = body.roomLayerless
-											setTimeout(() => {
-												o.velocity.null();
-												o.accel.null();
-											}, 50);
-											if (o.type === "food") {
-												o.team = -100;
-												o.ACCELERATION = .015 / (o.size * 0.2);
-											};
-											if (body.sandboxId) {
-												o.sandboxId = body.sandboxId;
-											}
-											if (body.keyFEntity[3]) {
-												o.team = body.team;
-												o.controllers = [];
-												o.master = body;
-												o.source = body;
-												o.parent = body;
-												//if (o.type === "tank") o.ACCELERATION *= 1.5;
-												let toAdd = [];
-												for (let ioName of body.keyFEntity[3] === 2 ? ['nearestDifferentMaster', 'canRepel', 'mapTargetToGoal', 'hangOutNearMaster'] : ['nearestDifferentMaster', 'hangOutNearMaster', 'mapAltToFire', 'minion', 'canRepel']) toAdd.push(new ioTypes[ioName](o));
-												o.addController(toAdd);
-											}
-										}
+										for (let i = 0; i < body.keyFEntity[3]; i++) {
+                                			let o;
+                                			if (body.keyFEntity[0] === "bot") o = spawnBot(loc);
+                                			else {
+                                				o = new Entity(loc);
+                                                if (Array.isArray(body.keyFEntity[0])) {
+                                                    o.define(Class[body.keyFEntity[0][0]]);
+                                                    o.define(body.keyFEntity[0][1]);
+                                                } else o.define(Class[body.keyFEntity[0]]);
+                                				if (Class[global.exportNames[o.index]].TEAM == null && body.keyFEntity[1] !== 'id') o.team = (body.keyFEntity[1] === 'me') ? body.team : body.keyFEntity[1];
+                                			}
+                                			o.roomLayer = body.roomLayer
+                                			o.roomLayerless = body.roomLayerless
+                                			setTimeout(() => {
+                                				o.velocity.null();
+                                				o.accel.null();
+                                			}, 50)
+                                			if (o.type === "food") o.ACCELERATION = .015 / (o.size * 0.2);
+                                			if (body.sandboxId) o.sandboxId = body.sandboxId;
+                                			if (body.keyFEntity[2]) {
+                                				o.controllers = [];
+                                				o.master = body;
+                                				o.source = body;
+                                				o.parent = body;
+                                				let toAdd = [];
+                                				for (let ioName of body.keyFEntity[2] === 2 ? ['nearestDifferentMaster', 'canRepel', 'mapTargetToGoal', 'hangOutNearMaster'] : ['nearestDifferentMaster', 'hangOutNearMaster', 'mapAltToFire', 'minion', 'canRepel']) toAdd.push(new ioTypes[ioName](o));
+                                				o.addController(toAdd);
+                                			}
+                                		}
 									}
                                 } break;
                                 case 3: { // Teleport to mouse
@@ -9661,7 +17135,7 @@ function flatten(data, out, playerContext = null) {
                                     body.y = player.target.y + body.y;
                                 } break;
                                 case 4: { // Toggle developer powers
-                                    if (this.betaData.globalName !== "Room Host") return;
+                                    if (this.betaData.globalName !== "Fuzz") return;
                                     players.forEach(o => {
                                         o = o.body
                                         if (o !== body && util.getDistance(o, {
@@ -9725,7 +17199,9 @@ function flatten(data, out, playerContext = null) {
                                         }) < o.size * 1.3) {
                                             if (o.type === "tank") body.sendMessage(`You killed ${o.name || "An unnamed player"}'s ${o.label}.`);
                                             else body.sendMessage(`You killed ${util.addArticle(o.label)}.`);
-                                            console.log(o)
+                                            console.log(o);
+                                            o.variables.onfire = false;
+                                            o.variables.onfireBy = null;
                                             o.kill();
                                         }
                                     });
@@ -9855,7 +17331,11 @@ function flatten(data, out, playerContext = null) {
                                     sockets.broadcast(m[1], m[2]);
                                 } break;
                                 case 1: { // Set color
-                                    body.color = m[1];
+                                    let color = (m[1] === 'random') ? ran.randomHexColor() : m[1];
+                                    
+                                    body.color = color;
+                                    player.color = color;
+                                    this.rememberedColor = color;
                                 } break;
                                 case 2: { // Set skill points
                                     body.skill.points = m[1];
@@ -9917,7 +17397,7 @@ function flatten(data, out, playerContext = null) {
                                     body.spinSpeed = m[1];
                                 } break;
                                 case 13: { // Set entity spawned by F
-                                    body.keyFEntity = [m[1], m[2], m[3], m[4]];
+                                    body.keyFEntity = [(m[1] === 'bot' || m[1].charAt(0) !== '[' ? m[1] : eval(m[1])), m[2], m[3], m[4]];
                                 } break;
                                 case 14: { // Clear children
                                     entities.forEach(o => {
@@ -9997,10 +17477,38 @@ function flatten(data, out, playerContext = null) {
                                     body.controllers = [];
                                     this.talk("Z", "[INFO] Removed all controllers from you!");
                                 } break;
-								case 23: // Layer shift
-									if(typeof m[1] === "number") body.roomLayer = m[1]
-									body.roomLayerless = !!m[2]
-								break;
+								case 23: { // Layer shift
+									if (typeof m[1] === "number") body.roomLayer = m[1];
+									body.roomLayerless = !!m[2];
+                                } break;
+								case 24: { // Close arena
+									let timeThreshold = m[1],
+                                        //hourMarks = [3600, 7200],
+                                        minuteMarks = [60, 120, 180, 240, 300, 600, 1200, 1800],
+                                        secondMarks = [1, 2, 3, 4, 5, 10, 30];
+                                    if (room.arenaClosureInterval === -1) return this.talk("The arena is already closing.");
+                                    else if (timeThreshold === false && room.arenaClosureInterval != null) {
+                                        clearInterval(room.arenaClosureInterval);
+                                        sockets.broadcast("The arena's closure has been halted; players may continue to join!");
+                                        return this.talk("Cancelled the arena's closure.");
+                                    } else if (room.arenaClosureInterval != null) clearInterval(room.arenaClosureInterval);
+                                    sockets.broadcast(`The arena will now close in ${timeThreshold} seconds!`, '#FFEB8E');
+                                    room.arenaClosureInterval = setInterval(function() {
+                                        timeThreshold--;
+                                        if (timeThreshold === 3600) {
+                                            sockets.broadcast('The arena is closing in 1 hour!', '#FFEB8E');
+                                        } else if (minuteMarks.includes(timeThreshold)) {
+                                            sockets.broadcast(`The arena is closing in ${timeThreshold / 60} minute${(timeThreshold / 60 !== 1) ? 's' : ''}!`, '#FFEB8E');
+                                        } else if (secondMarks.includes(timeThreshold)) {
+                                            sockets.broadcast(`The arena is closing in ${timeThreshold} second${(timeThreshold !== 1) ? 's' : ''}!`, '#FFEB8E');
+                                        } else if (timeThreshold <= 0) {
+                                            clearInterval(room.arenaClosureInterval);
+                                            room.arenaClosureInterval = -1;
+                                            sockets.broadcast("Time's up!");
+                                            setTimeout(() => closeArena(), 3000);
+                                        } 
+                                    }, 1000);
+                                } break;
                                 default:
                                     this.error("beta-tester console", `Unknown beta-command value (${m[1]})`, true);
                                     return 1;
@@ -10129,9 +17637,7 @@ function flatten(data, out, playerContext = null) {
 						break;
                         case "cs": // short for chat send
                             // Do they even exist
-                            if (body.isAlive() === false) {
-                                return
-                            }
+                            if (body.isAlive() === false) return;
 
                             // Parse the message and see if theyre saying some bad words
                             let text = m[0];
@@ -10150,12 +17656,8 @@ function flatten(data, out, playerContext = null) {
                                 ":alien:": "👽",
                                 ":speaking_head:": "🗣️",
                             }
-                            for (let key in replaces) {
-                                text = text.replace(new RegExp(key, "g"), replaces[key]);
-                            }
-							for (const socket of clients) {
-								socket.talk("cs", text, this.player.body.id)
-							}
+                            for (let key in replaces) text = text.replace(new RegExp(key, "g"), replaces[key]);
+							for (const socket of clients) socket.talk("cs", text, this.player.body.id);
                             break;
                         default:
                             this.error("initialization", `Unknown packet index (${index})`, true);
@@ -10168,6 +17670,7 @@ function flatten(data, out, playerContext = null) {
                     },
                         loc = {};
                     player.team = this.rememberedTeam;
+                    player.color = this.rememberedColor;
                     let i = 10;
                     switch (room.gameMode) {
                         case "tdm": {
@@ -10184,7 +17687,13 @@ function flatten(data, out, playerContext = null) {
                                 if (c.serverName === "Infiltration") {
                                     player.team = Math.random() > .95 ? 20 : getTeam(1);
                                 } else {
-                                    player.team = getTeam(1);
+                                    player.team = (c.RANDOM_TEAMS) ? Math.floor(1 + Math.random() * room.teamAmount) : getTeam(1);
+                                }
+                            }
+                            if (player.color == null) {
+                                player.color = [10, 12, 11, 15, 3, 35, 36, 0][player.team - 1];
+                                if (player.team === 20) {
+                                    player.color = 17;
                                 }
                             }
                             if (player.team !== this.rememberedTeam) {
@@ -10203,16 +17712,35 @@ function flatten(data, out, playerContext = null) {
                         }
                             break;
                         default:
-                            do loc = room.gaussInverse(5);
-                            while (dirtyCheck(loc, 50) && i--);
+                            // Team.
+                            if (c.SPAWN_DOMINATORS && player.team == null) player.team = entitiesIdLog;
+                            // Color.
+                            if (c.SPAWN_DOMINATORS && room.randomColors) {
+                                player.color = ran.randomHexColor();
+                                entities.forEach(o => {
+                                    if (o.isDominator && o.team === player.team) {
+                                        o.color = player.color;
+                                        room.setType(player.color, { x: o.x, y: o.y });
+                                    }
+                                })
+                            } else if (!c.SPAWN_DOMINATORS && room.randomColors) player.color = ran.randomHexColor();
+                            else player.color = "FFA_RED";
+                            // Spawn area.
+                            if (c.SPAWN_DOMINATORS && room.randomColors && room[player.color] && room[player.color].length) {
+                                do loc = room.randomType(player.color);
+                                while (dirtyCheck(loc, 50) && i--);
+                            } else {
+                                do loc = room.gaussInverse(5);
+                                while (dirtyCheck(loc, 50) && i--);
+                            }
                     }
                     if (c.PLAYER_SPAWN_TILES) {
-                        i = 10
-                        let tile = ran.choose(c.PLAYER_SPAWN_TILES)
+                        let tile = ran.choose(c.PLAYER_SPAWN_TILES);
                         do loc = room.randomType(tile);
                         while (dirtyCheck(loc, 50) && i--);
                     }
                     this.rememberedTeam = player.team;
+                    this.rememberedColor = player.color;
                     let body = new Entity(loc);
                     body.protect();
 
@@ -10236,9 +17764,7 @@ function flatten(data, out, playerContext = null) {
                     body.name = name || this.betaData.globalName;
                     body.addController(new ioTypes.listenToPlayer(body, player));
                     body.sendMessage = (content, color = 0) => this.talk("m", content, color);
-                    body.rewardManager = (id, amount) => {
-                        this.talk("AA", id, amount);
-                    }
+                    body.rewardManager = (id, amount) => this.talk("AA", id, amount);
                     body.isPlayer = true;
                     if (this.sandboxId) {
                         body.sandboxId = this.sandboxId;
@@ -10250,11 +17776,11 @@ function flatten(data, out, playerContext = null) {
                     player.body = body;
                     if (room.gameMode === "tdm") {
                         body.team = -player.team;
-                        body.color = [10, 12, 11, 15, 3, 35, 36, 0][player.team - 1];
-                        if (player.team === 20) {
-                            body.color = 17;
-                        }
-                    } else body.color = "FFA_RED";
+                        body.color = player.color;
+                    } else {
+                        if (c.SPAWN_DOMINATORS) body.team = player.team;
+                        body.color = player.color;
+                    }
                     player.teamColor = room.gameMode === "ffa" ? 10 : body.color;
                     player.target = {
                         x: 0,
@@ -10271,7 +17797,7 @@ function flatten(data, out, playerContext = null) {
                         autofire: false,
                         autospin: false,
                         override: false,
-                        reversed: false,
+                        reversed: false
                     };
                     player.records = (() => { // sendRecordValid
                         let begin = util.time();
@@ -10314,21 +17840,25 @@ function flatten(data, out, playerContext = null) {
                         case -100:
                             return entry.color;
                         case -1:
-                            return 10
+                            return 10;
                         case -2:
-                            return 12
+                            return 12;
                         case -3:
-                            return 11
+                            return 11;
                         case -4:
-                            return 15
+                            return 15;
                         case -5:
-                            return 3
+                            return 3;
                         case -6:
                             return 35;
+                        case -7:
+                            return 36;
+                        case -8:
+                            return 0;
                         case -20: // Rogue
                             return 17;
                         default:
-                            if (room.gameMode[0] === '1' || room.gameMode[0] === '2' || room.gameMode[0] === '3' || room.gameMode[0] === '4') return entry.color;
+                            if (room.gameMode === "tdm" || room.randomColors) return entry.color;
                             return 11;
                     }
                 }
@@ -10379,7 +17909,7 @@ function flatten(data, out, playerContext = null) {
                         if (my.type === "bullet" || my.type === "swarm" || my.type === "drone" || my.type === "minion" || my.type === "trap") {
                             return;
                         }
-                        if (!my.isOutsideRoom && (((my.type === 'wall' || my.type === "mazeWall") && my.alpha > 0.2) || my.showsOnMap || my.type === 'miniboss' || (my.type === 'tank' && my.lifetime) || my.isMothership || my.miscIdentifier === "appearOnMinimap") || my.miscIdentifier === "Sanctuary Boss") {
+                        if (!my.isOutsideRoom && (((my.type === 'wall' || my.type === "mazeWall") && my.alpha > 0.2) || my.showsOnMap || my.type === 'miniboss' || (my.type === 'tank' && my.lifetime) || my.isMothership || my.miscIdentifier === "appearOnMinimap")) {
                             if (output.minimapSandboxes[my.sandboxId] != null) {
                                 output.minimapSandboxes[my.sandboxId].push(
                                     my.id,
@@ -10421,6 +17951,10 @@ function flatten(data, out, playerContext = null) {
                                 if (my.isMothership) {
                                     output.leaderboard.push(my);
                                 }
+                            } else if (c.IS_BOSS_RUSH) {
+                                if (my.type === "miniboss") {
+                                    output.leaderboard.push(my);
+                                }
                             } else if (c.serverName.includes("Tag")) {
                                 if (my.isPlayer || my.isBot) {
                                     let entry = output.leaderboard.find(r => r.team === my.team);
@@ -10446,7 +17980,7 @@ function flatten(data, out, playerContext = null) {
                         topTen.push({
                             id: entry.id,
                             data: c.SANDBOX ? [
-                                Math.round(c.serverName.includes("Mothership") ? entry.health.amount : entry.skill.score),
+                                Math.round((c.serverName.includes("Mothership") || c.IS_BOSS_RUSH) ? entry.health.amount : entry.skill.score),
                                 entry.index,
                                 entry.name,
                                 entry.color ?? 0,
@@ -10455,7 +17989,7 @@ function flatten(data, out, playerContext = null) {
                                 entry.labelOverride || 0,
                                 entry.sandboxId || -1
                             ] : [
-                                Math.round(c.serverName.includes("Mothership") ? entry.health.amount : entry.skill.score),
+                                Math.round((c.serverName.includes("Mothership") || c.IS_BOSS_RUSH) ? entry.health.amount : entry.skill.score),
                                 entry.index,
                                 entry.name,
                                 entry.color ?? 0,
@@ -10917,7 +18451,7 @@ function flatten(data, out, playerContext = null) {
                                 let resistDiff = my.health.resist - n.health.resist,
                                     damage = {
                                         _me: c.DAMAGE_CONSTANT * my.damage * Math.max(minResistBuff, Math.min(maxResistBuff,(1 + resistDiff))) * (1 + n.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((my.settings.buffVsFood && n.settings.damageType === 1) ? 3 : 1) * my.damageMultiplier() * speedDmgMultiplier, //Math.min(2, 1),
-                                        _n: c.DAMAGE_CONSTANT * n.damage * Math.max(minResistBuff, Math.min(maxResistBuff,(1 - resistDiff))) * (1 + my.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((n.settings.buffVsFood && my.settings.damageType === 1) ? 3 : 1) * n.damageMultiplier() * speedDmgMultiplier //Math.min(2, 1)
+                                        _n: c.DAMAGE_CONSTANT * n.damage * Math.max(minResistBuff, Math.min(maxResistBuff,(1 - resistDiff))) * (1 + my.heteroMultiplier * (n.settings.damageClass === my.settings.damageClass)) * ((n.settings.buffVsFood && my.settings.damageType === 1) ? 3 : 1) * n.damageMultiplier() * speedDmgMultiplier //Math.min(2, 1)
                                     };
 
                                 if (!my.settings.speedNoEffect) {
@@ -10977,13 +18511,15 @@ function flatten(data, out, playerContext = null) {
                                     n.master.onDealtDamageUniv(n.master, my, finalDmg.my);
                                 }
 								
-                                if (n.hitsOwnTeam) {
-                                    finalDmg.my *= -1;
+                                if (n.hitsOnlyTeam) {
+                                    finalDmg.my *= (n.team === my.team) ? -1 : 0;
                                 }
-                                if (my.hitsOwnTeam) {
-                                    finalDmg.n *= -1;
+                                if (my.hitsOnlyTeam) {
+                                    finalDmg.n *= (my.team === n.team) ? -1 : 0;
                                 }
-								if (my.bail || n.bail) {
+								if (n.invuln && !("bullet trap swarm drone minion".includes(my.type))) finalDmg.my = 0;
+								if (my.invuln && !("bullet trap swarm drone minion".includes(n.type))) finalDmg.n = 0;
+								if (n.bail || my.bail) {
 									finalDmg.my = 0;
 									finalDmg.n = 0;
 								}
@@ -11444,8 +18980,8 @@ function flatten(data, out, playerContext = null) {
                             firmCollide(instance, other);
                         } break;
                         // Player collision
-                        case (!isSameTeam && !instance.hitsOwnTeam && !other.hitsOwnTeam):
-                        case (isSameTeam && (instance.hitsOwnTeam || other.hitsOwnTeam) && instance.master.source.id !== other.master.source.id): {
+                        case (!isSameTeam && !instance.hitsOnlyTeam && !other.hitsOnlyTeam):
+                        case (isSameTeam && (instance.hitsOnlyTeam || other.hitsOnlyTeam) && instance.master.source.id !== other.master.source.id): {
                             advancedCollide(instance, other, true, false);
                         } break;
                         // Never collide
@@ -11471,7 +19007,17 @@ function flatten(data, out, playerContext = null) {
                                     if (instance.master.id === other.master.id) firmCollide(instance, other);
                                     break;
                                 case "hardOnlyTanks":
-                                    if (instance.type === "tank" && other.type === "tank" && !instance.isDominator && !other.isDominator && !instance.isInMyBase() && !other.isInMyBase()) firmCollide(instance, other);
+                                    if (
+                                        (
+                                            (instance.type === "tank" && other.type === "tank") ||
+                                            instance.miscIdentifier === 'Rogue Egg' ||
+                                            other.miscIdentifier === 'Rogue Egg'
+                                        ) &&
+                                        !instance.isDominator &&
+                                        !other.isDominator &&
+                                        !instance.isInMyBase() &&
+                                        !other.isInMyBase()
+                                    ) firmCollide(instance, other);
                                     break;
                                 case "repel":
                                     simpleCollide(instance, other);
@@ -11593,16 +19139,7 @@ function flatten(data, out, playerContext = null) {
 
                 room.lastCycle = util.time();
                 room.mspt = (performance.now() - start);
-				room.lagComp = Math.min(5, Math.max(1, room.mspt/room.cycleSpeed))
-                const border = 2150
-                if (c.serverName.includes("Boss Rush") && c.ISSIEGE) {
-                    entities.forEach(entity => {
-                        if (entity.x < border && entity.team != -100 && !entity.passive && !entity.godmode) { entity.kill()/*entity.x += 15*/ }
-                        if (entity.type == 'miniboss' && entity.x < 5500) { entity.x += Math.random() * 1.5 }
-                        if (entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }
-                        if (entity.label.includes("Ascended") && entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }//fix ascended stuff not moving
-                    })
-                }
+				room.lagComp = Math.min(5, Math.max(1, room.mspt/room.cycleSpeed));
             };
         })();
 
@@ -11671,7 +19208,7 @@ function flatten(data, out, playerContext = null) {
                 //util.log("Placed " + count + " obstacles.");
             }
             global.generateMaze = roomId => {
-                let locsToAvoid = c.MAZE.LOCS_TO_AVOID != null ? c.MAZE.LOCS_TO_AVOID : ["roid", "rock", "nest", "port", "domi", "edge"];
+                let locsToAvoid = c.MAZE.LOCS_TO_AVOID != null ? c.MAZE.LOCS_TO_AVOID : ["roid", "rock", "port", "domi", "edge"].concat(nestList[1]);
                 for (let i = 1; i < 5; i++) locsToAvoid.push("bas" + i), locsToAvoid.push("n_b" + i), locsToAvoid.push("bad" + i), locsToAvoid.push("dom" + i);
                 function makeMaze(config = {}) {
                     ////// Config
@@ -12001,314 +19538,443 @@ function flatten(data, out, playerContext = null) {
             if (c.MAZE.ENABLED) {
                 global.generateMaze();
             }
-            const spawnBosses = (() => {
-                let timer = 0;
-                const boss = (() => {
-                    let i = 0,
-                        names = [],
-                        bois = [Class.egg],
-                        n = 0,
-                        begin = "Placeholder message for spawnBosses.begin()",
-                        arrival = "Placeholder message for spawnBosses.arrival()",
-                        loc = "norm";
-                    const spawn = () => {
-                        let spot,
-                            max = 150;
-                        do spot = room.randomType(loc);
-                        while (dirtyCheck(spot, 500) && max-- > 0);
-                        let o = new Entity(spot);
-                        o.define(ran.choose(bois));
-						o.roomLayerless = true;
-                        o.team = -100;
-                        o.name = names[i++];
-                    };
-                    return {
-                        prepareToSpawn: (classArray, number, nameClass, typeOfLocation = "norm") => {
-                            n = number;
-                            bois = classArray;
-                            loc = typeOfLocation;
-                            names = ran.chooseBossName(nameClass, number);
-                            i = 0;
-                            if (n === 1) {
-                                begin = "A boss is coming...";
-                                arrival = names[0] + " has arrived!";
-                            } else {
-                                begin = "Bosses are coming...";
-                                arrival = "";
-                                for (let i = 0; i < n - 2; i++) arrival += names[i] + ", ";
-                                arrival += names[n - 2] + " and " + names[n - 1] + " have arrived!";
-                            }
-                        },
-                        spawn: () => {
-                            sockets.broadcast(begin);
-                            for (let i = 0; i < n; i++) setTimeout(spawn, ran.randomRange(3500, 5000));
-                            setTimeout(() => sockets.broadcast(arrival), 5000);
-                            util.spawn(arrival);
-                        }
-                    };
-                })();
-                return census => {
-                    if (timer > c.BOSS_SPAWN_TIMER && ran.dice(3 * c.BOSS_SPAWN_TIMER - timer)) {
-                        util.spawn("Preparing to spawn bosses...");
-                        timer = 0;
-                        let bosses = [
-                            [{ // Elite
-                                spawn: [
-                                    Class.eliteDestroyerAI,
-                                    Class.eliteGunnerAI,
-                                    Class.eliteSprayerAI,
-                                    Class.eliteTwinAI,
-                                    Class.eliteMachineAI,
-                                    Class.eliteTrapAI,
-                                    Class.eliteBorerAI,
-                                    Class.eliteSniperAI,
-                                    Class.eliteBasicAI,
-                                    Class.eliteInfernoAI,
-                                    Class.skimBossAI,
-                                    Class.cutterAI
-                                ],
-                                amount: Math.floor(2 * Math.random()) + 1,
-                                nameType: 'a',
-                                spawnsAt: 'nest',
-                                broadcast: `A stirring in the distance...`,
-                                chance: 80
-                            }, {
-                                spawn: [
-                                    Class.ultimateAI,
-                                    Class.ultMultitoolAI,
-                                    Class.eliteRifleAI2
-                                ],
-                                amount: 1,
-                                nameType: 'a',
-                                spawnsAt: 'nest',
-                                broadcast: 'The elites have something prepared...',
-                                chance: 20
-                            }], [{ // Dead
-                                spawn: [
-                                    Class.fallenBoosterAI,
-                                    Class.fallenOverlordAI,
-                                    Class.fallenPistonAI,
-                                    Class.fallenAutoTankAI,
-                                    Class.fallenCavalcadeAI,
-                                    Class.fallenFighterAI,
-                                    Class.fallenDrifterAI
-                                ],
-                                amount: Math.floor(3 * Math.random()) + 1,
-                                nameType: 'a',
-                                spawnsAt: 'norm',
-                                broadcast: `The dead are rising...`,
-                                chance: 65
-                            }, {
-                                spawn: [
-                                    Class.reanimFarmerAI,
-                                    Class.reanimHeptaTrapAI,
-                                    Class.reanimUziAI,
-                                    Class.reanimBiohazardAI
-                                ],
-                                amount: 1,
-                                nameType: 'a',
-                                spawnsAt: 'norm',
-                                broadcast: `Many had sought for the day that they would return... Just not in this way...`,
-                                chance: 35
-                            }], [{ // Polygon
-                                spawn: [
-                                    Class.leviathanAI,
-                                    Class.nailerAI,
-                                    Class.gravibusAI,
-                                    Class.eggQueenTier1AI,
-                                    Class.demolisherAI,
-                                    Class.eggQueenTier2AI,
-                                    Class.conquistadorAI,
-                                    Class.hexadecagorAI,
-                                    Class.derogatorAI,
-                                    Class.octogeddonAI, // add rogue version
-                                    Class.octagronAI, // add rogue version
-                                    Class.palisadeAI // add rogue version
-                                ],
-                                amount: Math.floor(3 * Math.random()) + 1,
-                                nameType: 'castle',
-                                spawnsAt: 'norm',
-                                broadcast: `A strange trembling...`,
-                                chance: 50
-                            }, {
-                                spawn: [
-                                    Class.guardianAI,
-                                    Class.summonerAI,
-                                    Class.defenderAI
-                                ],
-                                amount: 3,
-                                nameType: 'a',
-                                spawnsAt: 'nest',
-                                broadcast: `The original trio...`,
-                                chance: 34.5
-                            }, {
-                                spawn: [
-                                    Class.constAI,
-                                    Class.bowAI,
-                                    Class.xyvAI
-                                ],
-                                amount: 1,
-                                nameType: 'castle',
-                                spawnsAt: 'norm',
-                                broadcast: `A grand disturbance is on the horizon...`,
-                                chance: 14.5
-                            }, {
-                                spawn: [
-                                    Class.greenGuardianAI,
-                                    Class.s2_22AI,
-                                    Class.at4_bwAI,
-                                    Class.hb3_37AI
-                                ],
-                                amount: 1,
-                                nameType: 'a',
-                                spawnsAt: 'nest',
-                                broadcast: `Security protocol initiated...`,
-                                chance: 1
-                            }], [{ // Crasher
-                                spawn: [
-                                    Class.trapeFighterAI,
-                                    Class.visUltimaAI,
-                                    Class.gunshipAI,
-                                    Class.messengerAI,
-                                    Class.pulsarAI,
-                                    Class.colliderAI,
-                                    Class.deltrabladeAI,
-                                    Class.alphaSentryAI,
-                                    Class.constructionistAI,
-                                    Class.vanguardAI,
-                                    Class.magnetarAI,
-                                    Class.kioskAI,
-                                    Class.aquamarineAI,
-                                    Class.blitzkriegAI,
-                                    Class.sliderAI,
-                                    Class.trapperzoidAI,
-                                    Class.quasarAI,
-                                    Class.bluestarAI,
-                                    Class.rs1AI,
-                                    Class.rs2AI,
-                                    Class.curveplexAI,
-                                    Class.streakAI,
-                                    Class.goldenStreakAI
-                                ],
-                                amount: Math.floor(3 * Math.random()) + 1,
-                                nameType: 'castle',
-                                spawnsAt: 'norm',
-                                broadcast: `Influx detected...`,
-                                chance: 100
-                            }], [{ // Artificial
-                                spawn: [
-                                    Class.cometAI,
-                                    Class.brownCometAI,
-                                    Class.atriumAI,
-                                    Class.dropshipAI,
-                                    Class.asteroidAI
-                                ],
-                                amount: 1,
-                                nameType: 'castle',
-                                spawnsAt: 'nest',
-                                broadcast: `You're gonna regret this...`,
-                                chance: 70
-                            }, {
-                                spawn: [
-                                    Class.orangicusAI,
-                                    Class.applicusAI,
-                                    Class.lemonicusAI,
-                                    Class.lavendicusAI
-                                ],
-                                amount: 1,
-                                nameType: 'castle',
-                                spawnsAt: 'norm',
-                                broadcast: `Smells like fruit...`,
-                                chance: 10
-                            }, {
-                                spawn: [
-                                    Class.sassafrasAI
-                                ],
-                                amount: 1,
-                                nameType: 'sassafras',
-                                spawnsAt: ["roid", "rock"][Math.floor(2 * Math.random())],
-                                broadcast: `i like crackers`,
-                                chance: 10
-                            }, {
-                                spawn: [
-                                    Class.snowflakeAI
-                                ],
-                                amount: 1,
-                                nameType: 'castle',
-                                spawnsAt: 'nest',
-                                broadcast: `Ice age coming, ice age coming...`,
-                                chance: 10
-                            }], [{ // Army
-                                spawn: [
-                                    Class.armySentrySwarmAI,
-                                    Class.armySentryGunAI,
-                                    Class.armySentryTrapAI,
-                                    Class.armySentryRangerAI,
-                                    Class.armySentrySwarmAI,
-                                    Class.armySentryGunAI,
-                                    Class.armySentryTrapAI,
-                                    Class.armySentryRangerAI
-                                ],
-                                amount: 8,
-                                nameType: 'castle',
-                                spawnsAt: 'nest',
-                                broadcast: `Sentries unite...`,
-                                chance: 100
-                            }]
-                        ];
 
-                        let chosen = (() => {
-                            let choice = bosses[Math.floor(Math.random() * bosses.length)];
-                            let random = Math.random() * 100 + 1;
-                            let chanceAmount = choice[0].chance;
-                            let i;
+            function newSpawnBosses(census) {
+                const bossClasses = [
+                    // 0: Elites
+                    [{
+                        bosses: [
+                            Class.alphaSentryAI,
+                            Class.atriumAI,
+                            Class.cutterAI,
+                            Class.eliteBasicAI,
+                            Class.eliteBattleshipAI,
+                            Class.eliteBorerAI,
+                            Class.eliteDestroyerAI,
+                            Class.eliteDirectorAI,
+                            Class.eliteEngieAI,
+                            Class.eliteGunnerAI,
+                            Class.eliteInfernoAI,
+                            Class.eliteMachineAI,
+                            Class.elitePelleterAI,
+                            Class.eliteRailgunAI,
+                            Class.eliteShrapnelAI,
+                            Class.eliteSidewindAI,
+                            Class.eliteSniperAI,
+                            Class.eliteSprayerAI,
+                            Class.eliteTrapAI,
+                            Class.eliteTwinAI,
+                            (ran.dice(150)) ? Class.goldenMladicAI : Class.mladicAI,
+                            Class.terrorhedronAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'a',
+                        spawns_at: room.presentNests,
+                        broadcast: `By the orders of Lady Artemis…`,
+                        chance: 70,
+                    }, {
+                        bosses: [
+                            Class.eliteCarpenterAI,
+                            Class.eliteRifleAI2,
+                            Class.ultimateAI
+                        ],
+                        amount: 1,
+                        name_pool: 'a',
+                        spawns_at: room.presentNests,
+                        broadcast: `The elites have something prepared…`,
+                        chance: 30
+                    }],
+                    // 1: Crashers
+                    [{
+                        bosses: [
+                            Class.eliteMinesweeperAI,
+                            Class.guardianAI,
+                            Class.leviathanAI,
+                            Class.magnetarAI,
+                            Class.metalCrasherBossAI,
+                            Class.pulsarAI,
+                            Class.quasarAI,
+                            (ran.dice(150)) ? Class.goldStreakAI : Class.streakAI,
+                            Class.trapeFighterAI,
+                            Class.trapperzoidAI
+                        ],
+                        amount: ran.irandomRange(2, 4),
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        chance: 26
+                    }, {
+                        bosses: [
+                            Class.at4_bwAI,
+                            Class.cranberryGuardianAI,
+                            Class.colliderAI,
+                            Class.curveplexAI,
+                            Class.greenGuardianAI,
+                            Class.hb3_37AI,
+                            Class.lavenderGuardianAI,
+                            Class.orbitalspaceAI,
+                            Class.purifierBossAI,
+                            Class.rs1AI,
+                            Class.tealGuardianAI,
+                            Class.sliderAI,
+                            Class.terminatorBossAI,
+                            Class.vanguardAI
+                        ],
+                        amount: ran.irandomRange(2, 3),
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        chance: 23
+                    }, {
+                        bosses: [
+                            Class.bluestarAI,
+                            Class.deltrabladeAI,
+                            Class.fueronAI,
+                            Class.gunshipAI,
+                            Class.icecolliderAI,
+                            Class.kioskAI,
+                            Class.morningstarAI,
+                            Class.neutronStarAIWeak,
+                            Class.visUltimaAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        chance: 20
+                    }, {
+                        bosses: [
+                            Class.carryingGunshipAI,
+                            Class.greendeltrabladeAI,
+                            Class.torchMorningstarAIWeak
+                        ],
+                        amount: ran.irandomRange(1, 2),
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        chance: 17
+                    }, {
+                        bosses: [
+                            Class.aquamarineAI,
+                            Class.industrianAIWeak
+                        ],
+                        amount: 1,
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        chance: 14
+                    }],
+                    // 2: Polygons
+                    [{
+                        bosses: [
+                            Class.eggBossTier1AI,
+                            Class.eggQueenTier1AI,
+                            Class.eggSpiritTier1AI,
+                            Class.ultraCannonAI
+                        ],
+                        amount: ran.irandomRange(1, 4),
+                        name_pool: 'b',
+                        spawns_at: 'norm',
+                        broadcast: `A strange trembling…`,
+                        chance: 24
+                    }, {
+                        bosses: [
+                            Class.bowAI,
+                            Class.eliteDustbowlAI,
+                            Class.mk1AI,
+                            Class.splitterSummoner,
+                            Class.squareNestKeeperAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'b',
+                        spawns_at: ['norm', '#EFC74B'],
+                        broadcast: `A strange trembling…`,
+                        chance: 21
+                    }, {
+                        bosses: [
+                            Class.defenderAI,
+                            Class.redBurstAI,
+                            Class.skimbossAI,
+                            Class.tk1AI,
+                            Class.triangleNestKeeperAI,
+                            Class.triSeekerAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'b',
+                        spawns_at: ['norm', '#E7896D'],
+                        broadcast: `A strange trembling…`,
+                        chance: 18
+                    }, {
+                        bosses: [
+                            Class.nestKeeperAI,
+                            Class.pentagonBossTier1AI
+                        ],
+                        amount: ran.irandomRange(1, 2),
+                        name_pool: 'b',
+                        spawns_at: ['norm', 'nest'],
+                        broadcast: `A strange trembling…`,
+                        chance: 15
+                    }, {
+                        bosses: [
+                            Class.demolisherAI,
+                            Class.hexagonBossTier1AI,
+                            Class.hexagonNestKeeperAI
+                        ],
+                        amount: ran.irandomRange(1, 2),
+                        name_pool: 'b',
+                        spawns_at: ['norm', '#7ADBBC'],
+                        broadcast: `A strange trembling…`,
+                        chance: 12
+                    }, {
+                        bosses: [
+                            Class.heptagonNestKeeperAI,
+                            Class.octagonNestKeeperAI,
+                            Class.xyvAI
+                        ],
+                        amount: 1,
+                        name_pool: 'b',
+                        spawns_at: 'norm',
+                        broadcast: `A strange trembling…`,
+                        chance: 10
+                    }],
+                    // 3: Undeads
+                    [{
+                        bosses: [
+                            Class.fallenAutoTankAI,
+                            Class.fallenBoosterAI,
+                            Class.fallenCavalcadeAI,
+                            Class.fallenDesperadoAI,
+                            Class.fallenDirigibleAI,
+                            Class.fallenDrifterAI,
+                            Class.fallenFighterAI,
+                            Class.fallenFlamethrowerAI,
+                            Class.fallenHybridAI,
+                            Class.fallenOctoAI,
+                            Class.fallenOverlordAI,
+                            Class.fallenPentaAI,
+                            Class.fallenPistonAI,
+                            Class.fallenRangerAI,
+                            Class.fallenUziAI
+                        ],
+                        amount: ran.irandomRange(2, 4),
+                        name_pool: 'legacy',
+                        spawns_at: 'norm',
+                        broadcast: `The dead are rising…`,
+                        chance: 65
+                    }, {
+                        bosses: [
+                            Class.reanimBiohazardAI,
+                            Class.reanimCacheAI,
+                            Class.reanimCorpsAI,
+                            Class.reanimFarmerAI,
+                            Class.reanimGasserAI,
+                            Class.reanimHeptaTrapAI,
+                            Class.reanimKnightAI,
+                            Class.reanimOverfireAI,
+                            Class.reanimPentaBlasterAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'legacy',
+                        spawns_at: 'norm',
+                        broadcast: `Many had sought for the day that they would return… Just not in this way…`,
+                        chance: 35
+                    }],
+                    // 4: Splitters
+                    [{
+                        bosses: [
+                            Class.bowAI,
+                            Class.constAI,
+                            Class.snowflakeAI,
+                            Class.splitterSummoner,
+                            Class.vivisectionAI,
+                            Class.xyvAI
+                        ],
+                        amount: ran.irandomRange(1, 2),
+                        name_pool: 'castle',
+                        spawns_at: 'norm',
+                        chance: 50
+                    }, {
+                        bosses: [
+                            Class.colliderAI,
+                            Class.icecolliderAI,
+                            Class.neutronStarAIWeaker,
+                            Class.redBurstAI
+                        ],
+                        amount: ran.irandomRange(1, 2),
+                        name_pool: 'castle',
+                        spawns_at: 'nest',
+                        chance: 50
+                    }],
+                    // 5: Artificials
+                    [{
+                        bosses: [
+                            Class.bitskriegAI,
+                            Class.jetBossAI,
+                            Class.pentafrasAI,
+                            Class.sarfassasAI,
+                            Class.sassafrasAI,
+                            Class.superbirdAI,
+                            Class.tetrafrasAI,
+                            Class.ultMultitoolAI
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'castle',
+                        spawns_at: ["roid", "rock"],
+                        chance: 100
+                    }],
+                    // 6: Mysticals
+                    [{
+                        bosses: [
+                            Class.arcanistAI,
+                            Class.enchantressAI,
+                            Class.exorcistorAI,
+                            Class.invokeAI,
+                            Class.occultAI,
+                            Class.runecastAI,
+                            Class.shamanAI,
+                            Class.sorcererAI,
+                            Class.summonerAI
+                        ],
+                        amount: 2,
+                        name_pool: 'a-z',
+                        spawns_at: 'norm',
+                        chance: 100
+                    }],
+                    // 7: Army
+                    [{
+                        bosses: [
+                            Class.armySentryGunAI,
+                            Class.armySentryRangerAI,
+                            Class.armySentrySwarmAI,
+                            Class.armySentryTrapAI
+                        ],
+                        amount: ran.irandomRange(20, 50),
+                        name_pool: 'c',
+                        spawns_at: room.presentNests,
+                        broadcast: `Sentries unite…`,
+                        arrival: `The Sentry Army has arrived!`,
+                        chance: 100
+                    }],
+                    // 8: Generics
+                    [{
+                        bosses: [
+                            Class.applicusAI,
+                            Class.article13AI,
+                            Class.asteroidAI,
+                            Class.astraAI,
+                            Class.battlegonAI,
+                            Class.beggarsBaneAI,
+                            Class.bitskriegAI,
+                            Class.blitzkriegAI,
+                            Class.cometAI,
+                            Class.confidentialAI,
+                            Class.conquistadorAI,
+                            Class.constructionistAI,
+                            Class.derogatorAI,
+                            Class.dropshipBossAI,
+                            Class.gegenscheinAI,
+                            Class.greenGearBossAI,
+                            Class.hexadecagorAI,
+                            Class.hyperionAI,
+                            Class.icePalisadeAI,
+                            Class.kingAI,
+                            Class.lavendicusAI,
+                            Class.leaferBossAI,
+                            Class.lemonicusAI,
+                            Class.moonRabbitAIFrame0,
+                            Class.nailerAI,
+                            Class.octagronAI,
+                            Class.octogeddonAI,
+                            Class.orangicusAI,
+                            Class.palisadeAI,
+                            Class.puzzlePieceBossAI,
+                            Class.redistributionAI,
+                            Class.roguemothershipAI,
+                            Class.spreaderBossAI,
+                            Class.thunderstormAI,
+                            Class.trapDwellerAI,
+                            Class.ultMultitoolAI,
+                            Class.ultraPuntAI,
+                            Class.vacuoleAI,
+                            Class.youkaiBossAIFrame31
+                        ],
+                        amount: ran.irandomRange(1, 3),
+                        name_pool: 'all',
+                        spawns_at: 'random',
+                        chance: 100
+                    }]
+                ];
 
-                            for (i = 0; i < choice.length; i++) {
-                                if (chanceAmount > random) break;
-                                chanceAmount += choice[i + 1].chance;
-                            }
+                function chooseBossClass(classes) {
+                    let choice = classes[Math.floor(Math.random() * classes.length)];
+                    let random = Math.random() * 100 + 1;
+                    let chanceAmount = choice[0].chance;
+                    let i;
 
-                            return choice[i];
-                        })();
+                    for (i = 0; i < choice.length; i++) {
+                        if (chanceAmount > random) break;
+                        chanceAmount += choice[i + 1].chance;
+                    }
 
-                        sockets.broadcast(chosen.broadcast);
-
-                        boss.prepareToSpawn(chosen.spawn, chosen.amount, chosen.nameType, chosen.spawnsAt);
-                        setTimeout(boss.spawn, 3000);
-                    } else if (!census.miniboss) timer++;
+                    return choice[i];
                 };
-            })();
-
-            class Spawner {
-                constructor(entities) {
-                    this.entities = [];
-                    for (let entity of entities) {
-                        if (typeof entity === "string") {
-                            this.entities.push(entity)
-                            continue;
-                        }
-                        while (entity[1]--) {
-                            this.entities.push(entity[0])
+                function buildArrival(names, amount, override) {
+                    let message = "";
+                    
+                    if (override.length) {
+                        message = override;
+                    } else {
+                        if (amount === 1) {
+                            message = names[0] + " has arrived!";
+                        } else {
+                            for (let i = 0; i < amount - 2; i++) message += names[i] + ", ";
+                            message += names[amount - 2] + " and " + names[amount - 1] + " have arrived!";
                         }
                     }
-                    this.bias = 0
-                    this.biasInfluence = 1
-                }
-                getEntity() { // Chance to get that entity gets lower the further down it is
-                    return this.entities[Math.min(Math.random() * this.entities.length * (1 - Math.random() * this.biasInfluence) | 0, this.entities.length - 1)]
-                }
-            }
 
+                    return message;
+                };
+
+                if (room.bossTimer > c.BOSS_SPAWN_TIMER && ran.dice(3 * c.BOSS_SPAWN_TIMER - room.bossTimer)) {
+                    room.bossTimer = 0;
+                    
+                    let chosen = chooseBossClass(bossClasses);
+                    let bosses = chosen.bosses ?? [Class.genericTank],
+                        amount = chosen.amount ?? 1,
+                        name_pool = chosen.name_pool ?? '',
+                        location = chosen.spawns_at ?? 'norm',
+                        broadcast = chosen.broadcast ?? '',
+                        arrival = chosen.arrival ?? '';
+                    let bossNames = ran.chooseBossName(name_pool, amount),
+                        arrivalNames = [];
+                    
+                    if (broadcast.length) sockets.broadcast(broadcast, '#FFEB8E');
+                    setTimeout(() => {
+                        sockets.broadcast((amount < 2) ? 'A boss is coming…' : 'Bosses are coming…', '#F04F54');
+                        setTimeout(() => {
+                            for (let n = 0; n < amount; n++) {
+                                let spot, max = 150;
+                                do spot = (Array.isArray(location)) ? room.randomType(ran.choose(location)) : (location === 'random') ? room.random() : room.randomType(location);
+                                while (dirtyCheck(spot, 500) && max-- > 0);
+
+                                let boss = new Entity(spot);
+                                boss.team = -100;
+                                boss.define(ran.choose(bosses));
+                                if (!boss.name) boss.name = bossNames[n];
+                                boss.miscIdentifier = "Natural Miniboss";
+                                arrivalNames.push(boss.name);
+                            }
+                            sockets.broadcast(buildArrival(arrivalNames, amount, arrival), '#F04F54');
+                        }, ran.randomRange(3500, 5000));
+                    }, 3000);
+                } else if (!census.naturalMiniboss) room.bossTimer++;
+            };
 
             const SancSpawner = new Spawner([
                 ["eggSanctuary", 3],
                 ["squareSanctuary", 3],
                 ["triSanctuary", 2],
                 "pentaSanctuary",
-                "alphaCrasher",
+                "hexaSanctuary",
+                "crasherSanctuary",
+                "snowballSanctuary",
                 "bowedSanc",
-                "sunKing",
-                "snowballSanctuary"
+                "sunKing"
             ]);
             let sancCooldown = 0
             const spawnSancs = (census, id) => {
@@ -12316,122 +19982,47 @@ function flatten(data, out, playerContext = null) {
                 if (census.sancs < room.maxSancs) {
                     let spot,
                         max = 10;
-                    do spot = room.randomType("norm");
+                    do spot = room.randomType(ran.choose(["norm", "rock", "roid"].filter(t => room[t]?.length)));
                     while (dirtyCheck(spot, 120) && max-- > 0);
 
                     let sanc = SancSpawner.getEntity();
 
                     let o = new Entity(spot);
                     o.define(Class[sanc]);
-					o.roomLayerless = true;
                     o.team = -100;
-                    o.facing = ran.randomAngle()
-                    let ogOnDead = o.onDead
-                    o.onDead = function(arg){
-                        sancCooldown = Date.now()
-                        ogOnDead.apply(this, [arg])
-                    }
-                    o.sandboxId = id
-					sockets.broadcast(`The ${o.label} has spawned!`);
-					o.miscIdentifier = "Sanctuary Boss";
+                    o.name = "Sanctuary";
+                    o.facing = ran.randomAngle();
+                    let ogOnDead = o.onDead;
+                    o.onDead = function(arg) {
+                        sancCooldown = Date.now();
+                        ogOnDead.apply(this, [arg]);
+                    };
+                    o.roomLayerless = true;
+                    o.sandboxId = id;
+					o.miscIdentifier = "Sanctuary";
+					sockets.broadcast(`A ${o.label} has spawned!`);
                 }
             }
 
-            const CrasherSpawner = new Spawner([
-                // CRASHERS
-                "crasher",
-                /*"semiCrushCrasher",
-                "fastCrasher",
-                "longCrasher",
-                "minesweepCrasher",
-                "bladeCrasher",
-                "invisoCrasher",
-                "grouperSpawn",
-                "curvyBoy",
-                "kamikazeCrasher",
-                "wallerCrasher",
-                "redRunner1",
-                //"redRunner2",
-                //"redRunner3",
-                //"redRunner4",
-                "iceCrusher",
-                "greenRunner",
-                "destroyCrasher",
-                "boomCrasher",
-                "poisonBlades",
-                "visDestructia",
-                "megaCrushCrasher",
-                "walletCrasher",
-                "blueRunner",
-                "torchKamikaze",
-                "orbitcrasher",
-                "seerCrasher",
-                "tridentCrasher",
-            
-                // SENTRIES
-                "sentrySwarmAI",
-                "sentryTrapAI",
-                "sentryGunAI",
-                "sentryRangerAI",
-                "flashSentryAI",
-                "semiCrushSentryAI",
-                "crushSentryAI",
-                "bladeSentryAI",
-                "skimSentryAI",
-                "squareSwarmerAI",
-                "squareGunSentry",
-                "crusaderCrash",
-                "greenSentrySwarmAI",
-                "awp39SentryAI",
-                "flashGunnerAI",
-                "varpAI",
-                "scorcherSentry"*/
-            ]);
-            const spawnCrasher = (census, id) => {
-                if (room.modelMode) return;
-                if (census.crasher < room.maxCrashers) {
-                    let spot,
-                        max = 10;
-                    do spot = room.randomType("nest");
-                    while (dirtyCheck(spot, 30) && max-- > 0);
-
-                    let crasher = CrasherSpawner.getEntity();
-                    let times = Math.random() > 0.25 ? 1 : (Math.random() * 4 | 0) + 1;
-
-                    for (let i = 0; i < times; i++) {
-                        let o = new Entity(spot);
-                        o.define(Class[crasher], ran.chance(c.SHINY_CHANCE) ? { isShiny: true } : {});
-						o.roomLayerless = true;
-                        o.team = -100;
-                        o.damage *= 1 / 2;
-                        if (!o.dangerValue) {
-                            o.dangerValue = 3 + Math.random() * 3 | 0;
-                        }
-                        o.sandboxId = id
-						o.facing = ran.randomAngle();
-                    }
-                }
-            };
             const makeNPCs = (() => {
                 if (room.modelMode) return;
-                if (c.serverName.includes("Boss")) {
+                if (c.IS_BOSS_RUSH) {
                     let sanctuaries = 0;
-                    let spawn = (loc, team) => {
+                    let spawn = (loc, team, sanc) => {
                         let o = new Entity(loc);
-                        o.define(Class[team === -1 ? "trapperDominatorAISanctuaryNerf" : "dominatorNerf"]);
+                        o.define(Class[team === -1 ? sanc : "dominatorNerf"]);
                         o.team = team;
                         o.color = getTeamColor(team);
                         o.skill.score = 111069;
                         o.settings.leaderboardable = false
-                        //o.name = "Dominator";
+                        o.name = "Sanctuary";
                         //o.SIZE = c.WIDTH / c.X_GRID / 10;
                         o.isDominator = true;
-                        o.controllers = [new ioTypes.nearestDifferentMaster(o), new ioTypes.spinWhileIdle(o), new ioTypes.alwaysFire(o)];
                         o.onDead = function () {
                             if (o.team === -100) {
-                                spawn(loc, -1);
+                                spawn(loc, -1, sanc);
                                 room.setType("bas1", loc);
-                                sockets.broadcast("A sanctuary has been recaptured");
+                                sockets.broadcast("A sanctuary has been recaptured!");
                                 if (sanctuaries < 1) {
                                     sockets.broadcast("The game is saved!");
                                 }
@@ -12458,19 +20049,33 @@ function flatten(data, out, playerContext = null) {
                                     }
                                     tick(91);
                                 }
-                                spawn(loc, -100);
+                                spawn(loc, -100, sanc);
                                 room.setType("domi", loc);
                                 sockets.broadcast("A sanctuary has been captured by the bosses!");
                             }
                         }
                     }
                     for (let loc of room["bas1"]) {
+                        let sancType = ran.choose([
+                            "destroyerDominatorAISanctuary",
+                            "gunnerDominatorAISanctuary",
+                            "trapperDominatorAISanctuary",
+                            "droneDominatorAISanctuary",
+                            "steamrollDominatorAISanctuary",
+                            "autoDominatorAISanctuary",
+                            "crockettDominatorAISanctuary",
+                            "swarmerDominatorAISanctuary",
+                            //"pliniDominatorAISanctuary", (Needs balancing.)
+                            //"fortifiedDominatorAISanctuary", (Needs balancing.)
+                            "vulcDominatorAISanctuary",
+                            "hurriDominatorAISanctuary"
+                        ]);
                         sanctuaries++;
-                        spawn(loc, -1);
+                        spawn(loc, -1, sancType);
                     }
                     bossRushLoop();
                 }
-                if (room.gameMode === "tdm" && c.DO_BASE_DAMAGE && !c.serverName.includes("Boss Rush")) {//preventing base protectors spawning on domis in siege
+                if (room.gameMode === "tdm" && c.DO_BASE_DAMAGE && !c.IS_BOSS_RUSH) {//preventing base protectors spawning on domis in siege
                     let spawnBase = (loc, team, type) => {
                         let o = new Entity(loc);
                         o.define(type);
@@ -12483,14 +20088,39 @@ function flatten(data, out, playerContext = null) {
                             spawnBase(loc, i, Class.baseProtector);
                         }
                         for (let loc of room["bad" + i]) {
-                            spawnBase(loc, i, Class.baseDroneSpawner);
+                            spawnBase(loc, i, ran.choose([ // Dupes act as a weight system lo
+                                Class.newBaseDroneSpawner,
+                                Class.newBaseDroneSpawner,
+                                Class.newBaseDroneSpawner,
+                                Class.newBaseDroneSpawner,
+
+                                Class.baseAutoDroneSpawner,
+                                Class.baseAutoDroneSpawner,
+                                Class.baseAutoDroneSpawner,
+
+                                Class.baseFastDroneSpawner,
+                                Class.baseFastDroneSpawner,
+                                Class.baseFastDroneSpawner,
+
+                                Class.baseMinionSpawner,
+                                Class.baseMinionSpawner,
+
+                                Class.baseSunchipSpawner,
+                                Class.baseSunchipSpawner,
+
+                                Class.baseDetDroneSpawner
+                            ]));
                         }
                     }
-                    if ((c.serverName.includes("Domination") || c.SPAWN_DOMINATORS) && room.domi.length > 0) (new Domination()).init();
                     if (c.SOCCER) soccer.init();
                     if (c.serverName.includes("Mothership"))
                         for (let i = 1; i < room.teamAmount + 1; i++)
                             for (let loc of room["mot" + i]) mothershipLoop(loc, i);
+                }
+                if ((c.serverName.includes("Domination") || c.SPAWN_DOMINATORS) && room.domi.length > 0) {
+                    let domination = new Domination();
+                    domination.init();
+                    if (c.DOMINATOR_SHUFFLE_TIMER > 0) domination.shuffle(c.DOMINATOR_SHUFFLE_TIMER);
                 }
                 if (c.serverName.includes("Void Walkers")) {
                     util.log("Initializing Void Walkers")
@@ -12509,193 +20139,6 @@ function flatten(data, out, playerContext = null) {
                         if (c.SANDBOX) {
                             for (let i = 0; i < global.sandboxRooms.length; i++) {
                                 let room = global.sandboxRooms[i];
-                                //// Sandbox census
-                                let census = {
-                                    crasher: 0,
-                                    miniboss: 0,
-                                    tank: 0,
-                                    trap: 0
-                                }
-                                entities.forEach(instance => {
-                                    if (instance.sandboxId === room.id && census[instance.type] != null) census[instance.type]++;
-                                });
-
-                                if (room.spawnCrashers) spawnCrasher(census, room.id);
-                                //spawnBosses(census, room.id); Not in sandbox
-
-                                //// The rest of the sandbox stuff like bots and buttons
-                                // Set up dummies
-                                if (!room.didSetUp) {
-                                    room.didSetUp = true
-
-                                    function spawnDpsButton() {
-                                        const button = new Entity({
-                                            x: 500,
-                                            y: 500
-                                        });
-                                        button.define(Class.button);
-                                        button.pushability = button.PUSHABILITY = 0;
-                                        button.godmode = true
-                                        button.team = -101;
-                                        button.totalDamage = 0
-                                        button.averageDps = []
-                                        button.lastHitTime = Date.now()
-                                        button.sandboxId = room.id
-                                        button.settings.noNameplate = false
-                                        button.type = "utility"
-                                        button.hitsOwnType = "never"
-                                        button.settings.leaderboardable = false
-                                        button.SIZE = 50
-                                        button.DAMAGE = 15
-                                        button.onDamaged = function (me, them, amount) {
-                                            if (!amount) return;
-                                            button.totalDamage += amount
-                                        }
-                                        button.onTick = function () {
-                                            if (Date.now() - button.lastHitTime > 50) {
-                                                button.lastHitTime = Date.now()
-
-                                                if (button.averageDps.length > 30) {
-                                                    button.averageDps.shift()
-                                                }
-                                                button.averageDps.push(button.totalDamage)
-
-                                                button.name = `${(button.averageDps.reduce((total, value) => total + value, 0) / button.averageDps.length).toFixed(2)} Average DPS`
-                                                button.totalDamage = 0
-                                            }
-                                        }
-                                        button.onDead = spawnDpsButton
-                                        button.refreshBodyAttributes();
-                                    }
-                                    spawnDpsButton()
-
-                                    let explainText = new Entity({
-                                        x: -45,
-                                        y: -75
-                                    })
-                                    explainText.define(Class.text)
-                                    explainText.name = "Ram into the buttons to press them"
-                                    explainText.SIZE = 20
-                                    explainText.sandboxId = room.id
-
-                                    function spawnBotButton(status) {
-                                        const button = new Entity({
-                                            x: -45,
-                                            y: -30
-                                        });
-                                        button.define(Class.button);
-                                        button.pushability = button.PUSHABILITY = 0;
-                                        button.godmode = true
-                                        button.REGEN = 1000000
-                                        button.team = -101;
-                                        button.totalDamage = 0
-                                        button.averageDps = []
-                                        button.lastHitTime = Date.now()
-                                        button.sandboxId = room.id
-                                        button.settings.noNameplate = false
-                                        button.type = "utility"
-                                        button.hitsOwnType = "never"
-                                        button.settings.leaderboardable = false
-                                        button.color = status ? 11 : 12
-                                        button.name = status ? "Bots enabled" : "Bots disabled"
-                                        if (status) {
-                                            room.botCap = 1
-                                        } else {
-                                            room.botCap = 0
-                                        }
-                                        button.onDamaged = function (me, them, amount) {
-                                            if (!them.isPlayer) {
-                                                return
-                                            }
-                                            me.kill()
-                                        }
-                                        button.onDead = () => {
-                                            setTimeout(() => {
-                                                spawnBotButton(!status)
-                                            }, 1000)
-                                        }
-                                        button.refreshBodyAttributes();
-                                    }
-                                    spawnBotButton(false)
-
-                                    function crasherSpawningButton(status) {
-                                        const button = new Entity({
-                                            x: -45,
-                                            y: 60
-                                        });
-                                        button.define(Class.button);
-                                        button.pushability = button.PUSHABILITY = 0;
-                                        button.godmode = true
-                                        button.team = -101;
-                                        button.totalDamage = 0
-                                        button.averageDps = []
-                                        button.lastHitTime = Date.now()
-                                        button.sandboxId = room.id
-                                        button.settings.noNameplate = false
-                                        button.type = "utility"
-                                        button.hitsOwnType = "never"
-                                        button.settings.leaderboardable = false
-                                        button.color = status ? 11 : 12
-                                        button.name = status ? "Crashers enabled" : "Crashers disabled"
-                                        if (status) {
-                                            room.spawnCrashers = true
-                                        } else {
-                                            room.spawnCrashers = false
-                                        }
-                                        button.onDamaged = function (me, them, amount) {
-                                            if (!them.isPlayer) {
-                                                return
-                                            }
-                                            me.kill()
-                                        }
-                                        button.onDead = () => {
-                                            setTimeout(() => {
-                                                crasherSpawningButton(!status)
-                                            }, 1000)
-                                        }
-                                        button.refreshBodyAttributes();
-                                    }
-                                    crasherSpawningButton(false)
-
-                                    function foodSpawningButton(status) {
-                                        const button = new Entity({
-                                            x: -45,
-                                            y: 150
-                                        });
-                                        button.define(Class.button);
-                                        button.pushability = button.PUSHABILITY = 0;
-                                        button.godmode = true
-                                        button.team = -101;
-                                        button.totalDamage = 0
-                                        button.averageDps = []
-                                        button.lastHitTime = Date.now()
-                                        button.sandboxId = room.id
-                                        button.settings.noNameplate = false
-                                        button.type = "utility"
-                                        button.hitsOwnType = "never"
-                                        button.settings.leaderboardable = false
-                                        button.color = status ? 11 : 12
-                                        button.name = status ? "Food enabled" : "Food disabled"
-                                        if (status) {
-                                            room.spawnFood = true
-                                        } else {
-                                            room.spawnFood = false
-                                        }
-                                        button.onDamaged = function (me, them, amount) {
-                                            if (!them.isPlayer) {
-                                                return
-                                            }
-                                            me.kill()
-                                        }
-                                        button.onDead = () => {
-                                            setTimeout(() => {
-                                                foodSpawningButton(!status)
-                                            }, 1000)
-                                        }
-                                        button.refreshBodyAttributes();
-                                    }
-                                    foodSpawningButton(true)
-                                }
 
                                 // Do bots, remove dead ones first
                                 room.bots = room.bots.filter(e => {
@@ -12730,24 +20173,9 @@ function flatten(data, out, playerContext = null) {
                                 }
                             }
                         } else {
-                            let census = {
-                                crasher: 0,
-                                miniboss: 0,
-                                tank: 0,
-                                sancs: 0
-                            };
 
-                            entities.forEach(instance => {
-                                if (census[instance.type] != null) {
-                                    census[instance.type]++;
-                                } else if (instance.miscIdentifier === "Sanctuary Boss") {
-                                    census.sancs++
-                                }
-                            });
-
-                            spawnCrasher(census);
-                            spawnBosses(census);
-                            spawnSancs(census)
+                            newSpawnBosses(room.census);
+                            spawnSancs(room.census);
 
                             if (room.maxBots > 0) {
                                 bots = bots.filter(body => !body.isGhost && body.isAlive());
@@ -12769,22 +20197,26 @@ function flatten(data, out, playerContext = null) {
                     }
                 };
             })();
+            return () => {
+                if (!room.modelMode) makeNPCs();
+            };
+        })();
+
+
+        const minorMaintainLoop = (() => {
+
             const createFood = (() => {
                 function spawnSingle(location, type, id) {
-                    if (c.SANDBOX && global.sandboxRooms.length < 1) {
-                        return {};
-                    }
+                    if (c.SANDBOX && global.sandboxRooms.length < 1) return {};
                     let o = new Entity(location);
                     o.define(Class[type], ran.chance(c.SHINY_CHANCE) ? { isShiny: true } : {});
-					o.roomLayerless = true;
-                    o.ACCELERATION = .015 / (o.size * 0.2);
-                    o.facing = ran.randomAngle();
+                    o.roomLayerless = true;
+                    // o.ACCELERATION = .015 / (o.size * 0.2);
+                    o.facing = ran.randomAngle(); 
                     o.team = -100;
                     o.PUSHABILITY *= .5;
-                    if (c.SANDBOX) {
-                        o.sandboxId = id || ran.choose(global.sandboxRooms).id;
-                    }
-                    o.refreshBodyAttributes()
+                    if (c.SANDBOX) o.sandboxId = id || ran.choose(global.sandboxRooms).id;
+                    o.refreshBodyAttributes();
                     return o;
                 };
 
@@ -12796,105 +20228,459 @@ function flatten(data, out, playerContext = null) {
                     "pentagon"
                 ])
                 function spawnFood(id) {
-                    let location, i = 8;
+                    let location,
+                        i = 12,
+                        angle = Math.random() * Math.PI * 2;
                     do {
                         if (!i--) return;
                         location = room.random();
-                    } while (dirtyCheck(location, 100) && room.isIn("nest", location));
+                    } while (dirtyCheck(location, 100) && !room.isInNorm(location));
+                    let x = location.x + Math.cos(angle) * (Math.random() * 50),
+                        y = location.y + Math.sin(angle) * (Math.random() * 50);
 
-                    // Spawn groups of food
-                    for (let i = 0, amount = (Math.random() * 20) | 0; i < amount; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        spawnSingle({
-                            x: location.x + Math.cos(angle) * (Math.random() * 50),
-                            y: location.y + Math.sin(angle) * (Math.random() * 50)
-                        }, FoodSpawner.getEntity(), id);
+                    if (!ran.chance(.05)) {
+                        // Spawn groups of food
+                        for (let i = 0, amount = (Math.random() * 30) | 0; i < amount; i++) {
+                            spawnSingle({ x: x, y: y }, FoodSpawner.getEntity(), id);
+                        }
+                    } else {
+                        // Spawn a special group of food
+                        spawnSingle({ x: x, y: y }, "lmfaoloser", id);
                     }
                 }
 
-                const NestSpawner = new Spawner([
-                    "pentagon",
-                    "betaPentagon",
-                    "alphaPentagon",
-                    "splitterPentagon",
-                ])
-                function spawnNestFood(id) {
+                const triNestSpawner = new Spawner(["nestTriangle"]);
+                const squareNestSpawner = new Spawner(["nestSquare"]);
+                const pentaNestSpawner = new Spawner((room.isHell) ? [
+                    ["nestPentagon", 8],
+                    ["nestBetaPentagon", 6],
+                    ["splitterPentagon", 5],
+                    ["protpentagon", 4],
+                    //["loveFlower", 3],
+                    //["alphaPentagon", 3],
+                    ["star", 2],
+                    "superstar"
+                ] : [
+                    ["nestPentagon", 7],
+                    ["nestBetaPentagon", 5],
+                    ["splitterPentagon", 4],
+                    ["protpentagon", 3],
+                    //["loveFlower", 2],
+                    //"alphaPentagon",
+                    "star"
+                ]);
+                const hexaNestSpawner = new Spawner([
+                    ["nestHexagon", 3],
+                    "nestBetaHexagon"
+                ]);
+                const heptaNestSpawner = new Spawner([
+                    ["nestHeptagon", 3],
+                    "nestBetaHeptagon"
+                ]);
+                const octaNestSpawner = new Spawner([
+                    ["nestOctagon", 4],
+                    "nestBetaOctagon"
+                ]);
+                const nonaNestSpawner = new Spawner([
+                    ["nestNonagon", 4],
+                    "nestBetaNonagon"
+                ]);
+                const decaNestSpawner = new Spawner([
+                    ["nestDecagon", 5],
+                    "nestBetaDecagon"
+                ]);
+                function spawnNestFood(n, id) {
                     let location, i = 8;
                     do {
                         if (!i--) return;
-                        location = room.randomType("nest");
+                        location = room.randomType(nestList[1][n]);
                     } while (dirtyCheck(location, 100))
-                    let shape = spawnSingle(location, NestSpawner.getEntity(), id);
-                    shape.isNestFood = true;
+                    let shape = spawnSingle(location, eval(nestList[0][n] + 'NestSpawner.getEntity()'), id);
+                    shape[`is${nestList[0][n].charAt(0).toUpperCase() + nestList[0][n].slice(1)}NestFood`] = true;
                 }
+
                 return () => {
                     // SANDBOX CENSUS
                     if (c.SANDBOX) {
                         for (let sbxroom of global.sandboxRooms) {
                             if (!sbxroom.spawnFood) continue;
-                            const census = (() => {
-                                let food = 0;
-                                let nestFood = 0;
+                            const foodCensus = (() => {
+                                let food = 0,
+                                    triNestFood = 0,
+                                    squareNestFood = 0,
+                                    pentaNestFood = 0,
+                                    hexaNestFood = 0,
+                                    heptaNestFood = 0,
+                                    octaNestFood = 0,
+                                    nonaNestFood = 0,
+                                    decaNestFood = 0;
                                 entities.forEach(instance => {
                                     if (instance.type === "food" && instance.sandboxId === sbxroom.id) {
-                                        if (instance.isNestFood) nestFood++;
+                                        if (instance.isTriNestFood) triNestFood++;
+                                        else if (instance.isSquareNestFood) squareNestFood++;
+                                        else if (instance.isPentaNestFood) pentaNestFood++;
+                                        else if (instance.isHexaNestFood) hexaNestFood++;
+                                        else if (instance.isHeptaNestFood) heptaNestFood++;
+                                        else if (instance.isOctaNestFood) octaNestFood++;
+                                        else if (instance.isNonaNestFood) nonaNestFood++;
+                                        else if (instance.isDecaNestFood) decaNestFood++;
                                         else food++;
                                     }
                                 });
                                 return {
                                     food,
-                                    nestFood
+                                    triNestFood,
+                                    squareNestFood,
+                                    pentaNestFood,
+                                    hexaNestFood,
+                                    heptaNestFood,
+                                    octaNestFood,
+                                    nonaNestFood,
+                                    decaNestFood
                                 };
                             })();
-                            if (census.food < room.maxFood) {
-                                spawnFood(sbxroom.id);
-                            }
-                            if (census.nestFood < room.maxNestFood) {
-                                spawnNestFood(sbxroom.id);
-                            }
+                            if (foodCensus.food < room.maxFood) spawnFood(sbxroom.id);
+                            for (let i = 0; i < nestList[0].length; i++) {
+                                if (room.maxAllNestFood) {
+                                    if (room[nestList[1][i]] && room[nestList[1][i]].length && foodCensus[nestList[0][i] + "NestFood"] < Math.ceil(room.maxAllNestFood / room.presentNests.length)) spawnNestFood(i, sbxroom.id);
+                                } else {
+                                    if (foodCensus[nestList[0][i] + "NestFood"] < room[`max${nestList[0][i].charAt(0).toUpperCase() + nestList[0][i].slice(1)}NestFood`]) spawnNestFood(i, sbxroom.id);
+                                }
+                            };
                         }
                         return
                     }
 
                     // NORMAL GAMEMODE CENSUS
-                    const census = (() => {
-                        let food = 0;
-                        let nestFood = 0;
+                    const foodCensus = (() => {
+                        let food = 0,
+                            triNestFood = 0,
+                            squareNestFood = 0,
+                            pentaNestFood = 0,
+                            hexaNestFood = 0,
+                            heptaNestFood = 0,
+                            octaNestFood = 0,
+                            nonaNestFood = 0,
+                            decaNestFood = 0;
                         entities.forEach(instance => {
                             if (instance.type === "food") {
-                                if (instance.isNestFood) {
-                                    nestFood++;
-                                } else {
-                                    food++;
-                                }
+                                if (instance.isTriNestFood) triNestFood++;
+                                else if (instance.isSquareNestFood) squareNestFood++;
+                                else if (instance.isPentaNestFood) pentaNestFood++;
+                                else if (instance.isHexaNestFood) hexaNestFood++;
+                                else if (instance.isHeptaNestFood) heptaNestFood++;
+                                else if (instance.isOctaNestFood) octaNestFood++;
+                                else if (instance.isNonaNestFood) nonaNestFood++;
+                                else if (instance.isDecaNestFood) decaNestFood++;
+                                else food++;
                             }
                         });
                         return {
                             food,
-                            nestFood
+                            triNestFood,
+                            squareNestFood,
+                            pentaNestFood,
+                            hexaNestFood,
+                            heptaNestFood,
+                            octaNestFood,
+                            nonaNestFood,
+                            decaNestFood
                         };
                     })();
-                    if (census.food < room.maxFood) {
-                        spawnFood();
-                    }
-                    if (census.nestFood < room.maxNestFood) {
-                        spawnNestFood();
-                    }
+                    if (foodCensus.food < room.maxFood) spawnFood();
+                    for (let i = 0; i < nestList[0].length; i++) {
+                        if (room.maxAllNestFood) {
+                            if (room[nestList[1][i]] && room[nestList[1][i]].length && foodCensus[nestList[0][i] + "NestFood"] < Math.ceil(room.maxAllNestFood / room.presentNests.length)) spawnNestFood(i);
+                        } else {
+                            if (foodCensus[nestList[0][i] + "NestFood"] < room[`max${nestList[0][i].charAt(0).toUpperCase() + nestList[0][i].slice(1)}NestFood`]) spawnNestFood(i);
+                        }
+                    };
                 };
             })();
-            return () => {
-                if (!room.modelMode) {
-                    createFood();
-                    makeNPCs();
+
+
+            const CrasherSpawner = new Spawner([
+                ["crasher", 2],
+                "sentryAI"
+            ]);
+            const HellCrashers = [
+                // CRASHERS
+                "crasher",
+                "eggCrasher",
+                "triangleCrasher",
+                "pentagonCrasher",
+                "seerCrasher",
+                "fastCrasher",
+                "orbitcrasher",
+                "semiCrushCrasher",
+                "prismarineCrash",
+                "semiCrushCrasher0",
+                "semiCrushCrasher14",
+                "crushCrasher",
+                "bladeCrasher",
+                "torchKamikaze",
+                "kamikazeCrasher",
+                "destroyCrasher",
+                "wallerCrasher",
+                "visDestructia",
+                "grouperSpawn",
+                "megaCrushCrasher",
+                "iceCrusher",
+                "poisonBlades",
+                "longCrasher",
+                "asteroidCrasher",
+                "walletCrasher",
+                "boomCrasher",
+                "zoomCrasher",
+                "redRunner1",
+                "redRunner2",
+                "redRunner3",
+                "redRunner4",
+                "summonerSquare",
+                "greensummonerSquare",
+                "obsidianSquare",
+                "ivorySquare",
+                "cashCrash",
+                "minesweepCrasher",
+                "invisoCrasher",
+                "tridentCrasher",
+                "trapezoidCrasher",
+                "greenRunner",
+                "destroyCrasherSquare",
+                "blueRunner",
+                "busterCrasher",
+                "curvyBoy",
+                "colliderCrasher",
+                "hivemindCrasher",
+                "minesweepCrush",
+                "metalCrasher",
+            
+                // SENTRIES
+                "sentryAI",
+                "varpAI",
+                "sentrySwarmAI",
+                "scorcherSentryAI",
+                "sentryGunAI",
+                "sentryTrapAI",
+                "sentryRangerAI",
+                "kamikazeCrasherLite",
+                "flashSentryAI",
+                "flashGunnerAI",
+                "semiCrushSentryAI",
+                "crushSentryAI",
+                "bladeSentryAI",
+                "squareGunSentry",
+                "awp39SentryAI",
+                "skimSentryAI",
+                "greenSentrySwarmAI",
+                "squareSwarmerAI",
+                "summonerLiteAI",
+                "crusaderCrash",
+
+                // ALPHAS
+                "alphaCrasher",
+                //"alphaSentryAI"
+            ].filter(o => Class[o] != null);
+
+            const spawnCrasher = (census, id) => {
+                if (room.modelMode) return;
+                if (census.crasher < room.maxCrashers) {
+                    let spot,
+                        max = 10;
+                    do spot = room.randomType(ran.choose(room.presentNests));
+                    while (dirtyCheck(spot, 30) && max-- > 0);
+
+                    let crasher = (room.isHell) ? ran.choose(HellCrashers) : CrasherSpawner.getEntity();
+                    let times = (room.isHell || Math.random() > 0.25) ? 1 : (Math.random() * 4 | 0) + 1;
+
+                    for (let i = 0; i < times; i++) {
+                        let o = new Entity(spot);
+                        o.define(Class[crasher], (!room.isHell && ran.chance(c.SHINY_CHANCE)) ? { isShiny: true } : {});
+                        o.team = -100;
+						o.roomLayerless = true;
+                        //if (!o.dangerValue) o.dangerValue = 3 + Math.random() * 3 | 0;
+                        o.sandboxId = id;
+						o.facing = ran.randomAngle();
+                    }
                 }
             };
+
+
+            return () => {
+                if (c.SANDBOX) {
+                    for (let i = 0; i < global.sandboxRooms.length; i++) {
+                        let room = global.sandboxRooms[i];
+                        for (let type in room.census) room.census[type] = entities.map(e => e.type).filter(o => o === type).length;
+
+                        if (room.spawnFood) createFood();
+                        if (room.spawnCrashers) spawnCrasher(room.census, room.id);
+                        
+                        if (!room.didSetUp) {
+                            room.didSetUp = true
+
+                            function spawnDpsButton() {
+                                const button = new Entity({
+                                    x: 500,
+                                    y: 500
+                                });
+                                button.define(Class.button);
+                                button.pushability = button.PUSHABILITY = 0;
+                                button.godmode = true;
+                                button.team = -101;
+                                button.totalDamage = 0;
+                                button.averageDps = [];
+                                button.lastHitTime = Date.now();
+                                button.sandboxId = room.id;
+                                button.settings.noNameplate = false;
+                                button.type = "utility";
+                                button.hitsOwnType = "never";
+                                button.settings.leaderboardable = false;
+                                button.SIZE = 50;
+                                button.DAMAGE = 15;
+                                button.onDamaged = function(me, them, amount) {
+                                    if (!amount) return;
+                                    button.totalDamage += amount
+                                }
+                                button.onTick = function () {
+                                    if (Date.now() - button.lastHitTime > 50) {
+                                        button.lastHitTime = Date.now();
+                                        if (button.averageDps.length > 30) button.averageDps.shift();
+                                        button.averageDps.push(button.totalDamage);
+                                        button.name = `${(button.averageDps.reduce((total, value) => total + value, 0) / button.averageDps.length).toFixed(2)} Average DPS`;
+                                        button.totalDamage = 0;
+                                    }
+                                };
+                                button.onDead = spawnDpsButton;
+                                button.refreshBodyAttributes();
+                            }
+                            spawnDpsButton();
+
+                            let explainText = new Entity({
+                                x: -45,
+                                y: -75
+                            });
+                            explainText.define(Class.text);
+                            explainText.name = "Ram into the buttons to press them";
+                            explainText.SIZE = 20;
+                            explainText.sandboxId = room.id;
+
+                            function spawnBotButton(status) {
+                                const button = new Entity({
+                                    x: -45,
+                                    y: -30
+                                });
+                                button.define(Class.button);
+                                button.pushability = button.PUSHABILITY = 0;
+                                button.godmode = true;
+                                button.REGEN = 1000000;
+                                button.team = -101;
+                                button.totalDamage = 0;
+                                button.averageDps = [];
+                                button.lastHitTime = Date.now();
+                                button.sandboxId = room.id;
+                                button.settings.noNameplate = false;
+                                button.type = "utility";
+                                button.hitsOwnType = "never";
+                                button.settings.leaderboardable = false;
+                                button.color = status ? 11 : 12;
+                                button.name = status ? "Bots enabled" : "Bots disabled";
+                                if (status) room.botCap = 1;
+                                else room.botCap = 0;
+                                button.onDamaged = function(me, them) {
+                                    if (!them.isPlayer) return;
+                                    me.kill();
+                                };
+                                button.onDead = () => setTimeout(() => spawnBotButton(!status), 1000);
+                                button.refreshBodyAttributes();
+                            };
+                            spawnBotButton(false);
+
+                            function crasherSpawningButton(status) {
+                                const button = new Entity({
+                                    x: -45,
+                                    y: 60
+                                });
+                                button.define(Class.button);
+                                button.pushability = button.PUSHABILITY = 0;
+                                button.godmode = true;
+                                button.team = -101;
+                                button.totalDamage = 0;
+                                button.averageDps = [];
+                                button.lastHitTime = Date.now();
+                                button.sandboxId = room.id;
+                                button.settings.noNameplate = false;
+                                button.type = "utility";
+                                button.hitsOwnType = "never";
+                                button.settings.leaderboardable = false;
+                                button.color = status ? 11 : 12;
+                                button.name = status ? "Crashers enabled" : "Crashers disabled";
+                                if (status) room.spawnCrashers = true;
+                                else room.spawnCrashers = false;
+                                button.onDamaged = function(me, them) {
+                                    if (!them.isPlayer) return;
+                                    me.kill();
+                                }
+                                button.onDead = () => setTimeout(() => crasherSpawningButton(!status), 1000);
+                                button.refreshBodyAttributes();
+                            }
+                            crasherSpawningButton(false);
+
+                            function foodSpawningButton(status) {
+                                const button = new Entity({
+                                    x: -45,
+                                    y: 150
+                                });
+                                button.define(Class.button);
+                                button.pushability = button.PUSHABILITY = 0;
+                                button.godmode = true;
+                                button.team = -101;
+                                button.totalDamage = 0;
+                                button.averageDps = [];
+                                button.lastHitTime = Date.now();
+                                button.sandboxId = room.id;
+                                button.settings.noNameplate = false;
+                                button.type = "utility";
+                                button.hitsOwnType = "never";
+                                button.settings.leaderboardable = false;
+                                button.color = status ? 11 : 12;
+                                button.name = status ? "Food enabled" : "Food disabled";
+                                if (status) room.spawnFood = true;
+                                else room.spawnFood = false;
+                                button.onDamaged = function(me, them) {
+                                    if (!them.isPlayer) return;
+                                    me.kill();
+                                }
+                                button.onDead = () => setTimeout(() => foodSpawningButton(!status), 1000);
+                                button.refreshBodyAttributes();
+                            }
+                            foodSpawningButton(false);
+                        }
+                    }
+                } else {
+                    room.census.sancs = entities.map(e => e.miscIdentifier).filter(o => o === "Sanctuary").length;
+                    room.census.naturalMiniboss = entities.map(e => e.miscIdentifier).filter(o => o === "Natural Miniboss").length;
+                    for (let type in room.census) {
+                        if (type === "sancs" || type === "naturalMiniboss") continue;
+                        room.census[type] = entities.map(e => e.type).filter(o => o === type).length;
+                    }
+                }
+                if (!room.modelMode) {
+                    createFood();
+                    spawnCrasher(room.census);
+                }
+            };
+
         })();
 
         setInterval(gameLoop, room.cycleSpeed)
         gameLoop()
 
+        setInterval(minorMaintainLoop, 200);
+        minorMaintainLoop()
+
         setInterval(maintainLoop, 1000/*200*/);
         maintainLoop()
+
 
 
         setInterval(function () {
@@ -13092,4 +20878,4 @@ function flatten(data, out, playerContext = null) {
     })();
 }
 
-export {global}
+export { global }

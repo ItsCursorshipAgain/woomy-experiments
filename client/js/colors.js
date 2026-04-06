@@ -1239,7 +1239,7 @@ function getColor(colorID) {
 		default:
 			if (typeof colorID == "string") {
 				if (colorID.length !== 7) {
-					return "#F00000"//else it would break undefined colorID entities
+					return "#F00000"; //else it would break undefined colorID entities
 					throw new Error("Colors should be a 6 number hexcode (i.e. #000000), got:\"" + colorID + "\"")
 				}
 				return colorID
@@ -1269,6 +1269,7 @@ function getZoneColor(cell, real, seed = 1) {
 				return mixColors(color.pink, color.guiwhite, 1 / 3);
 		}
 	}
+	if (cell.includes("domP")) return (+cell.slice(4) === global.player?.team) ? color.blue : color.red;
 	switch (cell) {
 		case "n_b1":
 		case "bas1":
