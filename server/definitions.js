@@ -11932,43 +11932,45 @@ defExports.swarm = {
     DIE_AT_RANGE: true,
     BUFF_VS_FOOD: true,
     AI: {
-        BLIND: true
+        BLIND: true,
+        SKYNET: true
     }
 };
 defExports.swarmLayer6 = {
     PARENT: [defExports.swarm],
-    LAYER: 6,
-},
-    defExports.TempestSwarm = {
-        LABEL: 'Swarm',
-        TYPE: 'swarm',
-        ACCEPTS_SCORE: false,
-        SHAPE: 3,
-        MOTION_TYPE: 'swarm',
-        FACING_TYPE: 'smoothWithMotion',
-        CONTROLLERS: ['circleTarget', 'canRepel'],
-        CRAVES_ATTENTION: true,
-        BODY: {
-            ACCELERATION: 3, // 3
-            PENETRATION: 1.5,
-            HEALTH: .19,
-            DAMAGE: 2.25,
-            SPEED: 4.5,
-            RESIST: 1.6,
-            RANGE: 225,
-            DENSITY: 12,
-            PUSHABILITY: .65,
-            FOV: 1.5
-        },
-        DIE_AT_RANGE: true,
-        BUFF_VS_FOOD: true
-    }
+    LAYER: 6
+};
+defExports.TempestSwarm = {
+    LABEL: 'Swarm',
+    TYPE: 'swarm',
+    ACCEPTS_SCORE: false,
+    SHAPE: 3,
+    MOTION_TYPE: 'swarm',
+    FACING_TYPE: 'smoothWithMotion',
+    CONTROLLERS: ['circleTarget', 'canRepel'],
+    CRAVES_ATTENTION: true,
+    BODY: {
+        ACCELERATION: 3, // 3
+        PENETRATION: 1.5,
+        HEALTH: .19,
+        DAMAGE: 2.25,
+        SPEED: 4.5,
+        RESIST: 1.6,
+        RANGE: 225,
+        DENSITY: 12,
+        PUSHABILITY: .65,
+        FOV: 1.5
+    },
+    DIE_AT_RANGE: true,
+    BUFF_VS_FOOD: true
+};
 defExports.bee = {
     PARENT: [defExports.swarm],
     LABEL: 'Bee',
     PERSISTS_AFTER_DEATH: true,
     SHAPE: 4,
-    HITS_OWN_TYPE: 'hardWithBuffer'
+    HITS_OWN_TYPE: 'hardWithBuffer',
+    AI: { SKYNET: true }
 };
 defExports.eggbutitsanasshole = {
     PARENT: [defExports.swarm],
@@ -11977,18 +11979,18 @@ defExports.eggbutitsanasshole = {
 }
 defExports.beeAI = {
     PARENT: [defExports.bee],
+    AI: { SKYNET: true },
     INDEPENDENT: true
 };
 defExports.autoSwarm = {
     PARENT: [defExports.swarm],
     LABEL: 'AI Swarm Drone',
+    AI: { SKYNET: true },
     INDEPENDENT: true
 };
 defExports.protectorSwarm = {
     PARENT: [defExports.swarm],
-    AI: {
-        IGNORE_SHAPES: true
-    },
+    AI: { IGNORE_SHAPES: true },
     HITS_OWN_TYPE: 'never',
     GO_THRU_OBSTACLES: true,
     INDEPENDENT: true
