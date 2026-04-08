@@ -593,7 +593,7 @@ let blackout_ffa = {
         "MAX_FOOD": (isHell) ? 0 : 948, // 361
         "MAX_COMBINED_NEST_FOOD": (isHell) ? 474 : 225, // 120
         "MAX_CRASHERS": (isHell) ? 474 : 270, // 120
-        "EVOLVE_HALT_CHANCE": (isHell) ? .75 : .35
+        "EVOLVE_HALT_CHANCE": (isHell) ? .8 : .4
     };
 };
 function select(mode) {
@@ -601,7 +601,7 @@ function select(mode) {
     mode.BOSS_SPAWN_TIMER ??= 240;
     mode.EVOLVE_TIME ??= 60000;
     mode.EVOLVE_TIME_RAN_ADDER ??= 120000;
-    mode.EVOLVE_HALT_CHANCE ??= .35;
+    mode.EVOLVE_HALT_CHANCE ??= .4;
     mode.MAX_SANCS ??= 2;
     mode.SHINY_CHANCE ??= 1/1000;
     

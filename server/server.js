@@ -14164,7 +14164,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.health.resist = 1 - 1 / (Math.max(1, this.RESIST + this.skill.brst) / 1.15);
                 this.shield.set(((this.settings.healthWithLevel ? .6 * this.skill.level : 0) + this.SHIELD) * this.skill.shi * (this.settings.reloadToAcceleration ? .85 : 1), Math.max(0, (((this.settings.healthWithLevel ? .006 * this.skill.level : 0) + 1) * this.REGEN) * this.skill.rgn) * (this.settings.reloadToAcceleration ? 0.9 : 1));
                 this.damage = this.DAMAGE * (this.settings.reloadToAcceleration ? this.skill.atk * 1.1 /*1.1*/ /*1.25*/ : this.skill.atk);
-                this.penetration = this.PENETRATION + 1.5 * (this.skill.brst /*+ 0.8 * (this.skill.atk - 1)*/); this.range = this.RANGE;
+                this.penetration = this.PENETRATION + 1.5 * (this.skill.brst /*+ 0.8 * (this.skill.atk - 1)*/);
+                this.range = this.RANGE;
                 this.fov = 250 * this.FOV * Math.sqrt(this.size) * (1 + .003 * this.skill.level);
                 this.density = (1 + 0.08 * this.skill.level) * this.DENSITY;//(1 + .08 * this.skill.level) * this.DENSITY * 2.334;//(this.settings.reloadToAcceleration ? 5 : 1);
                 this.stealth = this.STEALTH;
@@ -19147,7 +19148,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 room.mspt = (performance.now() - start);
                 room.lagComp = Math.min(5, Math.max(1, room.mspt / room.cycleSpeed))
                 const border = 2150
-                if (c.serverName.includes("Boss Rush") && c.ISSIEGE) {
+                if (c.serverName === "Boss Rush") {
                     entities.forEach(entity => {
                         if (entity.x < border && entity.team != -100 && !entity.passive && !entity.godmode) { entity.kill()/*entity.x += 15*/ }
                         if (entity.type == 'miniboss' && entity.x < 5500) { entity.x += Math.random() * 1.5 }
