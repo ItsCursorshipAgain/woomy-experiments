@@ -8558,6 +8558,7 @@ const Chain = Chainf;
                     sancs: 0
                 };
                 this.bossTimer = 0;
+                this.bossRush = c.serverName === "Boss Rush" || config.ISSIEGE || config.IS_BOSS_RUSH;
                 this.bossRushOver = false;
                 this.bossRushWave = 0;
                 this.bossRushMaxIncrement = 0;
@@ -8795,17 +8796,17 @@ const Chain = Chainf;
                     setInterval(() => {
                         this.timeUntilRestart--;
                         if (this.timeUntilRestart === 1800 || this.timeUntilRestart === 900 || this.timeUntilRestart === 600 || this.timeUntilRestart === 300) {
-                            if (c.IS_BOSS_RUSH) sockets.broadcast(`WARNING: Tanks have ${this.timeUntilRestart / 60} minutes to defeat the boss rush!`, "#FFE46B");
+                            if (room.bossRush) sockets.broadcast(`WARNING: Tanks have ${this.timeUntilRestart / 60} minutes to defeat the boss rush!`, "#FFE46B");
                             else sockets.broadcast(`WARNING: The server will automatically restart in ${this.timeUntilRestart / 60} minutes!`, "#FFE46B");
                             util.warn(`Automatic restart will occur in ${this.timeUntilRestart / 60} minutes.`);
                         }
                         if (!this.timeUntilRestart) {
-                            let reason = c.IS_BOSS_RUSH ? "Reason: The tanks could only defeat " + this.bossRushWave + "/75 waves" : "Reason: Uptime has reached " + totalTime / 60 / 60 + " hours";
+                            let reason = room.bossRush ? "Reason: The tanks could only defeat " + this.bossRushWave + "/75 waves" : "Reason: Uptime has reached " + totalTime / 60 / 60 + " hours";
                             util.warn("Automatic server restart initialized! Closing arena...");
-                            let toAdd = c.IS_BOSS_RUSH ? "Tanks have run out of time to kill the bosses!" : c.SPAWN_DOMINATORS ? "No team has managed to capture all of the Dominators! " : c.serverName.includes("Mothership") ? "No team's Mothership has managed to become the last Mothership standing! " : "";
+                            let toAdd = room.bossRush ? "Tanks have run out of time to kill the bosses!" : c.SPAWN_DOMINATORS ? "No team has managed to capture all of the Dominators! " : c.serverName.includes("Mothership") ? "No team's Mothership has managed to become the last Mothership standing! " : "";
                             sockets.broadcast(toAdd + "Automatic server restart initializing...", "#FFE46B");
                             setTimeout(() => closeArena(), 2500);
-                            if (c.IS_BOSS_RUSH) this.bossRushOver = true;
+                            if (room.bossRush) this.bossRushOver = true;
                         }
                     }, 1000);
                 }
@@ -9584,7 +9585,7 @@ const Chain = Chainf;
         };
 
         const closeArena = () => {
-            if (c.IS_BOSS_RUSH) room.bossRushOver = true;
+            if (room.bossRush) room.bossRushOver = true;
             room.arenaClosed = true;
             //if (c.enableBot) editStatusMessage("Offline");
             sockets.broadcast("Arena Closed: No players can join.", "#FF0000");
@@ -10481,8 +10482,8 @@ const Chain = Chainf;
             }
             return function () {
                 room.bossRushWave++;
-                if (room.bossRushWave % (c.MAX_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMaxIncrement += c.MAX_BOSS_INCREMENT;
-                if (room.bossRushWave % (c.MIN_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMinIncrement += c.MIN_BOSS_INCREMENT;
+                if (room.bossRushWave % (c.MAX_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMaxIncrement += (c.MAX_BOSS_INCREMENT || 0);
+                if (room.bossRushWave % (c.MIN_BOSS_INCREMENT_INTERVAL || 5) === 0 && room.bossRushWave > 0) room.bossRushMinIncrement += (c.MIN_BOSS_INCREMENT || 0);
                 let minBosses = c.MINBOSSES + room.bossRushMaxIncrement,
                     maxBosses = c.MAXBOSSES + room.bossRushMinIncrement,
                     amount = maxBosses ? (Math.round(Math.random() * (maxBosses - minBosses) + minBosses)) : Math.round(Math.random() * 8 + 4 /*20 + 20*/);
@@ -11708,9 +11709,9 @@ const Chain = Chainf;
                     return {};
                 }
 				if(++this.tick > room.cycleSpeed){
-		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * ((c.IS_BOSS_RUSH) ? 3 : 2)) {
+		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * ((room.bossRush) ? 3 : 2)) {
                     	this.goal = room.randomType(
-                            (c.IS_BOSS_RUSH && room['bas1']?.length && ran.chance(.4)) ? "bas1" :
+                            (room.bossRush && room['bas1']?.length && ran.chance(.4)) ? "bas1" :
                             (room.isHell) ? ((ran.chance(.2)) ? "norm" : ran.choose(room.presentNests)) :
                             (room.presentNests.length && ran.chance(.2)) ? ran.choose(room.presentNests) :
                             "norm"
@@ -14917,7 +14918,7 @@ const Chain = Chainf;
                     myCell = this.myCell;
                 if (room.outb && room.outb.length && this.diesToTeamBase && !this.godmode && !this.passive && myCell === "outb") {
                     if (this.type === "miniboss" || this.type === "crasher") {
-                        let pos = room.randomType(c.IS_BOSS_RUSH ? "bosp" : ran.choose(room.presentNests));
+                        let pos = room.randomType(room.bossRush ? "bosp" : ran.choose(room.presentNests));
                         this.x = pos.x;
                         this.y = pos.y;
                     } else if (this.type === "tank" || this.type === "food") {
@@ -14928,7 +14929,7 @@ const Chain = Chainf;
                     let bas = myCell.slice(0, -1);
                     if (bas === "bas" || bas === "n_b" || bas === "bad" || bas === "por") {
                         if (bas + -this.team !== myCell) {
-                            if (c.IS_BOSS_RUSH && this.team == -100) return
+                            if (room.bossRush && this.team == -100) return
                             this.velocity.null();
                             this.accel.null();
                             this.kill();
@@ -17951,7 +17952,7 @@ function flatten(data, out, playerContext = null) {
                                 if (my.isMothership) {
                                     output.leaderboard.push(my);
                                 }
-                            } else if (c.IS_BOSS_RUSH) {
+                            } else if (room.bossRush) {
                                 if (my.type === "miniboss") {
                                     output.leaderboard.push(my);
                                 }
@@ -17980,7 +17981,7 @@ function flatten(data, out, playerContext = null) {
                         topTen.push({
                             id: entry.id,
                             data: c.SANDBOX ? [
-                                Math.round((c.serverName.includes("Mothership") || c.IS_BOSS_RUSH) ? entry.health.amount : entry.skill.score),
+                                Math.round((c.serverName.includes("Mothership") || room.bossRush) ? entry.health.amount : entry.skill.score),
                                 entry.index,
                                 entry.name,
                                 entry.color ?? 0,
@@ -17989,7 +17990,7 @@ function flatten(data, out, playerContext = null) {
                                 entry.labelOverride || 0,
                                 entry.sandboxId || -1
                             ] : [
-                                Math.round((c.serverName.includes("Mothership") || c.IS_BOSS_RUSH) ? entry.health.amount : entry.skill.score),
+                                Math.round((c.serverName.includes("Mothership") || room.bossRush) ? entry.health.amount : entry.skill.score),
                                 entry.index,
                                 entry.name,
                                 entry.color ?? 0,
@@ -20006,7 +20007,7 @@ function flatten(data, out, playerContext = null) {
 
             const makeNPCs = (() => {
                 if (room.modelMode) return;
-                if (c.IS_BOSS_RUSH) {
+                if (room.bossRush) {
                     let sanctuaries = 0;
                     let spawn = (loc, team, sanc) => {
                         let o = new Entity(loc);
@@ -20075,7 +20076,7 @@ function flatten(data, out, playerContext = null) {
                     }
                     bossRushLoop();
                 }
-                if (room.gameMode === "tdm" && c.DO_BASE_DAMAGE && !c.IS_BOSS_RUSH) {//preventing base protectors spawning on domis in siege
+                if (room.gameMode === "tdm" && c.DO_BASE_DAMAGE && !room.bossRush) {//preventing base protectors spawning on domis in siege
                     let spawnBase = (loc, team, type) => {
                         let o = new Entity(loc);
                         o.define(type);
