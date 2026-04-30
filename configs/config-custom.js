@@ -1,73 +1,42 @@
-let blackout_ffa = {
-    "BLACKOUT": true,
-    "displayName": "Fuzzy's Blackout FFA",
-    "displayDesc": "Self-explanatory.",
-    "ROOM_SETUP": [
-        ["R N N N r N N N r r N N N r N N N R"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N r N N N N N N N N N N r N N N"],
-        ["r N N N N N N N N N N N N N N N N r"],
-        ["N N N N N N N N P P N N N N N N N N"],
-        ["N N N N N N R P P P P R N N N N N N"],
-        ["N N N N N N P P P P P P N N N N N N"],
-        ["r N N N N P P P R R P P P N N N N r"],
-        ["r N N N N P P P R R P P P N N N N r"],
-        ["N N N N N N P P P P P P N N N N N N"],
-        ["N N N N N N R P P P P R N N N N N N"],
-        ["N N N N N N N N P P N N N N N N N N"],
-        ["r N N N N N N N N N N N N N N N N r"],
-        ["N N N r N N N N N N N N N N r N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["R N N N r N N N r r N N N r N N N R"]
-    ].map(row => row[0].split(" ").map(cell => {
-        switch (cell) {
-            case "N": return "norm";
-            case "P": return "nest";
-            case "R": return "roid";
-            case "r": return "rock";
-            default: throw new TypeError(cell + " is not a valid cell type!");
-        }
-    })),
-    "MAX_FOOD": 576, // 288
-    "MAX_COMBINED_NEST_FOOD": 72, // 36
-    "MAX_CRASHERS": 90 // 36
-},
-    ffa = {
-    "displayName": "Fuzzy's FFA",
-    "displayDesc": "Self-explanatory.",
-    "ROOM_SETUP": [
-        ["R N N N r N N N r r N N N r N N N R"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N r N N N N N N N N N N r N N N"],
-        ["r N N N N N N N N N N N N N N N N r"],
-        ["N N N N N N N N P P N N N N N N N N"],
-        ["N N N N N N R P P P P R N N N N N N"],
-        ["N N N N N N P P P P P P N N N N N N"],
-        ["r N N N N P P P R R P P P N N N N r"],
-        ["r N N N N P P P R R P P P N N N N r"],
-        ["N N N N N N P P P P P P N N N N N N"],
-        ["N N N N N N R P P P P R N N N N N N"],
-        ["N N N N N N N N P P N N N N N N N N"],
-        ["r N N N N N N N N N N N N N N N N r"],
-        ["N N N r N N N N N N N N N N r N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N"],
-        ["R N N N r N N N r r N N N r N N N R"]
-    ].map(row => row[0].split(" ").map(cell => {
-        switch (cell) {
-            case "N": return "norm";
-            case "P": return "nest";
-            case "R": return "roid";
-            case "r": return "rock";
-            default: throw new TypeError(cell + " is not a valid cell type!");
-        }
-    })),
-    "MAX_FOOD": 576, // 288
-    "MAX_COMBINED_NEST_FOOD": 72, // 36
-    "MAX_CRASHERS": 90 // 36
+let ffa = (blackout = false) => {
+    return {
+        "BLACKOUT": blackout,
+        "displayName": (blackout) ? "Fuzzy's Blackout FFA" : "Fuzzy's FFA",
+        "displayDesc": "Self-explanatory.",
+        "WIDTH": 8000,
+        "HEIGHT": 8000,
+        "ROOM_SETUP": [
+            ["R N N N r N N N r r N N N r N N N R"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N r N N N N N N N N N N r N N N"],
+            ["r N N N N N N N N N N N N N N N N r"],
+            ["N N N N N N N N P P N N N N N N N N"],
+            ["N N N N N N R P P P P R N N N N N N"],
+            ["N N N N N N P P P P P P N N N N N N"],
+            ["r N N N N P P P R R P P P N N N N r"],
+            ["r N N N N P P P R R P P P N N N N r"],
+            ["N N N N N N P P P P P P N N N N N N"],
+            ["N N N N N N R P P P P R N N N N N N"],
+            ["N N N N N N N N P P N N N N N N N N"],
+            ["r N N N N N N N N N N N N N N N N r"],
+            ["N N N r N N N N N N N N N N r N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["R N N N r N N N r r N N N r N N N R"]
+        ].map(row => row[0].split(" ").map(cell => {
+            switch (cell) {
+                case "N": return "norm";
+                case "P": return "nest";
+                case "R": return "roid";
+                case "r": return "rock";
+                default: throw new TypeError(cell + " is not a valid cell type!");
+            }
+        })),
+        "MAX_FOOD": 504, // 288
+        "MAX_COMBINED_NEST_FOOD": 63, // 36
+        "MAX_CRASHERS": 72 // 36
+    }
 },
     ffa_domination = {
     "SPAWN_DOMINATORS": true,
@@ -203,6 +172,72 @@ let blackout_ffa = {
         "MAX_SANCTUARIES": 3
     }
 })(),
+    maze = (blackout = false) => {
+    return {
+        "BLACKOUT": blackout,
+        "MAZE": {
+            "ENABLED": true,
+            "cellSize": 300,
+            "stepOneSpacing": 3,
+            "fillChance": 0.35,
+            "sparedChance": 0.65,
+            "margin": .25
+        },
+        "displayName": (blackout) ? "Fuzzy's Blackout Maze" : "Fuzzy's Maze",
+        "displayDesc": "Self-explanatory.",
+        "X_GRID": 31,
+        "Y_GRID": 31,
+        "WIDTH": 10000,
+        "HEIGHT": 10000,
+        "ROOM_SETUP": [                   /*C*/
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"], /*C*/
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"]
+        ].map(row => row[0].split(" ").map(cell => {
+            switch (cell) {
+                case "N": return "norm";
+                case "P": return "nest";
+                case "R": return "rock";
+                default: throw new TypeError(cell + " is not a valid cell type!");
+            }
+        })),
+        "MAX_FOOD": 625, // 961
+        "MAX_COMBINED_NEST_FOOD": 61, // 49
+        "MAX_CRASHERS": 110, // 98
+        "MAX_SANCS": 1,
+        "EVOLVE_TIME_RAN_ADDER": 240000,
+        "EVOLVE_HALT_CHANCE": .6,
+        "BORDER_FORCE": 0.075
+    }
+},
     miniboss_rush = {
     "MODE": "tdm",
     "IS_BOSS_RUSH": true,
@@ -499,8 +534,8 @@ let blackout_ffa = {
                 default: throw new TypeError(cell + " is not a valid cell type!");
             }
         })),
-        "WIDTH": 9000,
-        "HEIGHT": 9000,
+        "WIDTH": 10000,
+        "HEIGHT": 10000,
         "X_GRID": 21,
         "Y_GRID": 21,
         "MAX_FOOD": 869, // 331
@@ -570,7 +605,6 @@ let blackout_ffa = {
         "IS_HELL": isHell,
         "displayName": (isHell) ? "Fuzzy's 2TDM Hell" : "Fuzzy's 2TDM",
         "displayDesc": (isHell) ? "Self-explanatory…\n\n…though only the mighty may last." : "Self-explanatory.",
-        "RANDOM_TEAMS": true,
         "ROOM_SETUP": layout.map(row => row[0].split(" ").map(cell => {
             switch (cell) {
                 case "NM": return (isHell) ? "nest" : "norm";
@@ -596,7 +630,7 @@ let blackout_ffa = {
         "EVOLVE_HALT_CHANCE": (isHell) ? .8 : .4
     };
 };
-function select(mode) {
+function select(mode, testing = false) {
     mode.selectable = true;
     mode.BOSS_SPAWN_TIMER ??= 240;
     mode.EVOLVE_TIME ??= 60000;
@@ -605,12 +639,14 @@ function select(mode) {
     mode.MAX_SANCS ??= 2;
     mode.SHINY_CHANCE ??= 1/1000;
     
-    //mode.MINIMUM_PERMISSIONS = 3;
-    //mode.MAX_FOOD = 0;
-    //mode.MAX_COMBINED_NEST_FOOD = 0;
-    //mode.MAX_CRASHERS = 0;
-    //mode.MAX_SANCS = 0;
-    //mode.BOSS_SPAWN_TIMER = Infinity;
+    if (testing) {
+        mode.MINIMUM_PERMISSIONS = 3;
+        mode.MAX_FOOD = 0;
+        mode.MAX_COMBINED_NEST_FOOD = 0;
+        mode.MAX_CRASHERS = 0;
+        mode.MAX_SANCS = 0;
+        mode.BOSS_SPAWN_TIMER = Infinity;
+    }
     return mode;
 };
-select(sixTDM);
+select(maze(false));

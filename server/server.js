@@ -240,6 +240,10 @@ global.require = function(thing) {
                     }
                     return output;
                 },
+                addBelonging: function(string) {
+                    let output = (/[sS]/.test(string.slice(-1))) ? string + "'" : string + "'s";
+                    return output;
+                },
                 getLongestEdge: function getLongestEdge(x1, y1, x2, y2) {
                     let diffX = Math.abs(x2 - x1),
                         diffY = Math.abs(y2 - y1);
@@ -8311,6 +8315,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             "MAX_DECA_NEST_FOOD": 0,
             "MAX_CRASHERS": 18,
             "MAX_SANCS": 1,
+            "MAX_EVO_BOSSES": 3,
+            "MAX_NESTERS": 2,
             "TIME_BETWEEN_SANCS": 900000,
             "EVOLVE_TIME": 90000,
             "EVOLVE_TIME_RAN_ADDER": 210000,
@@ -8466,14 +8472,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     finalTank.TYPE = "tank"
                     finalTank.DIE_AT_LOW_SPEED = false
                     finalTank.DIE_AT_RANGE = false
-                    finalTank.INDEPENDANT = true
+                    finalTank.INDEPENDENT = true
                     finalTank.HAS_NO_MASTER = true
                     finalTank.ACCEPTS_SCORE = true
                     finalTank.CAN_BE_ON_LEADERBOARD = true
                     finalTank.GOD_MODE = false
                     finalTank.IS_ARENA_CLOSER = false
                     finalTank.PASSIVE = false
-                    finalTank.STAT_NAMES = 6 // generic
+                    finalTank.STAT_NAMES = 0 // generic
                     finalTank.SKILL_CAP = [9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
                     finalTank.AI = {}
                     //finalTank.MOTION_TYPE = 'motor'
@@ -8543,6 +8549,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.maxDecaNestFood = config.MAX_DECA_NEST_FOOD;
                 this.maxCrashers = config.MAX_CRASHERS;
                 this.maxSancs = config.MAX_SANCS;
+                this.maxEvoBosses = config.MAX_EVO_BOSSES;
+                this.maxNesters = config.MAX_NESTERS;
                 this.skillBoost = config.SKILL_BOOST;
                 this.topPlayerID = -1;
                 this.displayName = displyNameOverride || config.displayName || "";
@@ -8552,8 +8560,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.modelMode = c.modelMode;
                 this.census = {
                     crasher: 0,
+                    nesters: 0,
                     miniboss: 0,
                     naturalMiniboss: 0,
+                    evolutionMiniboss: 0,
                     tank: 0,
                     sancs: 0
                 };
@@ -9426,6 +9436,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
             for (let exportName of affectedExports) {
                 if (!Class[exportName]) {
+                    Class[exportName].index = indexs[indexI++]
                     global.addNewClass(exportName, defExports[exportName])
                 } else {
                     Class[exportName].index = indexs[indexI++]
@@ -10018,6 +10029,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.anniversarySummonerAI,
                 Class.applicusAI,
                 Class.aquamarineAI,
+                Class.armorboatBossAI,
                 Class.armySentryGunAI,
                 Class.armySentryRangerAI,
                 Class.armySentrySwarmAI,
@@ -10072,6 +10084,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.deltrabladeAI,
                 Class.demolisherAI,
                 Class.derogatorAI,
+                Class.disrupterBossAI,
                 Class.dropshipAI,
                 Class.eggBossTier1AI,
                 Class.eggBossTier1FaceAI,
@@ -10110,14 +10123,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.fallenBoosterAI,
                 Class.fallenCavalcadeAI,
                 Class.fallenDesperadoAI,
+                Class.fallenDirigibleAI,
                 Class.fallenDrifterAI,
                 Class.fallenFighterAI,
                 Class.fallenFlamethrowerAI,
                 Class.fallenHybridAI,
+                Class.fallenLaserAI,
                 Class.fallenOctoAI,
                 Class.fallenOverlordAI,
                 Class.fallenPentaAI,
                 Class.fallenPistonAI,
+                Class.fallenRangerAI,
                 Class.fallenUziAI,
                 Class.fueronAI,
                 Class.gegenscheinAI,
@@ -10130,7 +10146,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.greenGuardianAI,
                 Class.guardianAI,
                 Class.gunshipAI,
-                Class.hb3_37AI,
+                Class.crimsonGuardianAI,
                 Class.heptagonBossAI,
                 Class.heptagonBossTier1AI,
                 Class.heptagonBossTier2AI,
@@ -10260,6 +10276,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.trapDwellerAI,
                 Class.trapeFighterAI,
                 Class.trapperzoidAI,
+                Class.treeTopperAI,
                 Class.triangleNestKeeperAI,
                 Class.triguardAI,
                 Class.triSeekerAI,
@@ -10271,6 +10288,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.vanguardAI,
                 Class.visUltimaAI,
                 Class.vivisectionAI,
+                Class.wallerBossAI,
+                Class.walletBossAI,
                 Class.xyvAI,
                 Class.youkaiBossAIFrame31
             ].filter(o => o != null);
@@ -10307,7 +10326,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.odinAI,
                     Class.PCUAI,
                     Class.pentagonBossTier4AI,
-                    Class.purifierBossAI,
+                    Class.purifierBossAIWeak,
                     Class.RK_4AI,
                     Class.rod1AI,
                     Class.superSplitterSummoner,
@@ -10318,6 +10337,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.bidenAI,
                     Class.cometbetterAI,
                     Class.eliteXyvAI,
+                    Class.heptadecagonBossAI,
                     Class.grudgeAIWeaker,
                     Class.minosAI,
                     Class.redistributionAI,
@@ -10347,7 +10367,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             const waveOverrides = {
                 10: [[
                     Class.treasuryAI,
-                    Class.purifierBossAI,
                     Class.morningstarAI,
                     Class.neutronStarAI
                 ]],
@@ -10356,7 +10375,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.voidPentagonAI,
                     Class.rs4AI,
                     Class.grudgeAI,
-                    Class.XZ_4_MainAI
+                    Class.XZ_4_MainAI,
+                    Class.heptadecagonBossAI,
+                    Class.purifierBossAI,
                 ]],
                 30: [[
                     Class.mythicalCrasherAI,
@@ -10394,7 +10415,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     [Class.eggBossTier5AI, Class.boreasAI],
                     Class.cometAI,
                     Class.cometAI,
-                    [Class.splitterSummoner, Class.fueronAI, Class.treasuryAI],
+                    [Class.splitterSummoner, Class.fueronAI, Class.disrupterBossAI, Class.treasuryAI],
                     [7, [Class.armySentryGunAI, Class.armySentryRangerAI, Class.armySentrySwarmAI, Class.armySentryTrapAI]]
                 ],
                 72: [
@@ -10460,7 +10481,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 const o = new Entity(room.randomType("bosp"));
                 o.team = -100;
                 o.define(class_);
-                if (!o.name) o.name = ran.chooseBossName("all", 1)[0];
+                o.name ||= ran.chooseBossName("all", 1)[0];
                 // For special boss names:
                 switch (o.name) {
                     case "GIGA ":
@@ -11571,7 +11592,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 				const master = body.master.master;
 				const pos = body.aiSettings.SKYNET ? body : master;
 				const myTeam = master.team;
-				const { FARMER, IGNORE_SHAPES, FULL_VIEW, TARGET_EVERYTHING } = body.aiSettings;
+				const { FARMER, IGNORE_SHAPES, FULL_VIEW, TARGET_EVERYTHING, IGNORE_WEAPONS } = body.aiSettings;
 				const { seeInvisible, isArenaCloser, firingArc } = body;
 				const canSeeInvis = seeInvisible || isArenaCloser;
 
@@ -11602,6 +11623,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 					switch (entity.type) {
 						case "drone":
                         case "minion":
+                            if (IGNORE_WEAPONS) return;
+                            break;
                         case 'tank':
                         case 'miniboss':
                         case 'crasher':
@@ -11652,7 +11675,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 			think(input) {
 				// Cede control to the player by returning an empty object.
 				if (input.main || input.alt ||
-					this.body.master.autoOverride ||
+					((this.body.isRogueBoss && this.body.source.autoOverride) || this.body.master.autoOverride) ||
 					this.body.master.master.passive ||
 					(this.body.master.master.invuln && !this.body.master.master.grantedInvuln)) {
 					return {};
@@ -12817,8 +12840,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         SKILL: this.getSkillRaw(),
                         SIZE: this.body.size * this.width * this.settings.size / 2,
                         LABEL: this.master.label + (this.label ? " " + this.label : "") + " " + o.label
-                    });*/
-
+                    });
+                */
                 // Define body
                 let settings = this.interpret()
                 for (let set in settings) {
@@ -12883,6 +12906,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 switch (this.calculator) {
                     case 2:
                     case "drone":
+                    case 7:
+                    case "necro":
                         out.DAMAGE = shoot.damage * sk.dam;
                         out.HEALTH = 0.475 * shoot.health * sk.str;
                         break;
@@ -13087,7 +13112,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     dmg: this.master?.skill?.dam ?? 0,
                     len: this.master?.skill?.spd ?? 0,
                     dur: this.master?.skill?.str ?? 0,
-                    prc: this.master?.skill?.pen ?? 0,
+                    prc: this.master?.skill?.pen ?? 0
                 }
                 this.scaleWidth = settings.SCALE_WIDTH ?? true;
                 this.refreshStats()
@@ -13119,12 +13144,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
 
             refreshStats() {
-                this.width = (this.scaleWidth ? (this.settings.WIDTH ?? 0) + (this.master?.size * this.gun?.width) : this.settings.WIDTH) ?? 5;
-                this.range = (this.settings.RANGE ?? 300) * (this.skills.len * 5);
-                this.duration = (this.settings.DURATION ?? 300) * (this.skills.dur * 20);
+                this.width = (this.scaleWidth ? (this.settings.WIDTH ?? 0) + (this.master?.size * this.gun?.width * this.gun?.settings.size) : this.settings.WIDTH) ?? 5;
+                this.range = (this.settings.RANGE ?? 300) * (this.gun?.settings.range * this.skills.len * 5);
+                this.duration = (this.settings.DURATION ?? 300) * (this.gun?.settings.health * this.skills.dur * 20);
                 this.maxDuration = this.duration;
-                this.pierce = Math.round((this.settings.PIERCE ?? 1) * this.skills.prc);
-                this.damage = (this.settings.DAMAGE ?? .1) * (this.skills.dmg / 2);
+                this.pierce = Math.round((this.settings.PIERCE ?? 1) * this.gun?.settings.pen * this.skills.prc);
+                this.damage = (this.settings.DAMAGE ?? .1) * (this.gun?.settings.damage * this.skills.dmg / 2);
             }
 
             calcEndPoint() {
@@ -13538,6 +13563,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     return () => data;
                 })();
                 this.updateAABB(true);*/
+                this.immuneToIce = false;
                 this.immuneToAbilities = false;
                 this.isMothership = false;
                 this.isDominator = false;
@@ -13732,12 +13758,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
                     this.shapeData = set.SHAPE;
                 }
-                if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(.75, 1.25) : this.squiggle : 1;
-                if (set.SIZE != null) {
-                    this.SIZE = set.SIZE * this.squiggle;
-                }
+                if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(set.VARIES_IN_SIZE[0] || .75, set.VARIES_IN_SIZE[1] || 1.25) : this.squiggle : 1;
+                if (set.SIZE != null) this.SIZE = set.SIZE * this.squiggle;
                 if (set.LAYER != null) this.LAYER = set.LAYER;
-                this.settings.skillNames = set.STAT_NAMES || 6;
+                this.settings.skillNames = set.STAT_NAMES || 0;
                 if (set.INDEPENDENT != null) this.settings.independent = set.INDEPENDENT;
                 if (set.UPGRADES_TIER_1 != null)
                     for (let e of set.UPGRADES_TIER_1) this.upgrades.push({
@@ -13781,14 +13805,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.turrets = [];
                     for (let def of set.TURRETS) {
                         let o = new Entity(this, this.master);
-                        if (Array.isArray(def.TYPE)) {
-                            for (let type of def.TYPE) o.minimalDefine(type);
-                        } else o.minimalDefine(def.TYPE);
+                        if (Array.isArray(def.TYPE)) for (let type of def.TYPE) o.minimalDefine(type);
+                        else o.minimalDefine(def.TYPE);
                         o.bindToMaster(def.POSITION, this);
-                        // o.alwaysActive = this.alwaysActive;
-                        if (!def.TARGETABLE_TURRET) {
-                            o.dangerValue = 0;
-                        }
+                        if (!def.TARGETABLE_TURRET) o.dangerValue = 0;
                     };
                 };
                 if (set.PROPS != null) {
@@ -13797,356 +13817,329 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.props = newProps;
                 }
             }
+            
+            setEvolution(evolutionArray) {
+                if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
+                if (this.greaterEvolutionTimeout) clearTimeout(this.greaterEvolutionTimeout);
+                if (evolutionArray?.length) {
+                    this.evolutionTimeout = setTimeout(() => {
+                        try {
+                            if (!this.isAlive() || this.isShiny) return;
+                            if (Math.random() < c.EVOLVE_HALT_CHANCE) this.setEvolution(evolutionArray);
+                            let options = [],
+                                chances = [];
+                            for (let arr of evolutionArray) {
+                                options.push(arr[0]);
+                                chances.push(arr[1]);
+                            }
+                            let choice = options[ran.chooseChance(...chances)];
+                            if (Array.isArray(choice)) choice = ran.choose(choice);
+                            if (choice === '' || (choice.endsWith('estKeeperAI') && room.census.nesters >= room.maxNesters) || (choice === 'rogueEgg' && room.randomColors)) this.setEvolution(evolutionArray);
+                            else if (this.miscIdentifier === 'Rogue Egg') {
+                                const savedName = this.name;
+                                switch (room.gameMode) {
+                                    case 'ffa':
+                                        if (this.team !== -20) this.source = this.variables.savedMaster;
+                                        this.define(Class[(this.team !== -20) ? `${choice}FFA` : choice]);
+                                        break;
+                                    case 'tdm':
+                                        this.define(Class[(this.team !== -20) ? `${choice}Team${-this.team}` : choice]);
+                                        break;
+                                }
+                                sockets.broadcast(`${util.addArticle(this.label, true)} has hatched out of a Rogue Egg!`);
+                                this.isRogueBoss = true;
+                                this.name ||= savedName;
+                                if (room.gameMode === 'ffa' && this.team !== -20) this.checkIfMasterRespawned = setInterval(() => {
+                                    if (!this.isAlive()) {
+                                        if (this.checkIfMasterRespawned) clearInterval(this.checkIfMasterRespawned);
+                                        return;
+                                    }
+                                    if (this.source.isDead()) {
+                                        if (this.source.isBot) {
+                                            this.source = this;
+                                            this.autoOverride = false;
+                                            clearInterval(this.checkIfMasterRespawned);
+                                            return;
+                                        } else {
+                                            this.source = this;
+                                            this.autoOverride = false;
+                                        }
+                                    }
+                                    if (this.source === this) {
+                                        entities.forEach(e => {
+                                            if (e.isAlive() && e.team === this.team && e !== this && e.master === e && e.source === e && e.parent === e) this.source = e;
+                                        });
+                                    }
+                                }, 2000);
+                            } else {
+                                const savedLabel = this.label;
+                                if (Class[choice].TYPE !== 'food') this.define(Class.genericEntity);
+                                this.define(Class[choice]);
+                                if (this.type === "miniboss") {
+                                    this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes['moveInCircles']));
+                                    if (choice.endsWith('estKeeperAI')) {
+                                        for (let key in this) {
+                                            if (key.endsWith('NestFood')) {
+                                                this[key] = false;
+                                                this.name = ran.chooseBossName('b', 1)[0];
+                                                sockets.broadcast(`A Nest Keeper has hatched out of an ${savedLabel}!`);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (err) { util.error("Error while trying to evolve " + global.exportNames[this.index]) }
+                    }, (c.EVOLVE_TIME + ran.irandom(c.EVOLVE_TIME_RAN_ADDER)) * ((this.type === "crasher" || this.isSentry) ? .5 : (["Rogue Egg", "Golden Nonagon"].includes(this.miscIdentifier)) ? 3 : 1)) // Crashers evolve 2x as fast
+                }
+            }
             define(set, extra, addExtraToParents = false) {
                 try {
                     if (set.PARENT != null) for (let i = 0; i < set.PARENT.length; i++) this.define(set.PARENT[i], ((addExtraToParents) ? extra : {}), addExtraToParents);
                     for (let thing in extra) this[thing] = extra[thing];
-                    if (!this.onlyDoEvo) {
-                        if (set.TRAVERSE_SPEED != null) this.turretTraverseSpeed = set.TRAVERSE_SPEED;
-                        if (set.RIGHT_CLICK_TURRET != null) this.turretRightClick = set.RIGHT_CLICK_TURRET;
-                        if (set.index != null) this.index = set.index;
-                        if (set.NAME != null) this.name = set.NAME;
-                            else if (this.socket) this.name = this.socket.name;
-                        if (set.HITS_ONLY_TEAM != null) this.hitsOnlyTeam = set.HITS_ONLY_TEAM;
-                        if (set.LABEL != null) this.label = set.LABEL;
-                        this.labelOverride = "";
-                        if (set.TOOLTIP != null) this.socket?.talk("m", `${set.TOOLTIP}`, "#8cff9f");
-                        this.upgradeTooltip = set.UPGRADE_TOOLTIP || null;
-                        if (set.CREDIT != null) this.socket?.talk("m", `${set.CREDIT}`, "#B58EFD");
-                        this.upgradeCredit = set.UPGRADE_CREDIT || null;
-                        if (set.TYPE != null) this.type = set.TYPE;
-                        if (set.SHAPE != null) {
-                            this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
-                            this.shapeData = set.SHAPE;
-                        }
-                        if (set.COLOR != null && !this.skipColor) this.color = set.COLOR;
-                        if (set.REMOVE_PREVIOUS_CONTROLLERS) this.controllers = [];
-                        if (set.CONTROLLERS != null) {
-                            let toAdd = [];
-                            for (let ioName of set.CONTROLLERS) toAdd.push(new ioTypes[ioName](this));
-                            this.addController(toAdd);
-                        }
-                        if (set.REMOVE_CONTROLLERS) for (let ioName of set.REMOVE_CONTROLLERS) this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes[ioName]));
-                        /* FYI reason i dont just have it not added in the defs is because mockups would need to be generated to change upgrades
-                        if (set.IS_TESTBED_REMOVED && this.socket) {
-                            if (!c.IS_DEV_SERVER && !c.serverName.includes("Sandbox") && this.socket.betaData.permissions !== 3) {
-                                this.sendMessage("You cannot used removed tanks outside of a testing server.");
-                                this.kill();
-                                }
-                                }*/
-                        if (set.NO_SPEED_CALCULATION != null) this.settings.speedNoEffect = set.NO_SPEED_CALCULATION;
-                        if (set.MOTION_TYPE != null) {
-                            if (Array.isArray(set.MOTION_TYPE)) {
-                                this.motionType = set.MOTION_TYPE[0];
-                                this.motionTypeSettings = set.MOTION_TYPE[1];
-                            } else this.motionType = set.MOTION_TYPE;
-                        }
-                        if (set.FACING_TYPE != null) {
-                            if (Array.isArray(set.FACING_TYPE)) {
-                                this.facingType = set.FACING_TYPE[0];
-                                this.facingTypeSettings = set.FACING_TYPE[1];
-                            } else this.facingType = set.FACING_TYPE;
-                        }
-                        if (set.DRAW_HEALTH != null) this.settings.drawHealth = set.DRAW_HEALTH;
-                        if (set.DRAW_SELF != null) this.settings.drawShape = set.DRAW_SELF;
-                        if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
-                        if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
-                        if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
-                        if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
-                        if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;
-                        if (set.INDEPENDENT != null) this.settings.independent = set.INDEPENDENT;
-                        if (set.PERSISTS_AFTER_DEATH != null) this.settings.persistsAfterDeath = set.PERSISTS_AFTER_DEATH;
-                        if (set.CLEAR_ON_MASTER_UPGRADE != null) this.settings.clearOnMasterUpgrade = set.CLEAR_ON_MASTER_UPGRADE;
-                        if (set.HEALTH_WITH_LEVEL != null) this.settings.healthWithLevel = set.HEALTH_WITH_LEVEL;
-                        if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
-                        if (set.GETS_NEGATIVE_SCORE != null) this.settings.getsNegativeScore = set.GETS_NEGATIVE_SCORE;
-                        if (set.HAS_NO_RECOIL != null) this.settings.hasNoRecoil = set.HAS_NO_RECOIL;
-                        if (set.CRAVES_ATTENTION != null) this.settings.attentionCraver = set.CRAVES_ATTENTION;
-                        if (set.BROADCAST_MESSAGE != null) this.settings.broadcastMessage = set.BROADCAST_MESSAGE || undefined;
-                        if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
-                        if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
-                        if (set.CAN_BE_ON_LEADERBOARD != null) this.settings.leaderboardable = set.CAN_BE_ON_LEADERBOARD;
-                        if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
-                        if (set.IS_DIGGER != null) this.aiSettings.isDigger = set.IS_DIGGER;
-                        if (set.DIES_BY_OBSTACLES != null) this.settings.diesByObstacles = set.DIES_BY_OBSTACLES;
-                        this.settings.isHelicopter = set.IS_HELICOPTER || null;
-                        if (set.GO_THRU_OBSTACLES != null) this.settings.goThruObstacle = set.GO_THRU_OBSTACLES;
-                        if (set.BOUNCE_ON_OBSTACLES != null) this.settings.bounceOnObstacles = set.BOUNCE_ON_OBSTACLES;
-                        if (set.STAT_NAMES != null) this.settings.skillNames = set.STAT_NAMES;
-                        if (set.HAS_ANIMATION != null) this.settings.hasAnimation = set.HAS_ANIMATION;
-                        if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
-                        if (set.AI != null) this.aiSettings = set.AI;
-                        if (set.DANGER != null) this.dangerValue = set.DANGER;
-                        if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(.75, 1.25) : this.squiggle : 1;
-                        if (set.RESET_UPGRADES) this.upgrades = [];
-                        if (set.DIES_TO_TEAM_BASE != null) this.diesToTeamBase = set.DIES_TO_TEAM_BASE;
-                        if (set.GOD_MODE != null) this.godmode = set.GOD_MODE;
-                        if (set.PASSIVE != null) this.passive = set.PASSIVE;
-                        if (set.HAS_NO_SKILL_POINTS != null && set.HAS_NO_SKILL_POINTS) this.skill.points = 0;
-                        if (set.HAS_ALL_SKILL_POINTS != null && set.HAS_ALL_SKILL_POINTS) this.skill.points = 42;
-                        if (set.LAYER != null) this.LAYER = set.LAYER;
-                        if (set.ALPHA != null && !this.skipAlpha) this.alpha = set.ALPHA;
-                        if (set.TEAM != null) this.team = set.TEAM;
-                        if (set.BOSS_TIER_TYPE != null) this.bossTierType = set.BOSS_TIER_TYPE;
-                        if (set.SYNC_TURRET_SKILLS != null) this.syncTurretSkills = set.SYNC_TURRET_SKILLS;
-                        if (set.INVISIBLE != null && set.INVISIBLE.length > 0) {
-                            if (set.INVISIBLE.length !== 3) throw ("Invalid invisibility values!");
-                            this.invisible = set.INVISIBLE;
-                        } else this.invisible = [0, 0, 0];
-                        if (set.SEE_INVISIBLE != null) this.seeInvisible = set.SEE_INVISIBLE;
-                        this.displayText = set.DISPLAY_TEXT || "";
-                        this.displayTextColor = set.DISPLAY_TEXT_COLOR || "#FFFFFF"
-                        if (set.AMMO != null) {
-                            this.displayAmmoText = set.DISPLAY_AMMO_TEXT !== undefined ? set.DISPLAY_TEXT : true
-                            if (this.displayAmmoText) {
-                                this.displayText = `${set.AMMO} Ammo left`;
-                            }
-                            this.ammo = set.AMMO;
-                        }
-                        this.onCollide = set.ON_COLLIDE || null;
-                        this.onTick = set.ON_TICK || null;
-                        this.onDamaged = set.ON_DAMAGED || null;
-                        this.onDealtDamage = set.ON_DEALT_DAMAGE || null;
-                        this.onTorched = set.ON_TORCHED || null;
-                        this.doesTorch = set.DOES_TORCH || null;
-                        this.onDealtDamageUniv = set.ON_DEALT_DAMAGE_UNIVERSAL || null;
-                        this.onKill = set.ON_KILL || null;
-                        this.onMain = set.ON_MAIN || null;
-                        this.onNotMain = set.ON_NOT_MAIN ?? null;
-                        this.onAlt = set.ON_ALT || null;
-                        this.onQ = set.ON_Q || null
-                        this.onNotAlt = set.ON_NOT_ALT || null;
-                        this.onDead = set.ON_DEAD || null
-                        this.isObserver = set.IS_OBSERVER;
-                        this.onOverride = set.ON_OVERRIDE;
-                        this.isSentry = set.IS_SENTRY || null;
-                        this.canNecro = set.CAN_NECROMIZE || null;
-                        if(set.LEASHED){
-                            if(typeof set.LEASHED === "number"){
-                                this.controllers.push(new ioTypes.leashed(this, set.LEASHED));
-                            }else{
-                                console.error(`LEASHED must be a number`, this)
-                            }
-                        }else{
-                            this.leash = null;
-                        }
-                        if (set.UPGRADES_TIER_1 != null)
-                            for (let e of set.UPGRADES_TIER_1) this.upgrades.push({
-                                class: exportNames[e.index],
-                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 15,
-                                index: e.index,
-                                tier: 1
-                            });
-                        if (set.UPGRADES_TIER_2 != null)
-                            for (let e of set.UPGRADES_TIER_2) this.upgrades.push({
-                                class: exportNames[e.index],
-                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 30,
-                                index: e.index,
-                                tier: 2
-                            });
-                        if (set.UPGRADES_TIER_3 != null)
-                            for (let e of set.UPGRADES_TIER_3) this.upgrades.push({
-                                class: exportNames[e.index],
-                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 45,
-                                index: e.index,
-                                tier: 3
-                            });
-                        if (set.UPGRADES_TIER_4 != null)
-                            for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
-                                class: exportNames[e.index],
-                                level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
-                                index: e.index,
-                                tier: 4
-                            });
-                        if (set.SIZE != null) {
-                            this.SIZE = set.SIZE * this.squiggle;
-                        }
-                        if (set.SKILL != null && set.SKILL.length > 0) {
-                            if (set.SKILL.length !== 10) throw ("Invalid skill raws!");
-                            this.skill.set(set.SKILL);
-                        }
-                        if (set.LEVEL != null) {
-                            if (set.LEVEL === -1) this.skill.reset();
-                            while (this.skill.level < set.LEVEL) {
-                                this.skill.score += this.skill.levelScore;
-                                this.skill.maintain(true);
-                            }
-                            this.refreshBodyAttributes();
-                        }
-                        if (set.SKILL_CAP != null && set.SKILL_CAP.length > 0) {
-                            if (set.SKILL_CAP.length !== 10) throw ("Invalid skill caps!");
-                            this.skill.setCaps(set.SKILL_CAP);
-                        }
-                        if (set.VALUE != null) {
-                            this.skill.score = (set.FORCE_VALUE) ? set.VALUE * this.squiggle : Math.max(this.skill.score, set.VALUE * this.squiggle);
-                        }
-                        if (set.LABEL_OVERRIDE != null) this.labelOverride = set.LABEL_OVERRIDE
-                        if (set.SCOPED != null) {
-                            this.scoped = set.SCOPED;
-                            this.scopedMult = 1;
-                        }
-                        if (set.CAMERA_TO_MOUSE != null) {
-                            this.scoped = set.CAMERA_TO_MOUSE[0];
-                            this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
-                        }
-                        this.altCameraSource = null
-                        if (set.GUNS != null) {
-                            let newGuns = [];
-                            let i = 0;
-                            for (let def of set.GUNS) {
-                                newGuns.push(new Gun(this, def, i));
-                                i++;
-                            }
-                            this.guns = newGuns;
-                        }
-                        if (set.PROPS != null) {
-                            let newProps = [];
-                            for (let def of set.PROPS) newProps.push(new Prop(def));
-                            this.props = newProps;
-                        }
-                        if (set.MAX_CHILDREN != null) this.maxChildren = set.MAX_CHILDREN;
-                        if (set.COUNTS_OWN_KIDS != null) this.countsOwnKids = set.COUNTS_OWN_KIDS;
-                        if (set.BODY != null) {
-                            if (set.BODY.ACCELERATION != null) this.ACCELERATION = set.BODY.ACCELERATION;
-                                else if (this.type === 'food') this.ACCELERATION = .015 / (this.SIZE * .2);
-                            if (set.BODY.SPEED != null) this.SPEED = set.BODY.SPEED;
-                            if (set.BODY.HEALTH != null) this.HEALTH = set.BODY.HEALTH;
-                            if (set.BODY.RESIST != null) this.RESIST = set.BODY.RESIST;
-                            if (set.BODY.SHIELD != null) this.SHIELD = set.BODY.SHIELD;
-                            if (set.BODY.REGEN != null) this.REGEN = set.BODY.REGEN;
-                            if (set.BODY.DAMAGE != null) this.DAMAGE = set.BODY.DAMAGE;
-                            if (set.BODY.PENETRATION != null) this.PENETRATION = set.BODY.PENETRATION;
-                            if (set.BODY.FOV != null) this.FOV = set.BODY.FOV;
-                            if (set.BODY.RANGE != null) this.RANGE = set.BODY.RANGE;
-                            if (set.BODY.SHOCK_ABSORB != null) this.SHOCK_ABSORB = set.BODY.SHOCK_ABSORB;
-                            if (set.BODY.DENSITY != null) this.DENSITY = set.BODY.DENSITY;
-                            if (set.BODY.STEALTH != null) this.STEALTH = set.BODY.STEALTH;
-                            if (set.BODY.PUSHABILITY != null) this.PUSHABILITY = set.BODY.PUSHABILITY;
-                            if (set.BODY.HETERO != null) this.heteroMultiplier = set.BODY.HETERO;
-                            this.refreshBodyAttributes();
-                        }
-                        if (set.TURRETS != null) {
-                            for (let o of this.turrets) o.destroy();
-                            this.turrets = [];
-                            for (let def of set.TURRETS) {
-                                let o = new Entity(this, this.master);
-                                if (Array.isArray(def.TYPE)) {
-                                    for (let type of def.TYPE) o.define(type);
-                                } else o.define(def.TYPE);
-                                o.bindToMaster(def.POSITION, this);
-                                if (!def.TARGETABLE_TURRET) {
-                                    o.dangerValue = 0;
-                                } else if (def.TARGETABLE_TURRET > 0) {
-                                    o.dangerValue = def.TARGETABLE_TURRET;
-                                }
-                            }
-                        }
-                        if (set.DIES_INSTANTLY != null) this.kill();
-                        if (set.RANDOM_TYPE != null && set.RANDOM_TYPE !== "None") {
-                            let choices = [];
-                            switch (set.RANDOM_TYPE) {
-                                case "Cultist":
-                                    choices = [Class.trapmind.hivemindID, Class.poundHivemind.hivemindID, Class.psychosisProbe, Class.machHivemind.hivemindID, Class.auto2Probe, Class.propellerHivemind.hivemindID, Class.pelletHivemind.hivemindID, Class.lancemind.hivemindID, Class.flankmind.hivemindID, Class.minishotmind.hivemindID, Class.basebridMind.hivemindID, Class.twinmind.hivemindID, Class.submind.hivemindID].filter(i => !!i);;
-                                    break;
-                                default:
-                                    util.warn("Invalid RANDOM_TYPE value: " + set.RANDOM_TYPE + "!");
-                            }
-                            choices = choices.filter(r => !!r);
-                            this.define(choices[Math.floor(Math.random() * choices.length)]);
-                        }
-                        if (set.ICE_IMMUNE != null) this.immuneToIce = set.ICE_IMMUNE;
-                        if (set.ABILITY_IMMUNE != null) this.immuneToAbilities = set.ABILITY_IMMUNE;
-                        if (set.SPAWNS_DECA != null) this.define(Class.decagon);
-                        if (set.ALWAYS_ACTIVE != null) this.alwaysActive = set.ALWAYS_ACTIVE;
-                        if (set.MISC_IDENTIFIER != null) this.miscIdentifier = set.MISC_IDENTIFIER;
-                        if (set.SWITCHEROO_ID != null) this.switcherooID = set.SWITCHEROO_ID;
-                        if (set.IS_ARENA_CLOSER != null) {
-                            this.isArenaCloser = set.IS_ARENA_CLOSER;
-                            if (this.isArenaCloser) this.immuneToAbilities = true;
-                        }
-                        this.variables = set.VARIABLES ? JSON.parse(JSON.stringify(set.VARIABLES)) : {};
-                        this.animations = [];
+                    if (set.index != null) this.index = set.index;
+                    if (set.TRAVERSE_SPEED != null) this.turretTraverseSpeed = set.TRAVERSE_SPEED;
+                    if (set.RIGHT_CLICK_TURRET != null) this.turretRightClick = set.RIGHT_CLICK_TURRET;
+                    if (set.NAME != null) this.name = set.NAME;
+                        else if (this.socket) this.name = this.socket.name;
+                    if (set.HITS_ONLY_TEAM != null) this.hitsOnlyTeam = set.HITS_ONLY_TEAM;
+                    if (set.LABEL != null) this.label = set.LABEL;
+                    this.labelOverride = "";
+                    if (set.NO_TOOLTIPS != null) this.skipTooltip = set.NO_TOOLTIPS;
+                    if (set.TOOLTIP != null && !this.skipTooltip) this.socket?.talk("m", `${set.TOOLTIP}`, "#8cff9f");
+                    this.upgradeTooltip = set.UPGRADE_TOOLTIP || null;
+                    if (set.CREDIT != null) this.socket?.talk("m", `${set.CREDIT}`, "#B58EFD");
+                    this.upgradeCredit = set.UPGRADE_CREDIT || null;
+                    if (set.TYPE != null) this.type = set.TYPE;
+                    if (set.SHAPE != null) {
+                        this.shape = typeof set.SHAPE === 'number' ? set.SHAPE : 0
+                        this.shapeData = set.SHAPE;
                     }
-                    if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
-                    if (this.greaterEvolutionTimeout) clearTimeout(this.greaterEvolutionTimeout);
-                    if (set.EVOLUTIONS?.length) {
-                        this.evolutionTimeout = setTimeout(() => {
-                            try {
-                                if (!this.isAlive()) return;
-                                let options = [],
-                                    chances = [];
-                                for (let arr of set.EVOLUTIONS) {
-                                    options.push(arr[0]);
-                                    chances.push(arr[1]);
-                                }
-                                if (Math.random() < c.EVOLVE_HALT_CHANCE && this.miscIdentifier !== 'Rogue Egg') return;
-                                let choice = options[ran.chooseChance(...chances)];
-                                if (Array.isArray(choice)) choice = ran.choose([choice]);
-                                if (choice === '' || (choice === 'rogueEgg' && room.gameMode !== "tdm")) this.define({ EVOLUTIONS: set.EVOLUTIONS }, { onlyDoEvo: true });
-                                else if (this.miscIdentifier === 'Rogue Egg') {
-                                    this.name = ran.chooseBossName('castle', 1)[0];
-                                    this.nameColor = (this.team !== -20) ? teamHexCodes[-this.team - 1] : "#726F6F";
-                                    this.define(Class[(this.team !== -20) ? `${choice}Team${-this.team}` : choice]);
-                                    sockets.broadcast(`${util.addArticle(this.label, true)} has hatched out of a Rogue Egg!`);
-                                } else {
-                                    this.define(Class[choice]);
-                                    if (this.type === "miniboss") {
-                                        this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes['moveInCircles']));
-                                        switch (choice) {
-                                            case "triangleNestKeeperAI":
-                                                this.isTriNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Triangle!");
-                                                break;
-                                            case "squareNestKeeperAI":
-                                                this.isSquareNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Square!");
-                                                break;
-                                            case "nestKeeperAI":
-                                                this.isPentaNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Pentagon!");
-                                                break;
-                                            case "hexagonNestKeeperAI":
-                                                this.isHexaNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Hexagon!");
-                                                break;
-                                            case "heptagonNestKeeperAI":
-                                                this.isHeptaNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Heptagon!");
-                                                break;
-                                            case "octagonNestKeeperAI":
-                                                this.isOctaNestFood = false;
-                                                this.miscIdentifier = "Natural Miniboss";
-                                                this.name = ran.chooseBossName('b', 1)[0];
-                                                sockets.broadcast("A Nest Keeper has hatched out of an Alpha Octagon!");
-                                                break;
-                                        }
-                                    }
-                                }
-                            } catch (err) { util.error("Error while trying to evolve " + global.exportNames[this.index]) }
-                        }, (c.EVOLVE_TIME + ran.irandom(c.EVOLVE_TIME_RAN_ADDER)) * ((this.type === "crasher" || this.isSentry) ? 0.5 : (this.miscIdentifier === 'Rogue Egg') ? 2 : 1)) // Crashers evolve 2x as fast
-                    };
-                    if (!this.onlyDoEvo) {
-                        if (set.WEAPON_COLOR != null) this.mainWeaponColor = set.WEAPON_COLOR;
-                        if (set.BYPASS_BASE_RESTRICTIONS != null) this.shootsInBaseAnyway = set.BYPASS_BASE_RESTRICTIONS;
-                        if (this.isShiny) {
-                            this.color = -1;
-                            this.skill.score *= 3;
-                            this.SIZE += 2;
-                            this.label = "Shiny " + this.label;
-                            this.settings.givesKillMessage = true;
-                        }
-                        if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity, ran);
+                    if (set.COLOR != null) this.color = set.COLOR;
+                    if (set.REMOVE_PREVIOUS_CONTROLLERS) this.controllers = [];
+                    if (set.CONTROLLERS != null) {
+                        let toAdd = [];
+                        for (let ioName of set.CONTROLLERS) toAdd.push(new ioTypes[ioName](this));
+                        this.addController(toAdd);
                     }
+                    if (set.REMOVE_CONTROLLERS) for (let ioName of set.REMOVE_CONTROLLERS) this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes[ioName]));
+                    if (set.NO_SPEED_CALCULATION != null) this.settings.speedNoEffect = set.NO_SPEED_CALCULATION;
+                    if (set.MOTION_TYPE != null) {
+                        if (Array.isArray(set.MOTION_TYPE)) {
+                            this.motionType = set.MOTION_TYPE[0];
+                            this.motionTypeSettings = set.MOTION_TYPE[1];
+                        } else this.motionType = set.MOTION_TYPE;
+                    }
+                    if (set.FACING_TYPE != null) {
+                        if (Array.isArray(set.FACING_TYPE)) {
+                            this.facingType = set.FACING_TYPE[0];
+                            this.facingTypeSettings = set.FACING_TYPE[1];
+                        } else this.facingType = set.FACING_TYPE;
+                    }
+                    if (set.DRAW_HEALTH != null) this.settings.drawHealth = set.DRAW_HEALTH;
+                    if (set.DRAW_SELF != null) this.settings.drawShape = set.DRAW_SELF;
+                    if (set.GIVE_KILL_MESSAGE != null) this.settings.givesKillMessage = set.GIVE_KILL_MESSAGE;
+                    if (set.CAN_GO_OUTSIDE_ROOM != null) this.settings.canGoOutsideRoom = set.CAN_GO_OUTSIDE_ROOM;
+                    if (set.HITS_OWN_TYPE != null) this.settings.hitsOwnType = set.HITS_OWN_TYPE;
+                    if (set.DIE_AT_LOW_SPEED != null) this.settings.diesAtLowSpeed = set.DIE_AT_LOW_SPEED;
+                    if (set.DIE_AT_RANGE != null) this.settings.diesAtRange = set.DIE_AT_RANGE;
+                    if (set.INDEPENDENT != null) this.settings.independent = set.INDEPENDENT;
+                    if (set.PERSISTS_AFTER_DEATH != null) this.settings.persistsAfterDeath = set.PERSISTS_AFTER_DEATH;
+                    if (set.CLEAR_ON_MASTER_UPGRADE != null) this.settings.clearOnMasterUpgrade = set.CLEAR_ON_MASTER_UPGRADE;
+                    if (set.HEALTH_WITH_LEVEL != null) this.settings.healthWithLevel = set.HEALTH_WITH_LEVEL;
+                    if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
+                    if (set.GETS_NEGATIVE_SCORE != null) this.settings.getsNegativeScore = set.GETS_NEGATIVE_SCORE;
+                    if (set.HAS_NO_RECOIL != null) this.settings.hasNoRecoil = set.HAS_NO_RECOIL;
+                    if (set.CRAVES_ATTENTION != null) this.settings.attentionCraver = set.CRAVES_ATTENTION;
+                    if (set.BROADCAST_MESSAGE != null) this.settings.broadcastMessage = set.BROADCAST_MESSAGE || undefined;
+                    if (set.DAMAGE_CLASS != null) this.settings.damageClass = set.DAMAGE_CLASS;
+                    if (set.BUFF_VS_FOOD != null) this.settings.buffVsFood = set.BUFF_VS_FOOD;
+                    if (set.CAN_BE_ON_LEADERBOARD != null) this.settings.leaderboardable = set.CAN_BE_ON_LEADERBOARD;
+                    if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
+                    if (set.IS_DIGGER != null) this.aiSettings.isDigger = set.IS_DIGGER;
+                    if (set.DIES_BY_OBSTACLES != null) this.settings.diesByObstacles = set.DIES_BY_OBSTACLES;
+                    this.settings.isHelicopter = set.IS_HELICOPTER || null;
+                    if (set.GO_THRU_OBSTACLES != null) this.settings.goThruObstacle = set.GO_THRU_OBSTACLES;
+                    if (set.BOUNCE_ON_OBSTACLES != null) this.settings.bounceOnObstacles = set.BOUNCE_ON_OBSTACLES;
+                    if (set.STAT_NAMES != null) this.settings.skillNames = set.STAT_NAMES;
+                    if (set.HAS_ANIMATION != null) this.settings.hasAnimation = set.HAS_ANIMATION;
+                    if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
+                    if (set.AI != null) this.aiSettings = set.AI;
+                    if (set.DANGER != null) this.dangerValue = set.DANGER;
+                    if (set.VARIES_IN_SIZE != null) this.squiggle = (set.VARIES_IN_SIZE) ? (Number.isInteger(this.squiggle)) ? ran.randomRange(set.VARIES_IN_SIZE[0] || .75, set.VARIES_IN_SIZE[1] || 1.25) : this.squiggle : 1;
+                    if (set.RESET_UPGRADES) this.upgrades = [];
+                    if (set.DIES_TO_TEAM_BASE != null) this.diesToTeamBase = set.DIES_TO_TEAM_BASE;
+                    if (set.GOD_MODE != null) this.godmode = set.GOD_MODE;
+                    if (set.PASSIVE != null) this.passive = set.PASSIVE;
+                    if (set.HAS_NO_SKILL_POINTS != null && set.HAS_NO_SKILL_POINTS) this.skill.points = 0;
+                    if (set.HAS_ALL_SKILL_POINTS != null && set.HAS_ALL_SKILL_POINTS) this.skill.points = 42;
+                    if (set.LAYER != null) this.LAYER = set.LAYER;
+                    if (set.ALPHA != null && !this.skipAlpha) this.alpha = set.ALPHA;
+                    if (set.TEAM != null) this.team = set.TEAM;
+                    if (set.BOSS_TIER_TYPE != null) this.bossTierType = set.BOSS_TIER_TYPE;
+                    if (set.SYNC_TURRET_SKILLS != null) this.syncTurretSkills = set.SYNC_TURRET_SKILLS;
+                    if (set.INVISIBLE != null && set.INVISIBLE.length > 0) {
+                        if (set.INVISIBLE.length !== 3) throw ("Invalid invisibility values!");
+                        this.invisible = set.INVISIBLE;
+                    } else this.invisible = [0, 0, 0];
+                    if (set.SEE_INVISIBLE != null) this.seeInvisible = set.SEE_INVISIBLE;
+                    this.displayText = set.DISPLAY_TEXT || "";
+                    this.displayTextColor = set.DISPLAY_TEXT_COLOR || "#FFFFFF"
+                    if (set.AMMO != null) {
+                        this.displayAmmoText = set.DISPLAY_AMMO_TEXT !== undefined ? set.DISPLAY_TEXT : true
+                        if (this.displayAmmoText) this.displayText = `${set.AMMO} Ammo left`;
+                        this.ammo = set.AMMO;
+                    }
+                    this.onCollide = set.ON_COLLIDE || null;
+                    this.onTick = set.ON_TICK || null;
+                    this.onDamaged = set.ON_DAMAGED || null;
+                    this.onDealtDamage = set.ON_DEALT_DAMAGE || null;
+                    this.onTorched = set.ON_TORCHED || null;
+                    this.doesTorch = set.DOES_TORCH || null;
+                    this.onDealtDamageUniv = set.ON_DEALT_DAMAGE_UNIVERSAL || null;
+                    this.onKill = set.ON_KILL || null;
+                    this.onMain = set.ON_MAIN || null;
+                    this.onNotMain = set.ON_NOT_MAIN ?? null;
+                    this.onAlt = set.ON_ALT || null;
+                    this.onQ = set.ON_Q || null
+                    this.onNotAlt = set.ON_NOT_ALT || null;
+                    this.onDead = set.ON_DEAD || null
+                    this.isObserver = set.IS_OBSERVER;
+                    this.onOverride = set.ON_OVERRIDE;
+                    this.isSentry = set.IS_SENTRY || null;
+                    this.canNecro = set.CAN_NECROMIZE || null;
+                    if (set.LEASHED) {
+                        if (typeof set.LEASHED === "number") this.controllers.push(new ioTypes.leashed(this, set.LEASHED));
+                        else console.error(`LEASHED must be a number`, this)
+                    } else this.leash = null;
+                    if (set.UPGRADES_TIER_1 != null)
+                        for (let e of set.UPGRADES_TIER_1) this.upgrades.push({
+                            class: exportNames[e.index],
+                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 15,
+                            index: e.index,
+                            tier: 1
+                        });
+                    if (set.UPGRADES_TIER_2 != null)
+                        for (let e of set.UPGRADES_TIER_2) this.upgrades.push({
+                            class: exportNames[e.index],
+                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 30,
+                            index: e.index,
+                            tier: 2
+                        });
+                    if (set.UPGRADES_TIER_3 != null)
+                        for (let e of set.UPGRADES_TIER_3) this.upgrades.push({
+                            class: exportNames[e.index],
+                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 45,
+                            index: e.index,
+                            tier: 3
+                        });
+                    if (set.UPGRADES_TIER_4 != null)
+                        for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
+                            class: exportNames[e.index],
+                            level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
+                            index: e.index,
+                            tier: 4
+                        });
+                    if (set.SIZE != null) {
+                        this.SIZE = set.SIZE * this.squiggle;
+                    }
+                    if (set.SKILL != null && set.SKILL.length > 0) {
+                        if (set.SKILL.length !== 10) throw ("Invalid skill raws!");
+                        this.skill.set(set.SKILL);
+                    }
+                    if (set.LEVEL != null) {
+                        if (set.LEVEL === -1) this.skill.reset();
+                        while (this.skill.level < set.LEVEL) {
+                            this.skill.score += this.skill.levelScore;
+                            this.skill.maintain(true);
+                        }
+                        this.refreshBodyAttributes();
+                    }
+                    if (set.SKILL_CAP != null && set.SKILL_CAP.length > 0) {
+                        if (set.SKILL_CAP.length !== 10) throw ("Invalid skill caps!");
+                        this.skill.setCaps(set.SKILL_CAP);
+                    }
+                    if (set.VALUE != null) this.skill.score = (set.FORCE_VALUE) ? set.VALUE * this.squiggle : Math.max(this.skill.score, set.VALUE * this.squiggle);
+                    if (set.LABEL_OVERRIDE != null) this.labelOverride = set.LABEL_OVERRIDE
+                    if (set.SCOPED != null) {
+                        this.scoped = set.SCOPED;
+                        this.scopedMult = 1;
+                    }
+                    if (set.CAMERA_TO_MOUSE != null) {
+                        this.scoped = set.CAMERA_TO_MOUSE[0];
+                        this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
+                    }
+                    this.altCameraSource = null
+                    if (set.GUNS != null) {
+                        let newGuns = [];
+                        let i = 0;
+                        for (let def of set.GUNS) {
+                            newGuns.push(new Gun(this, def, i));
+                            i++;
+                        }
+                        this.guns = newGuns;
+                    }
+                    if (set.PROPS != null) {
+                        let newProps = [];
+                        for (let def of set.PROPS) newProps.push(new Prop(def));
+                        this.props = newProps;
+                    }
+                    if (set.MAX_CHILDREN != null) this.maxChildren = set.MAX_CHILDREN;
+                    if (set.COUNTS_OWN_KIDS != null) this.countsOwnKids = set.COUNTS_OWN_KIDS;
+                    if (set.BODY != null) {
+                        if (set.BODY.ACCELERATION != null) this.ACCELERATION = set.BODY.ACCELERATION;
+                            else if (this.type === 'food') this.ACCELERATION = .015 / (this.SIZE * .2);
+                        if (set.BODY.SPEED != null) this.SPEED = set.BODY.SPEED;
+                        if (set.BODY.HEALTH != null) this.HEALTH = set.BODY.HEALTH;
+                        if (set.BODY.RESIST != null) this.RESIST = set.BODY.RESIST;
+                        if (set.BODY.SHIELD != null) this.SHIELD = set.BODY.SHIELD;
+                        if (set.BODY.REGEN != null) this.REGEN = set.BODY.REGEN;
+                        if (set.BODY.DAMAGE != null) this.DAMAGE = set.BODY.DAMAGE;
+                        if (set.BODY.PENETRATION != null) this.PENETRATION = set.BODY.PENETRATION;
+                        if (set.BODY.FOV != null) this.FOV = set.BODY.FOV;
+                        if (set.BODY.RANGE != null) this.RANGE = set.BODY.RANGE;
+                        if (set.BODY.SHOCK_ABSORB != null) this.SHOCK_ABSORB = set.BODY.SHOCK_ABSORB;
+                        if (set.BODY.DENSITY != null) this.DENSITY = set.BODY.DENSITY;
+                        if (set.BODY.STEALTH != null) this.STEALTH = set.BODY.STEALTH;
+                        if (set.BODY.PUSHABILITY != null) this.PUSHABILITY = set.BODY.PUSHABILITY;
+                        if (set.BODY.HETERO != null) this.heteroMultiplier = set.BODY.HETERO;
+                        this.refreshBodyAttributes();
+                    }
+                    if (set.TURRETS != null) {
+                        for (let o of this.turrets) o.destroy();
+                        this.turrets = [];
+                        for (let def of set.TURRETS) {
+                            let o = new Entity(this, this.master);
+                            if (Array.isArray(def.TYPE)) for (let type of def.TYPE) o.define(type);
+                            else o.define(def.TYPE);
+                            o.bindToMaster(def.POSITION, this);
+                            if (!def.TARGETABLE_TURRET) o.dangerValue = 0;
+                            else if (def.TARGETABLE_TURRET > 0) o.dangerValue = def.TARGETABLE_TURRET;
+                        }
+                    }
+                    if (set.ICE_IMMUNE != null) this.immuneToIce = set.ICE_IMMUNE;
+                    if (set.ABILITY_IMMUNE != null) this.immuneToAbilities = set.ABILITY_IMMUNE;
+                    if (set.SPAWNS_DECA != null) this.define(Class.decagon);
+                    if (set.ALWAYS_ACTIVE != null) this.alwaysActive = set.ALWAYS_ACTIVE;
+                    if (set.MISC_IDENTIFIER != null) this.miscIdentifier = set.MISC_IDENTIFIER;
+                    if (set.SWITCHEROO_ID != null) this.switcherooID = set.SWITCHEROO_ID;
+                    if (set.IS_ARENA_CLOSER != null) {
+                        this.isArenaCloser = set.IS_ARENA_CLOSER;
+                        if (this.isArenaCloser) this.immuneToAbilities = true;
+                    }
+                    this.variables = set.VARIABLES ? JSON.parse(JSON.stringify(set.VARIABLES)) : {};
+                    this.animations = [];
+                    this.setEvolution(set.EVOLUTIONS);
+                    if (set.WEAPON_COLOR != null) this.mainWeaponColor = set.WEAPON_COLOR;
+                    if (set.BYPASS_BASE_RESTRICTIONS != null) this.shootsInBaseAnyway = set.BYPASS_BASE_RESTRICTIONS;
+                    if (this.isShiny) {
+                        this.color = -1;
+                        this.skill.score *= 3;
+                        this.SIZE += 2;
+                        this.label = "Shiny " + this.label;
+                        this.settings.givesKillMessage = true;
+                    }
+                    if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity, ran);
+                    if (set.DIES_INSTANTLY != null) this.kill();
                 } catch (e) {
                     if (this.isBot) console.error(this.tank);
                     console.error("An error occured while trying to set " + trimName(this.name) + "'s parent entity, aborting! Index: " + this.index + "." + " Export: " + global.exportNames[this.index]);
@@ -14220,7 +14213,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             camera(tur = false) {
                 let out = {
-                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((this.miscIdentifier === "Sanctuary" || this.type === "tank" || this.type === "miniboss" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + (this.invuln || (this.type === "food" || this.type === "crasher") && !this.necromizable) * 0x08,
+                    type: tur * 0x01 + this.settings.drawHealth * 0x02 + ((["Sanctuary", "Rogue Egg"].includes(this.miscIdentifier) || this.type === "tank" || this.type === "miniboss" || this.type === "utility") && !this.settings.noNameplate) * 0x04 + (this.invuln || (this.type === "food" || this.type === "crasher") && !this.necromizable) * 0x08,
                     id: this.id,
                     masterId: this.master.id,
                     index: this.index,
@@ -14306,16 +14299,22 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.upgrades = [];
                     this.define(tank);
                     this.tank = tank;
-                    if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.");
-                    if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
-                    if (this.invisible[1] && this.invisible[0]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
-                    if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.");
-                    if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use a special ability.");
-                    if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use a special ability.");
+                    if (!this.skipTooltip) {
+                        if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.", "#8cff9f");
+                        if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
+                        if (this.invisible[1] && this.invisible[0]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
+                        if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.", "#8cff9f");
+                        if (this.immuneToAbilities) this.socket?.talk("m", "You are immune to status effects.", "#8cff9f");
+                        if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use a special ability.", "#8cff9f");
+                        if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use a special ability.", "#8cff9f");
+                    }
                     //if (this.usesAltFire) this.sendMessage("Right click or press shift to fire other weapons.");
                     if (this.upgradeCredit) this.sendMessage(this.upgradeCredit, "#B58EFD");
-                    if (this.upgradeTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
-                    this.sendMessage("You have upgraded to " + this.label + ".");
+                    if (this.upgradeTooltip && !this.skipTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
+                    if (!this.label.length) {
+                        this.socket?.talk("m", "This tank appears to be nameless; suggest a label for it, if you'd like!", "#8cff9f");
+                        this.sendMessage("You have upgraded.");
+                    } else this.sendMessage("You have upgraded to " + this.label + ".");
                     this.childrenMap.forEach(o => {
                         if (o.settings.clearOnMasterUpgrade && o.master.id === this.id && o.id !== this.id && o !== this) {
                             o.kill();
@@ -14368,16 +14367,22 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.upgrades = [];
                 this.define(tank);
                 this.tank = tank;
-                if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.");
-                if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
-                if (this.invisible[1]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
-                if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.");
-                if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use an animation ability.");
-                if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use an animation ability.");
+                if (!this.skipTooltip) {
+                    if (this.switcherooID === 0 || (this.bossTierType !== -1 && this.bossTierType !== 16)) this.sendMessage("Press Q to switch tiers. There is a 1 second cooldown.", "#8cff9f");
+                    if (this.scoped) this.socket?.talk("m", "Right click or press shift to move the camera to your mouse.", "#8cff9f");
+                    if (this.invisible[1]) this.socket?.talk("m", "Stand still to turn invisible.", "#8cff9f");
+                    if (this.facingType === "hatchet") this.sendMessage("Left click to make the tank spin quickly.", "#8cff9f");
+                    if (this.immuneToAbilities) this.socket?.talk("m", "You are immune to status effects.", "#8cff9f");
+                    if (this.settings.hasAnimation === "rmb") this.sendMessage("Right click or press shift to use an animation ability.", "#8cff9f");
+                    if (this.settings.hasAnimation === "lmb") this.sendMessage("Left click or press space to use an animation ability.", "#8cff9f");
+                }
                 //if (this.usesAltFire) this.sendMessage("Right click or press shift to fire other weapons.");
                 if (this.upgradeCredit) this.sendMessage(this.upgradeCredit, "#B58EFD");
-                if (this.upgradeTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
-                this.sendMessage("You have changed your tank to " + this.label + ".");
+                if (this.upgradeTooltip && !this.skipTooltip) this.sendMessage(this.upgradeTooltip, "#8cff9f");
+                if (!this.label.length) {
+                    this.socket?.talk("m", "This tank appears to be nameless; suggest a label for it, if you'd like!", "#8cff9f");
+                    this.sendMessage("You have changed your tank.");
+                } else this.sendMessage("You have changed your tank to to " + this.label + ".");
                 this.skill.update();
                 this.refreshBodyAttributes();
                 this.childrenMap.forEach(o => {
@@ -14657,7 +14662,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     case "plasma":
                         this.x = this.source.x;
                         this.y = this.source.y;
-                        this.SIZE += 4;
+                        this.SIZE += 10;
                         break;
                     case "colorthingy":
                         this.color = 0;
@@ -15246,7 +15251,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
                     // Just in case one of the onDead events revives the tank from death (like dominators), don't run it
                     if (this.isDead()) {
-                    if (this.variables.onfire && this.miscIdentifier === 'Rogue Egg') this.collisionArray.push(this.variables.onfireBy);
+                    if (this.variables.onfire) this.collisionArray.push(this.variables.onfireBy);
                         let killers = [],
                             killTools = [],
                             notJustFood = false,
@@ -15280,16 +15285,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             }
                             killTools.push(o);
                         }
-                        /* if (this.variables.onfire) {
-                            let master = this.variables.onfireBy;
-                            if (master && master.settings.acceptsScore) {
-                                if (master.type === "tank" || master.type === "miniboss") notJustFood = true;
-                                if (master.settings.getsNegativeScore) jackpot *= -1;
-                                master.skill.score += jackpot;
-                                if (!killers.includes(master)) killers.push(master);
-                            }
-                            killTools.push(master);
-                        } */
                         // Now process that information
                         let killText = notJustFood ? "" : "You have been killed by ",
                             giveKillMessage = this.settings.givesKillMessage;
@@ -15325,7 +15320,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     killText += " and ";
                                 }
                                 if (giveKillMessage) {
-                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire) ? "scorched " : "killed ") + name + ".");
+                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire && this.variables.onfireBy === o) ? "scorched " : "killed ") + name + ".");
                                 }
                             }
                             killText = killText.slice(0, -4);
@@ -15547,11 +15542,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 return /*this != null && */ this.health.amount > 0 && !this.isGhost;
             }
             toggleRainbow() {
+                if (!this.isAlive()) return;
                 this.rainbow = !this.rainbow;
                 if (this.rainbow) this.intervalID = setInterval(this.rainbowLoop, this.rainbowSpeed);
                 else clearInterval(this.intervalID);
             }
             rainbowLoop() {
+                if (!this.isAlive()) return;
                 if (this.color < 100 || isNaN(this.color)) this.color = 100;
                 this.color = (this.color - 100 + 1) % 86 + 100;
                 if (this.multibox.enabled)
@@ -15893,6 +15890,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 // --- Perspective Logic ---
                 let finalTwiggle = data.twiggle;
                 let finalColor = data.color ?? 0;
+                let finalNameColor = data.nameColor ?? "#FFFFFF";
 
                 if (playerContext && playerContext.body) {
                     // Perspective #1: Autospin
@@ -15903,8 +15901,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
                     // Perspective #2: FFA Color Override
                     // In FFA, if a player's body color is 'FFA_RED', they see their own bullets as their team color.
-                    if (playerContext.gameMode === "ffa" && !room.randomColors  && data.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && data.masterId === playerContext.body.id) {
+                    if (playerContext.gameMode === "ffa" && !room.randomColors && data.color === "FFA_RED" && playerContext.body.color === "FFA_RED" && data.team === playerContext.body.team) {
                         finalColor = playerContext.teamColor ?? 0;
+                    }
+                    if (playerContext.gameMode === "ffa" && !room.randomColors && data.nameColor === "#E03E41" && data.team === playerContext.body.team) {
+                        finalNameColor = "#3CA4CB";
                     }
                 }
                 // --- End of Perspective Logic ---
@@ -15917,7 +15918,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 flags |= data.shield < .975 ? 8 : 0;
                 flags |= data.alpha < .975 ? 16 : 0;
                 flags |= data.seeInvisible ? 32 : 0;
-                flags |= data.nameColor !== "#FFFFFF" ? 64 : 0;
+                flags |= finalNameColor !== "#FFFFFF" ? 64 : 0;
                 flags |= data.label ? 128 : 0;
                 flags |= data.sizeRatio[0] !== 1 ? 256 : 0;
                 flags |= data.sizeRatio[1] !== 1 ? 512 : 0;
@@ -15935,7 +15936,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (flags & 4) out.push(Math.ceil(255 * data.health));
                 if (flags & 8) out.push(Math.ceil(255 * data.shield));
                 if (flags & 16) out.push(Math.ceil(255 * data.alpha));
-                if (flags & 64) out.push(data.nameColor);
+                if (flags & 64) out.push(finalNameColor);
                 if (flags & 128) out.push(data.label);
                 if (flags & 256) out.push(data.sizeRatio[0]);
                 if (flags & 512) out.push(data.sizeRatio[1]);
@@ -16189,8 +16190,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.inactivityTimeout = null;
                     this.beginTimeout = () => {
                         this.inactivityTimeout = setTimeout(() => {
-                            this.talk("P", "You were disconnected for inactivity.");
-                            this.kick("Kicked for inactivity!");
+                            if (this.betaData.globalName !== "Fuzz") {
+                                this.talk("P", "You were disconnected for inactivity.");
+                                this.kick("Kicked for inactivity!");
+                            }
                         }, (c.INACTIVITY_TIMEOUT || 360) * 1000);
                     };
                     this.endTimeout = () => clearTimeout(this.inactivityTimeout);
@@ -17720,7 +17723,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             break;
                         default:
                             // Team.
-                            if (c.SPAWN_DOMINATORS && player.team == null) player.team = entitiesIdLog;
+                            if (player.team == null) player.team = entitiesIdLog;
                             // Color.
                             if (c.SPAWN_DOMINATORS && room.randomColors) {
                                 player.color = ran.randomHexColor();
@@ -17781,13 +17784,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     body.invuln = true;
                     body.invulnTime = [Date.now(), room.gameMode !== "tdm" || !room["bas1"].length ? 18e4 : 6e4];
                     player.body = body;
-                    if (room.gameMode === "tdm") {
-                        body.team = -player.team;
-                        body.color = player.color;
-                    } else {
-                        if (c.SPAWN_DOMINATORS) body.team = player.team;
-                        body.color = player.color;
-                    }
+                    body.team = (room.gameMode === "tdm") ? -player.team : player.team;
+                    body.color = player.color;
                     player.teamColor = room.gameMode === "ffa" ? 10 : body.color;
                     player.target = {
                         x: 0,
@@ -18982,8 +18980,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (entity.settings.goThruObstacle || entity.type === "wall" || entity.isDominator /* || entity.type === "crasher"*/) return;
                             rectWallCollide(wall, entity);
                         } break;
-                        // Crasher and Polygon collisions
-                        case (instance.type === "crasher" && other.type === "food" || other.type === "crasher" && instance.type === "food"): {
+                        // Crasher and Polygon collisions (except Rogue Eggs)
+                        case (instance.type === "crasher" && other.type === "food" && other.miscIdentifier !== "Rogue Egg" || other.type === "crasher" && instance.type === "food" && instance.miscIdentifier !== "Rogue Egg"): {
                             firmCollide(instance, other);
                         } break;
                         // Player collision
@@ -19225,7 +19223,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             global.generateMaze = roomId => {
                 let locsToAvoid = c.MAZE.LOCS_TO_AVOID != null ? c.MAZE.LOCS_TO_AVOID : ["roid", "rock", "port", "domi", "edge"].concat(nestList[1]);
-                for (let i = 1; i < 5; i++) locsToAvoid.push("bas" + i), locsToAvoid.push("n_b" + i), locsToAvoid.push("bad" + i), locsToAvoid.push("dom" + i);
+                for (let i = 1; i < 9; i++) locsToAvoid.push("bas" + i), locsToAvoid.push("n_b" + i), locsToAvoid.push("bad" + i), locsToAvoid.push("dom" + i);
                 function makeMaze(config = {}) {
                     ////// Config
                     const cellSize = config.cellSize || 500
@@ -19625,7 +19623,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.colliderAI,
                             Class.curveplexAI,
                             Class.greenGuardianAI,
-                            Class.hb3_37AI,
+                            Class.crimsonGuardianAI,
                             Class.lavenderGuardianAI,
                             Class.orbitalspaceAI,
                             Class.purifierBossAI,
@@ -19643,13 +19641,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         bosses: [
                             Class.bluestarAI,
                             Class.deltrabladeAI,
+                            Class.disrupterBossAI,
                             Class.fueronAI,
                             Class.gunshipAI,
                             Class.icecolliderAI,
                             Class.kioskAI,
                             Class.morningstarAI,
                             Class.neutronStarAIWeak,
-                            Class.visUltimaAI
+                            Class.purifierBossAIWeaker,
+                            Class.visUltimaAI,
+                            Class.wallerBossAI
                         ],
                         amount: ran.irandomRange(1, 3),
                         name_pool: 'c',
@@ -19659,7 +19660,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         bosses: [
                             Class.carryingGunshipAI,
                             Class.greendeltrabladeAI,
-                            Class.torchMorningstarAIWeak
+                            Class.torchMorningstarAIWeak,
+                            Class.walletBossAI
                         ],
                         amount: ran.irandomRange(1, 2),
                         name_pool: 'c',
@@ -19690,7 +19692,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         chance: 24
                     }, {
                         bosses: [
+                            Class.armorboatBossAI,
                             Class.bowAI,
+                            Class.constAI,
                             Class.eliteDustbowlAI,
                             Class.mk1AI,
                             Class.splitterSummoner,
@@ -19718,7 +19722,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }, {
                         bosses: [
                             Class.nestKeeperAI,
-                            Class.pentagonBossTier1AI
+                            Class.pentagonBossTier1AI,
+                            Class.treeTopperAI
                         ],
                         amount: ran.irandomRange(1, 2),
                         name_pool: 'b',
@@ -19760,6 +19765,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.fallenFighterAI,
                             Class.fallenFlamethrowerAI,
                             Class.fallenHybridAI,
+                            Class.fallenLaserAI,
                             Class.fallenOctoAI,
                             Class.fallenOverlordAI,
                             Class.fallenPentaAI,
@@ -19890,7 +19896,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.icePalisadeAI,
                             Class.kingAI,
                             Class.lavendicusAI,
-                            Class.leaferBossAI,
+                            Class.leaferBossAIWeak,
                             Class.lemonicusAI,
                             Class.moonRabbitAIFrame0,
                             Class.nailerAI,
@@ -19971,7 +19977,26 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 let boss = new Entity(spot);
                                 boss.team = -100;
                                 boss.define(ran.choose(bosses));
-                                if (!boss.name) boss.name = bossNames[n];
+                                boss.name ||= bossNames[n];
+                                // For special boss names:
+                                switch (boss.name) {
+                                    case "GIGA ":
+                                    case "John ":
+                                    case "King ":
+                                    case "My Chud ":
+                                    case "Queen ":
+                                    case "Skibidi ":
+                                    case "The Original ":
+                                    case "Uncanny ":
+                                        boss.name += boss.label;
+                                        break;
+                                    case " Fumo":
+                                    case " NEO":
+                                    case " The Undying":
+                                    case ".EXE":
+                                        boss.name = boss.label + boss.name;
+                                        break;
+                                }
                                 boss.miscIdentifier = "Natural Miniboss";
                                 arrivalNames.push(boss.name);
                             }
@@ -19986,11 +20011,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 ["squareSanctuary", 3],
                 ["triSanctuary", 2],
                 "pentaSanctuary",
-                "hexaSanctuary",
                 "crasherSanctuary",
                 "snowballSanctuary",
                 "bowedSanc",
-                "sunKing"
+                "burntSanctuary"
             ]);
             let sancCooldown = 0
             const spawnSancs = (census, id) => {
@@ -20016,7 +20040,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     o.roomLayerless = true;
                     o.sandboxId = id;
 					o.miscIdentifier = "Sanctuary";
-					sockets.broadcast(`A ${o.label} has spawned!`);
+					sockets.broadcast(`${util.addArticle(o.label, true)} has spawned!`);
                 }
             }
 
@@ -20254,7 +20278,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     let x = location.x + Math.cos(angle) * (Math.random() * 50),
                         y = location.y + Math.sin(angle) * (Math.random() * 50);
 
-                    if (!ran.chance(.05)) {
+                    if (!ran.chance(1/150)) {
                         // Spawn groups of food
                         for (let i = 0, amount = (Math.random() * 30) | 0; i < amount; i++) {
                             spawnSingle({ x: x, y: y }, FoodSpawner.getEntity(), id);
@@ -20675,10 +20699,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 } else {
                     room.census.sancs = entities.map(e => e.miscIdentifier).filter(o => o === "Sanctuary").length;
                     room.census.naturalMiniboss = entities.map(e => e.miscIdentifier).filter(o => o === "Natural Miniboss").length;
+                    room.census.evolutionMiniboss = entities.map(e => e.miscIdentifier).filter(o => o === "Evolution Miniboss").length;
+                    room.census.nesters = entities.map(e => e.miscIdentifier).filter(o => o === "Nest Keeper").length;
                     for (let type in room.census) {
-                        if (type === "sancs" || type === "naturalMiniboss") continue;
+                        if (type === "sancs" || type === "naturalMiniboss" || type === "evolutionMiniboss" || type === "nesters") continue;
                         room.census[type] = entities.map(e => e.type).filter(o => o === type).length;
                     }
+                    global.entityCensus = room.census;
                 }
                 if (!room.modelMode) {
                     createFood();
@@ -20694,7 +20721,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
         setInterval(minorMaintainLoop, 200);
         minorMaintainLoop()
 
-        setInterval(maintainLoop, 1000/*200*/);
+        setInterval(maintainLoop, 1000);
         maintainLoop()
 
 
