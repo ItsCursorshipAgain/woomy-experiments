@@ -543,12 +543,12 @@ let ffa = (blackout = false) => {
         "MAX_CRASHERS": 185 // 74
     };
 })(),
-    twoTDM = (isHell) => {
+    twoTDM = (isHell = false, hasDominators = false) => {
     let layout = [[
         ["P1 NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM P2"],
         ["B1 NM NM RO NM NM NM NM ro ro ro ro ro ro ro NM NM NM NM RO NM NM B2"],
-        ["B1 NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM B2"],
-        ["B1 NM NM NM NM RO ro ro ro ro ro ro ro ro ro ro ro RO NM NM NM NM B2"],
+        ["B1 NM NM NM NM NM NM NM NM NM NM DN NM NM NM NM NM NM NM NM NM NM B2"],
+        ["B1 NM NM NM NM RO ro ro ro ro ro RO ro ro ro ro ro RO NM NM NM NM B2"],
         ["B1 NM ro ro NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM ro ro NM B2"],
         ["P1 NM NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM NM P2"],
         ["B1 NM NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM NM B2"],
@@ -556,7 +556,7 @@ let ffa = (blackout = false) => {
         ["B1 NM ro NM NM ro PN PN PN NM NM ro NM NM PN PN PN ro NM NM ro NM B2"],
         ["B1 NM NM ro NM ro PN PN PN NM NM NM NM NM PN PN PN ro NM ro NM NM B2"],
         ["B1 NM ro NM NM ro PN PN PN NM ro ro ro NM PN PN PN ro NM NM ro NM B2"],
-        ["P1 NM NM ro NM ro PN PN PN NM ro RO ro NM PN PN PN ro NM ro NM NM P2"],
+        ["P1 NM NM ro DN RO PN PN PN NM ro RO ro NM PN PN PN RO DN ro NM NM P2"],
         ["B1 NM ro NM NM ro PN PN PN NM ro ro ro NM PN PN PN ro NM NM ro NM B2"],
         ["B1 NM NM ro NM ro PN PN PN NM NM NM NM NM PN PN PN ro NM ro NM NM B2"],
         ["B1 NM ro NM NM ro PN PN PN NM NM ro NM NM PN PN PN ro NM NM ro NM B2"],
@@ -564,8 +564,8 @@ let ffa = (blackout = false) => {
         ["B1 NM NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM NM B2"],
         ["P1 NM NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM NM P2"],
         ["B1 NM ro ro NM ro PN PN PN PN PN PN PN PN PN PN PN ro NM ro ro NM B2"],
-        ["B1 NM NM NM NM RO ro ro ro ro ro ro ro ro ro ro ro RO NM NM NM NM B2"],
-        ["B1 NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM B2"],
+        ["B1 NM NM NM NM RO ro ro ro ro ro RO ro ro ro ro ro RO NM NM NM NM B2"],
+        ["B1 NM NM NM NM NM NM NM NM NM NM DN NM NM NM NM NM NM NM NM NM NM B2"],
         ["B1 NM NM NM NM RO NM NM ro ro ro ro ro ro ro NM NM NM NM RO NM NM B2"],
         ["P1 NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM P2"]
     ], [
@@ -573,21 +573,21 @@ let ffa = (blackout = false) => {
         ["NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM"],
         ["NM NM NM NM ro NM NM NM ro NM ro NM ro NM ro NM NM NM ro NM NM NM NM"],
         ["NM RO NM NM ro NM NM NM NM ro NM ro NM ro NM NM NM NM ro NM NM RO NM"],
-        ["NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM"],
+        ["NM NM NM NM NM NM NM NM NM NM NM DN NM NM NM NM NM NM NM NM NM NM NM"],
         ["NM NM NM RO ro ro ro ro ro ro ro RO ro ro ro ro ro ro ro RO NM NM NM"],
         ["NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM"],
         ["NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM"],
         ["NM ro NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM ro NM"],
         ["NM ro NM ro PN PN PN ro NM NM NM NM NM NM NM ro PN PN PN ro NM ro NM"],
         ["NM ro NM ro PN PN PN NM NM NM ro ro ro NM NM NM PN PN PN ro NM ro NM"],
-        ["NM ro NM RO PN PN PN NM ro NM ro RO ro NM ro NM PN PN PN RO NM ro NM"],
+        ["NM ro DN RO PN PN PN NM ro NM ro RO ro NM ro NM PN PN PN RO DN ro NM"],
         ["NM ro NM ro PN PN PN NM NM NM ro ro ro NM NM NM PN PN PN ro NM ro NM"],
         ["NM ro NM ro PN PN PN ro NM NM NM NM NM NM NM ro PN PN PN ro NM ro NM"],
         ["NM ro NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM ro NM"],
         ["NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM"],
         ["NM NM NM ro PN PN PN PN PN PN PN PN PN PN PN PN PN PN PN ro NM NM NM"],
         ["NM NM NM RO ro ro ro ro ro ro ro RO ro ro ro ro ro ro ro RO NM NM NM"],
-        ["NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM"],
+        ["NM NM NM NM NM NM NM NM NM NM NM DN NM NM NM NM NM NM NM NM NM NM NM"],
         ["NM RO NM NM ro NM NM NM NM ro NM ro NM ro NM NM NM NM ro NM NM RO NM"],
         ["NM NM NM NM ro NM NM NM ro NM ro NM ro NM ro NM NM NM ro NM NM NM NM"],
         ["NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM NM"],
@@ -603,14 +603,22 @@ let ffa = (blackout = false) => {
         "MODE": "tdm",
         "TEAM_AMOUNT": 2,
         "IS_HELL": isHell,
+        "SPAWN_DOMINATORS": hasDominators,
+        "DOMINATOR_SHUFFLE_TIMER": 300,
+        "ARENA_CAN_CLOSE": false,
         "displayName": (isHell) ? "Fuzzy's 2TDM Hell" : "Fuzzy's 2TDM",
-        "displayDesc": (isHell) ? "Self-explanatory…\n\n…though only the mighty may last." : "Self-explanatory.",
+        "displayDesc": ((isHell) ? "Self-explanatory…\n\n…though only the mighty may last." : "Self-explanatory.") + ((hasDominators) ? "\nThere are dominators for either team to capture, but the arena will *not* close if all are captured by the same team." : ""),
         "ROOM_SETUP": layout.map(row => row[0].split(" ").map(cell => {
             switch (cell) {
                 case "NM": return (isHell) ? "nest" : "norm";
-                case "PN": return (isHell) ? "rock" : "nest";
                 case "RO": return (isHell) ? "nest" : "roid";
                 case "ro": return (isHell) ? "nest" : "rock";
+
+                case "DN": return (hasDominators) ? "domi" : (isHell) ? "nest" : "norm";
+                case "DR": return (hasDominators) ? "domi" : (isHell) ? "nest" : "roid";
+                case "dr": return (hasDominators) ? "domi" : (isHell) ? "nest" : "rock";
+
+                case "PN": return (isHell) ? "rock" : "nest";
                 
                 case "B1": return shuffledBases[0][0];
                 case "B2": return shuffledBases[1][0];
@@ -624,9 +632,9 @@ let ffa = (blackout = false) => {
         "Y_GRID": 23,
         "WIDTH": 12000,
         "HEIGHT": 12000,
-        "MAX_FOOD": (isHell) ? 0 : 948, // 361
-        "MAX_COMBINED_NEST_FOOD": (isHell) ? 474 : 225, // 120
-        "MAX_CRASHERS": (isHell) ? 474 : 270, // 120
+        "MAX_FOOD": (isHell) ? 0 : 631, // 361
+        "MAX_COMBINED_NEST_FOOD": (isHell) ? 474 : 160, // 120
+        "MAX_CRASHERS": (isHell) ? 474 : 200, // 120
         "EVOLVE_HALT_CHANCE": (isHell) ? .8 : .4
     };
 };
@@ -649,4 +657,4 @@ function select(mode, testing = false) {
     }
     return mode;
 };
-select(maze(false));
+select(twoTDM(false, true));

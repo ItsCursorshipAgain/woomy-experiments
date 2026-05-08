@@ -1,9 +1,10 @@
 import { socket } from "./socket.js"
 import { logger } from "./debug.js"
+import { color, getColor } from "./colors.js"
 
 window["help"] = function () {
 	logger.info("Here is a list of commands and their usages:");
-	logger.norm(" � broadcast('message')");
+	logger.norm(" � broadcast('message', color)");
 	logger.norm(" � setColor(colorID)");
 	logger.norm(" � setSkill(amount)");
 	logger.norm(" � setScore(score)");
@@ -19,7 +20,7 @@ window["help"] = function () {
 	logger.norm(" � setInvisible(fadeInValue, fadeOutValue, limit)");
 	logger.norm(" � setFOV(fov)");
 	logger.norm(" � setSpinSpeed(speed)");
-	logger.norm(" � setEntity('exportName', team = 'id', isMinion = false, spawnAmount = 1)");
+	logger.norm(" � setEntity('exportName', teamID, isMinion, spawnAmount)");
 	logger.norm(" � clearChildren()");
 	logger.norm(" � setTeam(teamID)");
 	logger.norm(" � skillSet(atk, hlt, spd, str, pen, dam, rld, rgn, shi)");
@@ -29,9 +30,13 @@ window["help"] = function () {
 	logger.norm(" � closeArena(time)");
 	logger.warn("To use any of the above commands, you need to have beta-tester level 2!");
 };
-window["broadcast"] = function (message, hex) {
-	if (!hex) hex = color.black;
-	socket.talk("D", 0, message, hex);
+window["broadcast"] = function (message, col) {
+	if (col != undefined) {
+		if ((typeof col === 'number' && col < -2) || (typeof col === 'string' && (color[col] != undefined || (col.startsWith('#') && col.length !== 7)))) return logger.warn("Please specify a valid color!");
+		if (typeof col === 'number') col = getColor(col);
+		else if (typeof col === 'string' && !col.startsWith('#')) col = color[col];
+	} else col = color.black;
+	socket.talk("D", 0, message, col);
 	logger.info("Broadcasting your message to all players.");
 };
 window["setColor"] = function (colorID) {
@@ -40,7 +45,7 @@ window["setColor"] = function (colorID) {
 	logger.info("Set your color ID to " + colorID + ".");
 };
 window["setSkill"] = function (amount) {
-	if (isNaN(amount) || amount < 0) return logger.warn("Please specify a valid amount of stats! Note that the amount can't be below 0 or above 90.");
+	if (isNaN(amount) || amount < 0 || amount > 90) return logger.warn("Please specify a valid amount of stats! Note that the amount can't be below 0 or above 90.");
 	socket.talk("D", 2, amount);
 	logger.info("Set your amount of skill points to " + amount + ".");
 };

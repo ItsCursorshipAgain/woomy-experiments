@@ -25,7 +25,7 @@ let convert = (stat) => [
 ];
 let _rld = (n) => [n, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     _rcl = (n) => [1, n, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-
+    _shd = (n) => [1, 1, n, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     _siz = (n) => [1, 1, 1, n, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     _hlt = (n) => [1, 1, 1, 1, n, 1, 1, 1, 1, 1, 1, 1, 1],
     _dam = (n) => [1, 1, 1, 1, 1, n, 1, 1, 1, 1, 1, 1, 1],
@@ -34,7 +34,7 @@ let _rld = (n) => [n, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     _max = (n) => [1, 1, 1, 1, 1, 1, 1, 1, n, 1, 1, 1, 1],
     _rng = (n) => [1, 1, 1, 1, 1, 1, 1, 1, 1, n, 1, 1, 1],
     _den = (n) => [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, n, 1, 1],
-
+    _spr = (n) => [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, n, 1],
     _rst = (n) => [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, n];
 
 const g = {
@@ -133,10 +133,10 @@ const g = {
     "nano": [1.3, 1, 1, 1.5, 1, 1.475, 1.5, 1.25, 1.15, 1, .4, 1, .4],
     "staple": [1.25, 1, 1.1, 1, .95, .65, 1, 1, 1, 1, 1, .9, 1],
     "turret": [1, 1, 1, .85, .6, .6, .6, .9, .85, 1, .1, 1, 1],
-    "bees": [1.8, 1, 1, 1.4, 1.3, .9, .65, 3, 1.5, 1, .25, 1, 1],
+    "bees": [1.5, 1, 1, 1.5, 1.35, 1, .65, 3, 1.5, 1, .25, 1, 1],
     "battle": [1, 1, 1, 1, 1.2, 1.1, 1, .8, 1.15, 1, 1, 1, 1.1],
     "tempest": [.26, 1, 1, 1, 4, .2, 0.5, .01, 1.25, 1, 10, 1, 5],
-    "carrier": [1.1, 1, 1, 1, 1, .9, 1, 1.2, 1.2, 1.1, 1, 1, 1],
+    "carrier": [1.1, 1, 1, 1, 1.2, 1.1, 1, 1.2, 1.2, 1.1, 1, 1, 1.15],
     "hexatrap": [1.25, 1, 1.2, 1, 1, 1, 1, .8, 1, .575, 1, 1, 1],
     "octog": [1.25, 0, .25, 1.45, 1, 1, 1, .6, 1, 1.1, 1, 1, 1],
     "defend": [1.24, 1, .25, .85, 1.1, 1.2, 1.1, .85, 1, 2.3, 1, 1, 1],
@@ -440,6 +440,11 @@ const g = {
 	"sonic": [0.56, 0.8, 1, .95, .72, 1, 1, .6, 1, .67, .9, 1, 1.3],
 	"shredder": [1.1, 1, 1, .9, 10, .25, 1.4, .79, 1, 1, .9, 1, 2.2]
 };
+g.antimeta = convert({
+    reload: .8,
+    health: 1/.85,
+    damage: 1.25
+});
 global.utility.log("Started parsing stats...");
 
 //let g = {};
@@ -563,36 +568,30 @@ const defaultEggNecros = ['Egg', 'Sanctuary Egg'],
 // Prop functions
 class PropAnimation{
 	constructor(prop, index){
-		if(typeof index !== "number") throw new Error("You must define a valid index for PropAnimations") 
-		this.index = index
-		this.size = prop.size
-		this.x = prop.x
-		this.y = prop.y
-		this.angle = prop.angle
-		this.layer = prop.layer
-		this.shape = prop.shape
-		this.color = prop.color
+		if (typeof index !== "number") throw new Error("You must define a valid index for PropAnimations") 
+		this.index = index;
+		this.size = prop.size;
+		this.x = prop.x;
+		this.y = prop.y;
+		this.angle = prop.angle;
+		this.layer = prop.layer;
+		this.shape = prop.shape;
+		this.color = prop.color;
 		this.active = false;
 		this.lastUpdate = 0;
-		for(let val of this.toArray()){
-			if(val === undefined) throw new Error("Props must have all PropAnimation properties to be animated")
+		for (let val of this.toArray()) {
+			if (val === undefined) throw new Error("Props must have all PropAnimation properties to be animated");
 		}
 	}
 	toArray(){
-		const arr = [this.index, this.size, this.x, this.y, this.angle, this.layer]
-		if(this.shape._assetMagic === ASSET_MAGIC){
+		const arr = [this.index, this.size, this.x, this.y, this.angle, this.layer];
+		if (this.shape._assetMagic === ASSET_MAGIC) {
 			arr.push(ASSET_MAGIC)
 			arr.push(this.shape.id)
-		}else if(Array.isArray(this.shape)){
-			arr.push(JSON.stringify(this.shape))
-		}else{
-			arr.push(this.shape)
-		}
-		if(this.color._assetMagic === ASSET_MAGIC){
-			arr.push(ASSET_MAGIC, this.color.id)
-		} else {
-			arr.push(this.color)
-		}
+		} else if (Array.isArray(this.shape)) arr.push(JSON.stringify(this.shape));
+		else arr.push(this.shape);
+		if (this.color._assetMagic === ASSET_MAGIC) arr.push(ASSET_MAGIC, this.color.id);
+		else arr.push(this.color);
 		return arr
 	}
 }
@@ -1069,19 +1068,36 @@ defExports.turretParent = {
     DANGER: 0,
     CONTROLLERS: ["canRepel", "mapAltToFire", "nearestDifferentMaster", "onlyAcceptInArc"]
 };
-function interpretBody(output, body) {
-    return {
-        ACCELERATION: body.acceleration ?? output.BODY?.ACCELERATION ?? null,
-        SPEED:        body.speed        ?? output.BODY?.SPEED        ?? null,
-        HEALTH:       body.health       ?? output.BODY?.HEALTH       ?? null,
-        DAMAGE:       body.damage       ?? output.BODY?.DAMAGE       ?? null,
-        PENETRATION:  body.penetration  ?? output.BODY?.PENETRATION  ?? null,
-        SHIELD:       body.shield       ?? output.BODY?.SHIELD       ?? null,
-        REGEN:        body.regen        ?? output.BODY?.REGEN        ?? null,
-        FOV:          body.fov          ?? output.BODY?.FOV          ?? null,
-        DENSITY:      body.density      ?? output.BODY?.DENSITY      ?? null,
-        PUSHABILITY:  body.pushability  ?? output.BODY?.PUSHABILITY  ?? null,
-        HETERO:       body.hetero       ?? output.BODY?.HETERO       ?? null
+function interpretBody(output, body, priority) {
+    switch (priority) {
+        case 1:
+            return {
+                ACCELERATION: body.acceleration ?? output.BODY?.ACCELERATION ?? null,
+                SPEED:        body.speed        ?? output.BODY?.SPEED        ?? null,
+                HEALTH:       body.health       ?? output.BODY?.HEALTH       ?? null,
+                DAMAGE:       body.damage       ?? output.BODY?.DAMAGE       ?? null,
+                PENETRATION:  body.penetration  ?? output.BODY?.PENETRATION  ?? null,
+                SHIELD:       body.shield       ?? output.BODY?.SHIELD       ?? null,
+                REGEN:        body.regen        ?? output.BODY?.REGEN        ?? null,
+                FOV:          body.fov          ?? output.BODY?.FOV          ?? null,
+                DENSITY:      body.density      ?? output.BODY?.DENSITY      ?? null,
+                PUSHABILITY:  body.pushability  ?? output.BODY?.PUSHABILITY  ?? null,
+                HETERO:       body.hetero       ?? output.BODY?.HETERO       ?? null
+            }
+        case 2:
+            return {
+                ACCELERATION: output.BODY?.ACCELERATION ?? body.acceleration ?? null,
+                SPEED:        output.BODY?.SPEED        ?? body.speed        ?? null,
+                HEALTH:       output.BODY?.HEALTH       ?? body.health       ?? null,
+                DAMAGE:       output.BODY?.DAMAGE       ?? body.damage       ?? null,
+                PENETRATION:  output.BODY?.PENETRATION  ?? body.penetration  ?? null,
+                SHIELD:       output.BODY?.SHIELD       ?? body.shield       ?? null,
+                REGEN:        output.BODY?.REGEN        ?? body.regen        ?? null,
+                FOV:          output.BODY?.FOV          ?? body.fov          ?? null,
+                DENSITY:      output.BODY?.DENSITY      ?? body.density      ?? null,
+                PUSHABILITY:  output.BODY?.PUSHABILITY  ?? body.pushability  ?? null,
+                HETERO:       output.BODY?.HETERO       ?? body.hetero       ?? null,
+            }
     }
 };
 const deepCopy = (type) => {
@@ -1437,20 +1453,8 @@ const makeHybrid = (type, form = 'drone', options = {}) => {
     let output = deepCopy(type);
     let necroGun = options.necroGun ?? 0;
 
-    if (output.DANGER < 7) output.DANGER++;
-    output.BODY = {
-        ACCELERATION: options.accel       ?? output.BODY?.ACCELERATION ?? null,
-        SPEED:        options.speed       ?? output.BODY?.SPEED        ?? null,
-        HEALTH:       options.health      ?? output.BODY?.HEALTH       ?? null,
-        DAMAGE:       options.damage      ?? output.BODY?.DAMAGE       ?? null,
-        PENETRATION:  options.penetration ?? output.BODY?.PENETRATION  ?? null,
-        SHIELD:       options.shield      ?? output.BODY?.SHIELD       ?? null,
-        REGEN:        options.regen       ?? output.BODY?.REGEN        ?? null,
-        FOV:          options.fov         ?? output.BODY?.FOV          ?? null,
-        DENSITY:      options.density     ?? output.BODY?.DENSITY      ?? null,
-        PUSHABILITY:  options.pushability ?? output.BODY?.PUSHABILITY  ?? null,
-        HETERO:       options.hetero      ?? output.BODY?.HETERO       ?? null
-    };
+    if (output.DANGER < 8) output.DANGER++;
+    output.BODY = interpretBody(output, (options.body ?? {}), 1);
     if (options.credit != null) output.credit = options.credit;
     output.GUNS = output.GUNS || [];
     switch (form) {
@@ -1520,14 +1524,14 @@ const makeHybrid = (type, form = 'drone', options = {}) => {
             output.GUNS.push({
                 POSITION: [7, 7.5, .6, 7, 4, 180, 0],
                 PROPERTIES: {
-                    SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
+                    SHOOT_SETTINGS: combineStats([g.swarm, g.antimeta]),
                     TYPE: defExports.autoSwarm,
                     STAT_CALCULATOR: gunCalcNames.swarm
                 }
             }, {
                 POSITION: [7, 7.5, .6, 7, -4, 180, .5],
                 PROPERTIES: {
-                    SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.double]),
+                    SHOOT_SETTINGS: combineStats([g.swarm, g.antimeta]),
                     TYPE: defExports.autoSwarm,
                     STAT_CALCULATOR: gunCalcNames.swarm
                 }
@@ -1947,33 +1951,39 @@ const makeHivemind = (type, name, options = {}, noMinionController = false) => {
 
     return output;
 };
-const makeFallen = (type, name) => {
+const makeFallen = (type, options = {}) => {
     let output = deepCopy(type);
-    output.LABEL = name || 'Fallen ' + type.LABEL;
-    output.DANGER = 8;
-    output.SIZE = 23;
+    output.LABEL = options.name ?? `Fallen ${output.LABEL}`;
+    output.DANGER = 9;
     output.COLOR = 18;
-    output.BODY = {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.325,
-        FOV: 1.1,
-        HEALTH: 1000
-    };
+    output.SIZE = 24;
+    output.BODY = interpretBody(output, {
+        fov: base.FOV * 1.1,
+        health: 1225,
+		shield: 350,
+        acceleration: base.ACCEL * .375,
+        speed: base.SPEED * .225,
+        ...options.body
+    }, 1);
+    output.FACING_TYPE = options.facingType ?? 'toTarget';
+    output.HAS_NO_RECOIL = options.hasNoRecoil ?? false;
     return output;
 };
-const makeReanimated = (type, name) => {
+const makeReanimated = (type, options = {}) => {
     let output = deepCopy(type);
-    output.LABEL = name || 'Reanimated ' + type.LABEL;
-    output.DANGER = 8;
-    output.SIZE = 23;
+    output.LABEL = options.name ?? `Reanimated ${output.LABEL}`;
+    output.DANGER = 9;
     output.COLOR = 17;
-    output.BODY = {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.325,
-        FOV: 1.1,
-        HEALTH: 1500
-    };
-    // If possible, set COLOR and COLOR_OVERRIDE to 194
+    output.SIZE = 24;
+    output.BODY = interpretBody(output, {
+        fov: base.FOV * 1.1,
+        health: 1925,
+		shield: 425,
+        acceleration: base.ACCEL * .375,
+        speed: base.SPEED * .225
+    }, 1);
+    output.FACING_TYPE = options.facingType ?? 'toTarget';
+    output.HAS_NO_RECOIL = options.hasNoRecoil ?? false;
     return output;
 };
 const spectralAlpha = .75;
@@ -2038,7 +2048,7 @@ const makeSpectral = (type, options = {}) => {
     output.BODY = {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.325,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 2000
     };
 
@@ -2278,14 +2288,14 @@ const makeProp = (type, name, form = 'prop', statSet = [g.blank]) => {
                 return [{
                     POSITION: [7, 7.5, .6, 7, -1, 90, 0],
                     PROPERTIES: {
-                        SHOOT_SETTINGS: combineStats([g.swarm, g.bit_less_damage]),
+                        SHOOT_SETTINGS: combineStats([g.swarm]),
                         TYPE: defExports.autoSwarm,
                         STAT_CALCULATOR: gunCalcNames.swarm
                     }
                 }, {
                     POSITION: [7, 7.5, .6, 7, 1, -90, 0],
                     PROPERTIES: {
-                        SHOOT_SETTINGS: combineStats([g.swarm, g.bit_less_damage]),
+                        SHOOT_SETTINGS: combineStats([g.swarm]),
                         TYPE: defExports.autoSwarm,
                         STAT_CALCULATOR: gunCalcNames.swarm
                     }
@@ -2594,7 +2604,7 @@ const makeAkafuji = (exportName, name, type, options = {}) => {
     let gunsB = deepCopy(type.GUNS);
     //applyStats(gunsB, [g.flank, g.faster]);
 
-    let body = interpretBody(type, (options.body || {})),
+    let body = interpretBody(type, (options.body || {}), 1),
         extra = options.extra || {},
         addExtraToParents = options.addExtraToParents || false;
     makeAnimTank(exportName, name, {
@@ -3280,21 +3290,24 @@ let makeCephalopod = (exportName, name, leftArm, rightArm) => {
         }]
     };
 };
-function makeBossAI (type, options = {}) {
+function makeBossAI(type, options = {}) {
     let output = deepCopy(type);
 
     output.TYPE = 'miniboss';
     if (options.name != null) output.NAME = options.name;
     output.VARIES_IN_SIZE = options.variesInSize ?? true;
     output.LEVEL = options.level ?? 60;
-    output.VALUE = options.value ?? 5e5;
-    if (options.body != null) output.BODY = interpretBody(output, options.body);
+    if (options.level == null) output.VALUE = options.value ?? 5e5;
+    if (options.size != null) output.SIZE = options.size;
+    if (options.body != null) output.BODY = interpretBody(output, options.body, 1);
     output.CONTROLLERS = options.controllers ?? ['nearestDifferentMaster', 'minion', 'canRepel'];
     output.AI = options.ai ?? { NO_LEAD: true };
+    output.VARIABLES = options.variables ?? {};
     output.HITS_OWN_TYPE = options.hitsOwnType ?? 'hard';
     output.SKILL = options.skill ?? setSkill(0, 6, 6, 7, 7, 7, 7, 2, 0, 0);
     output.BROADCAST_MESSAGE = options.broadcastMessage ?? `${util.addArticle((output.LABEL || 'Unnamed Boss'), true)} has been defeated!`;
     if (options.onDefined != null) output.ON_DEFINED = options.onDefined;
+    if (options.onAlt != null) output.ON_ALT = options.onAlt;
     if (options.onDead != null) output.ON_DEAD = options.onDead;
 
     return output;
@@ -3339,7 +3352,7 @@ function setGreaterEvolution(me, sockets, evolution, options = {}) {
     if (me.type === 'crasher' && c.IS_HELL) return;
     me.greaterEvolutionTimeout = setTimeout(() => {
         if (!me.isAlive()) return;
-        if (me.type === 'crasher' && global.entityCensus.evolutionMiniboss >= c.MAX_EVO_BOSSES) {
+        if (me.type === 'crasher' && global.census.evolutionMiniboss >= c.MAX_EVO_BOSSES) {
             setGreaterEvolution(me, sockets, evolution, options);
             return;
         }
@@ -3401,9 +3414,7 @@ defExports.fogEmitter = {
     CAN_BE_ON_LEADERBOARD: false,
     DANGER: 'observer',
     ALPHA: 1,
-    PROPS: [
-        makeAura(9, 1, true)
-    ]
+    PROPS: [makeAura(9, 1, true)]
 };
 defExports.food = {
     TYPE: 'food',
@@ -3425,772 +3436,32 @@ defExports.food = {
     GIVE_KILL_MESSAGE: false,
     EVOLUTIONS: []
 };
-defExports.icosagon = {
+// Normal Foods
+defExports.egg = {
     PARENT: [defExports.food],
-    LABEL: 'Icosagon',
-    VALUE: 105000,
-    SHAPE: -20,
-    SIZE: 120,
-    COLOR: 160,
+    LABEL: 'Egg',
+    VALUE: 10,
+    SHAPE: 0, // 292
+    SIZE: 5,
+    COLOR: 6, // 243
+    INTANGIBLE: true,
     BODY: {
-        DAMAGE: 4.5,
-        DENSITY: 140,
-        HEALTH: 670.5,
-        RESIST: 1.6,//Math.pow(1.375, 3),
-        SHIELD: 110,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true
-};
-defExports.orangePentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Orange Pentagon',
-    SHAPE: 5,
-    SIZE: 12,
-    VALUE: 50000,
-    COLOR: 207,
-    BODY: {
-        DAMAGE: 3,
-        DENSITY: 8,
-        HEALTH: 125,//200
-        RESIST: 1.25,
-        PENETRATION: 1.1
-    },
-    DOES_TORCH: true,
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(207)],
-    ON_DAMAGED: (me, them) => {
-        torch(me, them, 1, 2, me.team);
-    },
-    EVOLUTIONS: [
-        ["orangeBetaPentagon", 85],
-        ["mysticPentagon", 15]
-    ],
-};
-defExports.orangeTriangle = {
-    PARENT: [defExports.food],
-    LABEL: 'Orange Triangle',
-    SHAPE: 3,
-    SIZE: 6.5,
-    VALUE: 40000,
-    COLOR: 207,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 6,
-        HEALTH: 60,
-        RESIST: 1.15,
-        PENETRATION: 1.5
-    },
-    DOES_TORCH: true,
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(207)],
-    ON_DAMAGED: (me, them) => {
-        torch(me, them, 1, 2, me.team);
-    },
-    EVOLUTIONS: [
-        ["orangePentagon", 85],
-        ["mysticTriangle", 15]
-    ]
-};
-defExports.orangeSquare = {
-    PARENT: [defExports.food],
-    LABEL: 'Orange Square',
-    SHAPE: 4,
-    SIZE: 7.5,
-    VALUE: 30000,
-    COLOR: 207,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 4,
-        HEALTH: 20,
-        PENETRATION: 2
-    },
-    DOES_TORCH: true,
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(207)],
-    ON_DAMAGED: (me, them) => {
-        torch(me, them, 1, 2, me.team);
-    },
-    EVOLUTIONS: [
-        ["orangeTriangle", 85],
-        ["mysticSquare", 15]
-    ]
-};
-defExports.greenBetaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Green Beta Pentagon',
-    VALUE: 1e4,
-    SHAPE: 5,
-    SIZE: 26,
-    COLOR: 31,
-    BODY: {
-        DAMAGE: 2.5,
-        DENSITY: 30,
-        HEALTH: 250,
-        RESIST: 1.2,//Math.pow(1.3, 2),
-        SHIELD: 40,
-        REGEN: .3
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    PROPS: [makeAura(31)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        poison(me, them, 1.5, 1);
-    },
-    EVOLUTIONS: [
-        ["orangeBetaPentagon", 100]
-    ]
-};
-defExports.orangeBetaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Orange Beta Pentagon',
-    VALUE: 1e5,
-    SHAPE: 5,
-    SIZE: 26,
-    COLOR: 207,
-    BODY: {
-        DAMAGE: 2.5,
-        DENSITY: 30,
-        HEALTH: 300,
-        RESIST: 1.2,//Math.pow(1.3, 2),
-        SHIELD: 40,
-        REGEN: .3
-    },
-    DOES_TORCH: true,
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    PROPS: [makeAura(207)],
-    ON_DAMAGED: (me, them) => {
-        torch(me, them, 1.5, 1, me.team);
-    },
-    EVOLUTIONS: [
-        ["mysticBetaPentagon", 100]
-    ]
-};
-defExports.mysticBetaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Mystic Beta Pentagon',
-    VALUE: 5e5,
-    SHAPE: 5,
-    SIZE: 28,
-    COLOR: 261,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 600,
-        RESIST: 1.3,//Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    ON_DAMAGED: function (me, them) {
-        if (Math.random() < 0.03) {
-            me.x += 30 * Math.floor(Math.random() * 21 - 10);
-            me.y += 30 * Math.floor(Math.random() * 21 - 10);
-        }
-    },
-    EVOLUTIONS: []
-};
-defExports.lavenderBetaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Lavender Beta Pentagon',
-    VALUE: 14000,
-    SHAPE: 5,
-    SIZE: 26,
-    COLOR: 337,
-    BODY: {
-        DAMAGE: 2.5,
-        DENSITY: 30,
-        HEALTH: 250,
-        RESIST: 1.2,
-        SHIELD: 40,
-        REGEN: .3
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    PROPS: [makeAura(337)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        swell(them, 1.01, 2);
-    },
-    EVOLUTIONS: []
-};
-defExports.hendecagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Hendecagon',
-    VALUE: 50000,
-    SHAPE: 11,
-    SIZE: 24,
-    COLOR: 190,
-    BODY: {
-        DAMAGE: 5,
-        DENSITY: 30,
-        HEALTH: 150,
-        RESIST: Math.pow(1.3, 2),
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-	ON_DEAD: function({ sockets, ran, Entity}){
-		let x = this.x,
-			y = this.y,
-			positions = [{
-				x: x - 10,
-				y: y - 10
-			}, {
-				x: x - 10,
-				y: y + 10
-			}, {
-				x: x + 10,
-				y: y - 10
-			}];
-		for (let i = 0; i < 3; i++) {
-			let o = new Entity(positions[i]);
-			o.team = this.team;
-			o.define([Class.crasher, Class.square, Class.triangle][i]);
-		}
-	},
-    EVOLUTIONS: []
-};
-defExports.mysticPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Mystic Pentagon',
-    VALUE: 32000,
-    SHAPE: 5,
-    SIZE: 12,
-    COLOR: 261,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 400,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    ON_DAMAGED: function (me, them) {
-        if (Math.random() < 0.03) {
-            me.x += 30 * Math.floor(Math.random() * 21 - 10);
-            me.y += 30 * Math.floor(Math.random() * 21 - 10);
-        }
-    },
-    EVOLUTIONS: [
-        ["mysticBetaPentagon", 100]
-    ]
-};
-defExports.greenPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Green Pentagon',
-    VALUE: 6000,
-    SHAPE: 5,
-    SIZE: 12,
-    COLOR: 31,
-    BODY: {
-        DAMAGE: 3,
-        DENSITY: 8,
-        HEALTH: 125,//200
-        RESIST: 1.25,
-        PENETRATION: 1.1
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(31)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        poison(me, them, 1.5, 1);
-    },
-    EVOLUTIONS: [
-        ["greenBetaPentagon", 60],
-        ["orangePentagon", 40]
-    ]
-};
-defExports.lavenderPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Lavender Pentagon',
-    VALUE: 8000,
-    SHAPE: 5,
-    SIZE: 12,
-    COLOR: 337,
-    BODY: {
-        DAMAGE: 3,
-        DENSITY: 8,
-        HEALTH: 125,//200
-        RESIST: 1.25,
-        PENETRATION: 1.1
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(337)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        swell(them, 1.003, 2);
-    },
-    EVOLUTIONS: [
-        ["cranberryPentagon", 52.5],
-        ["lavenderBetaPentagon", 47.5]
-    ]
-};
-defExports.cranberryPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Cranberry Pentagon',
-    VALUE: 8000,
-    SHAPE: 5,
-    SIZE: 12,
-    COLOR: 340,
-    BODY: {
-        DAMAGE: 3,
-        DENSITY: 8,
-        HEALTH: 200,
-        RESIST: 1.25,
-        PENETRATION: 1.1
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(340)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        shrivel(them, 1.01, 2);
-    },
-    EVOLUTIONS: []
-};
-defExports.mysticTriangle = {
-    PARENT: [defExports.food],
-    LABEL: 'Mystic Triangle',
-    VALUE: 28000,
-    SHAPE: 3,
-    SIZE: 6.5,
-    COLOR: 261,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 400,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    ON_DAMAGED: function (me, them) {
-        if (Math.random() < 0.03) {
-            me.x += 30 * Math.floor(Math.random() * 21 - 10);
-            me.y += 30 * Math.floor(Math.random() * 21 - 10);
-        }
-    },
-    EVOLUTIONS: [
-        ["mysticPentagon", 100]
-    ]
-};
-defExports.greenTriangle = {
-    PARENT: [defExports.food],
-    LABEL: 'Green Triangle',
-    VALUE: 4000,
-    SHAPE: 3,
-    SIZE: 6.5,
-    COLOR: 31,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 6,
-        HEALTH: 60,
-        RESIST: 1.15,
-        PENETRATION: 1.5
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(31)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        poison(me, them, 1.5, 1);
-    },
-    EVOLUTIONS: [
-        ["greenPentagon", 85],
-        ["orangeTriangle", 15]
-    ]
-};
-defExports.lavenderTriangle = {
-    PARENT: [defExports.food],
-    LABEL: 'Lavender Triangle',
-    VALUE: 5000,
-    SHAPE: 3,
-    SIZE: 6.5,
-    COLOR: 337,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 6,
-        HEALTH: 60,
-        RESIST: 1.15,
-        PENETRATION: 1.5
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(337)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        swell(them, 1.001, 2);
-    },
-    EVOLUTIONS: [
-        ["lavenderPentagon", 100]
-    ]
-};
-defExports.mysticSquare = {
-    PARENT: [defExports.food],
-    LABEL: 'Mystic Square',
-    VALUE: 15000,
-    SHAPE: 4,
-    SIZE: 7.5,
-    COLOR: 261,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 400,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    ON_DAMAGED: function (me, them) {
-        if (Math.random() < 0.03) {
-            me.x += 30 * Math.floor(Math.random() * 21 - 10);
-            me.y += 30 * Math.floor(Math.random() * 21 - 10);
-        }
-    },
-    EVOLUTIONS: [
-        ["mysticTriangle", 100]
-    ]
-};
-defExports.greenSquare = {
-    PARENT: [defExports.food],
-    LABEL: 'Green Square',
-    VALUE: 2000,
-    SHAPE: 4,
-    SIZE: 7.5,
-    COLOR: 31,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 4,
-        HEALTH: 20,
-        PENETRATION: 2
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(31)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        poison(me, them, 1.5, 1);
-    },
-    EVOLUTIONS: [
-        ["greenTriangle", 80],
-        ["orangeSquare", 15],
-        ["greensplitterSquare", 5]
-    ]
-};
-defExports.lavenderSquare = {
-    PARENT: [defExports.food],
-    LABEL: 'Lavender Square',
-    VALUE: 3000,
-    SHAPE: 4,
-    SIZE: 7.5,
-    COLOR: 337,
-    BODY: {
-        DAMAGE: .1,
-        DENSITY: 4,
-        HEALTH: 100,
-        PENETRATION: 2
-    },
-    DRAW_HEALTH: true,
-    PROPS: [makeAura(337)],
-    ON_DEALT_DAMAGE: (me, them) => {
-        swell(them, 1, 2);
-    },
-    EVOLUTIONS: [
-        ["lavenderTriangle", 100]
-    ]
-};
-defExports.flair = {
-    PARENT: [defExports.food],
-    LABEL: 'Flair',
-    VALUE: 120,
-    SHAPE: 314,
-    SIZE: 9,
-    COLOR: 2,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 6,
-        HEALTH: 6,
-        RESIST: 1.15,
-        PENETRATION: 1.5
-    },
-    DRAW_HEALTH: true
-};
-defExports.newDecagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Decagon',
-    VALUE: 25000,
-    SHAPE: 10,
-    SIZE: 36,
-    COLOR: 6,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 85,
-        HEALTH: 50,
-        RESIST: 2,
-        SHIELD: 8.5
-    },
-    DRAW_HEALTH: true
-};
-defExports.newNonagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Nonagon',
-    VALUE: 2e4,
-    SHAPE: 9,
-    SIZE: 32,
-    COLOR: 195,
-    BODY: {
-        DAMAGE: 1.8,
-        DENSITY: 80,
-        HEALTH: 45,
-        RESIST: 1.75,
-        SHIELD: 8
-    },
-    DRAW_HEALTH: true
-};
-defExports.newOctagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Octagon',
-    VALUE: 15000,
-    SHAPE: 8,
-    SIZE: 28,
-    COLOR: 242,
-    BODY: {
-        DAMAGE: 1.75,
-        DENSITY: 80,
-        HEALTH: 40,
-        RESIST: 1.35,
-        SHIELD: 8
-    },
-    DRAW_HEALTH: true
-};
-defExports.newHeptagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Heptagon',
-    VALUE: 12500,
-    SHAPE: 7,
-    SIZE: 30,
-    COLOR: 26,
-    BODY: {
-        DAMAGE: 1.75,
-        DENSITY: 80,
-        HEALTH: 35,
-        RESIST: 1.35,
-        SHIELD: 8
-    },
-    DRAW_HEALTH: true
-};
-defExports.newHexagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Hexagon',
-    VALUE: 1e4,
-    SHAPE: 6,
-    SIZE: 20,
-    COLOR: 241,
-    BODY: {
-        DAMAGE: 1.5,
-        DENSITY: 80,
-        HEALTH: 30,
-        RESIST: 1.35,
-        SHIELD: 8
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true
-};
-defExports.decagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Decagon',
-    VALUE: 100000,
-    SHAPE: -10,
-    SIZE: 59,
-    COLOR: 6, // 207,
-    BODY: {
-        DAMAGE: 3.75,
-        DENSITY: 95,
-        HEALTH: 600,
-        RESIST: 1.7,//Math.pow(1.375, 3),
-        SHIELD: 101,
-        REGEN: .01
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: []
-};
-defExports.nonagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Nonagon',
-    VALUE: 90000,
-    SHAPE: -9,
-    SIZE: 58,
-    COLOR: 195, // 28,
-    BODY: {
-        DAMAGE: 3.5,
-        DENSITY: 90,
-        HEALTH: 600,
-        RESIST: 1.65,//Math.pow(1.35, 3),
-        SHIELD: 100,
-        REGEN: .01
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["decagon", 99],
-        ["burntNonagon", 1]
-    ]
-};
-defExports.octagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Octagon',
-    VALUE: 65000,
-    SHAPE: -8,
-    SIZE: 57,
-    COLOR: 242, //0,
-    BODY: {
-        DAMAGE: 3.25,
-        DENSITY: 85,
-        HEALTH: 600,
-        RESIST: 1.6,//Math.pow(1.325, 3),
-        SHIELD: 95,
-        REGEN: .01
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["nonagon", 100]
-    ]
-};
-defExports.heptagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Heptagon',
-    VALUE: 50000,
-    SHAPE: -7,
-    SIZE: 56,
-    COLOR: 26, // 24,
-    BODY: {
-        DAMAGE: 3,
-        DENSITY: 80,
-        HEALTH: 600,
-        RESIST: 1.45,//Math.pow(1.3, 3),
-        SHIELD: 90,
-        REGEN: .02
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["octagon", 100]
-    ]
-};
-defExports.hexagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Hexagon',
-    VALUE: 35000,
-    SHAPE: -6,
-    SIZE: 54,
-    COLOR: 241, // 22,
-    BODY: {
-        DAMAGE: 2.5,
-        DENSITY: 80,
-        HEALTH: 600,
-        RESIST: 1.2,//Math.pow(1.275, 3),
-        SHIELD: 85,
-        REGEN: .05,
-        PENETRATION: 1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["heptagon", 100]
-    ]
-};
-defExports.alphaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Alpha Pentagon',
-    VALUE: 25000,
-    SHAPE: -5,
-    SIZE: 52,
-    COLOR: 14,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 50,
-        HEALTH: 600,
-        RESIST: 1.2,//Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["hexagon", 97.99],
-        ["hyperstar", 2],
-        ["seniorPentagon", 0.01]
-    ]
-};
-defExports.seniorPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Senior Pentagon',
-    VALUE: 25000,
-    SHAPE: 10021,
-    SIZE: 52,
-    COLOR: 14,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 50,
-        HEALTH: 600,
-        RESIST: 1.5,//Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: []
-};
-defExports.pentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Pentagon',
-    VALUE: 400,
-    SHAPE: 5,
-    SIZE: 16,
-    COLOR: 14,
-    BODY: {
-        DAMAGE: 1.5,
-        DENSITY: 8,
-        HEALTH: 20,
-        RESIST: 1.25,
+        DAMAGE: 0,
+        DENSITY: 2,
+        HEALTH: .0011,
         ACCELERATION: 0.01,
-        PENETRATION: 1.1
+        PUSHABILITY: 0
     },
-    DRAW_HEALTH: true,
+    DRAW_HEALTH: false,
     EVOLUTIONS: [
-        ["arrasHexagon", 44.5],
-        ["betaPentagon", 43.5],
-        ["splitterPentagon", 3],
-        [["greenPentagon", "lavenderPentagon"], 2.996],
-        [["boompentagon", "cagepentagon", "protpentagon"], 2],
-        [["star", "twistedPentagon"], 2],
-        ["loveFlower", 2],
-        ["pentagonColony", .003],
-        ["ascendedPentagonAI", .001]
-    ]
-};
-defExports.triangle = {
-    PARENT: [defExports.food],
-    LABEL: 'Triangle',
-    VALUE: 120,
-    SHAPE: 3,
-    SIZE: 9,
-    COLOR: 2,
-    BODY: {
-        DAMAGE: 1,
-        DENSITY: 6,
-        HEALTH: 6,
-        RESIST: 1.15,
-        ACCELERATION: 0.01,
-        PENETRATION: 1.5
-    },
-    DRAW_HEALTH: true,
-    EVOLUTIONS: [
-        ["pentagon", 83.9685],
-        ["splitterTriangle", 7],
-        ["greenTriangle", 5],
-        ["boomtriangle", 2],
-        ["twistedTriangle", 2],
-        ["rightTriangle", .01],
-        ["flair", .0085],
-        ["carbonFiberTriangle", .007],
-        ["triangleColony", .003],
-        ["ascendedTriangle", .003]
+        ["square", 98],
+        ["friedEgg", .9],
+        ["hardshellegg", .6],
+        ["gem", .25],
+        ["rogueEgg", .2],
+        ["obsidianEgg", .04],
+        ["eggColony", .006],
+        ["fakeegg", .004]
     ]
 };
 defExports.square = {
@@ -4222,16 +3493,1559 @@ defExports.square = {
         ["ascendedSquare", .002]
     ]
 };
+defExports.triangle = {
+    PARENT: [defExports.food],
+    LABEL: 'Triangle',
+    VALUE: 120,
+    SHAPE: 3,
+    SIZE: 9,
+    COLOR: 2,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 6,
+        HEALTH: 6,
+        RESIST: 1.15,
+        ACCELERATION: 0.01,
+        PENETRATION: 1.5
+    },
+    DRAW_HEALTH: true,
+    EVOLUTIONS: [
+        ["pentagon", 83.9685],
+        ["splitterTriangle", 7],
+        ["greenTriangle", 5],
+        ["boomtriangle", 2],
+        ["twistedTriangle", 2],
+        ["rightTriangle", .01],
+        ["flair", .0085],
+        ["carbonFiberTriangle", .007],
+        ["triangleColony", .003],
+        ["ascendedTriangle", .003]
+    ]
+};
+defExports.pentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Pentagon',
+    VALUE: 400,
+    SHAPE: 5,
+    SIZE: 16,
+    COLOR: 14,
+    BODY: {
+        DAMAGE: 1.5,
+        DENSITY: 8,
+        HEALTH: 20,
+        RESIST: 1.25,
+        ACCELERATION: 0.01,
+        PENETRATION: 1.1
+    },
+    DRAW_HEALTH: true,
+    EVOLUTIONS: [
+        ["arrasHexagon", 44.5],
+        ["betaPentagon", 43.5],
+        ["splitterPentagon", 3],
+        [["greenPentagon", "lavenderPentagon"], 2.996],
+        [["boompentagon", "cagepentagon", "protpentagon"], 2],
+        [["star", "twistedPentagon"], 2],
+        ["loveFlower", 2],
+        ["pentagonColony", .003],
+        ["ascendedPentagonAI", .001]
+    ]
+};
+defExports.betaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Pentagon',
+    VALUE: 2500,
+    SHAPE: 5,
+    SIZE: 30,
+    COLOR: 14,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 30,
+        HEALTH: 100,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: 40,
+        REGEN: .25
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [
+        ['alphaPentagon', 40],
+        ['betaHexagon', 30],
+        ['greenBetaPentagon', 10],
+        ['splitterBetaPentagon', 10],
+        ['hendecagon', 8],
+        ['superstar', 2]
+    ]
+};
+defExports.alphaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Pentagon',
+    VALUE: 25000,
+    SHAPE: -5,
+    SIZE: 52,
+    COLOR: 14,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 50,
+        HEALTH: 600,
+        RESIST: 1.2,//Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [
+        ["hexagon", 97.99],
+        ["hyperstar", 2],
+        ["seniorPentagon", 0.01]
+    ]
+};
+defExports.newHexagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Hexagon',
+    VALUE: 1e4,
+    SHAPE: 6,
+    SIZE: 20,
+    COLOR: 241,
+    BODY: {
+        DAMAGE: 1.5,
+        DENSITY: 80,
+        HEALTH: 30,
+        RESIST: 1.35,
+        SHIELD: 8
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+defExports.betaHexagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Hexagon',
+    VALUE: 22500,
+    SHAPE: 6,
+    SIZE: 37,
+    COLOR: mixColors('#7ADBBC', '#56E012', .5),
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 315,
+        RESIST: 1.275,
+        SHIELD: 46.5,
+        REGEN: .025
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [['hexagon', 100]]
+};
+defExports.hexagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Hexagon',
+    VALUE: 35000,
+    SHAPE: -6,
+    SIZE: 54,
+    COLOR: 241, // 22,
+    BODY: {
+        DAMAGE: 2.5,
+        DENSITY: 80,
+        HEALTH: 600,
+        RESIST: 1.2,//Math.pow(1.275, 3),
+        SHIELD: 85,
+        REGEN: .05,
+        PENETRATION: 1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["heptagon", 100]]
+};
+defExports.newHeptagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Heptagon',
+    VALUE: 12500,
+    SHAPE: 7,
+    SIZE: 30,
+    COLOR: 26,
+    BODY: {
+        DAMAGE: 1.75,
+        DENSITY: 80,
+        HEALTH: 35,
+        RESIST: 1.35,
+        SHIELD: 8
+    },
+    DRAW_HEALTH: true
+};
+defExports.betaHeptagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Heptagon',
+    VALUE: 31250,
+    SHAPE: 7,
+    SIZE: 43,
+    COLOR: 26,
+    BODY: {
+        DAMAGE: 2.375,
+        DENSITY: 80,
+        HEALTH: 317.5,
+        RESIST: 1.4,
+        SHIELD: 49,
+        REGEN: .01
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: []
+};
+defExports.heptagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Heptagon',
+    VALUE: 50000,
+    SHAPE: -7,
+    SIZE: 56,
+    COLOR: 26, // 24,
+    BODY: {
+        DAMAGE: 3,
+        DENSITY: 80,
+        HEALTH: 600,
+        RESIST: 1.45,//Math.pow(1.3, 3),
+        SHIELD: 90,
+        REGEN: .02
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["octagon", 100]]
+};
+defExports.newOctagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Octagon',
+    VALUE: 15000,
+    SHAPE: 8,
+    SIZE: 28,
+    COLOR: 242,
+    BODY: {
+        DAMAGE: 1.75,
+        DENSITY: 80,
+        HEALTH: 40,
+        RESIST: 1.35,
+        SHIELD: 8
+    },
+    DRAW_HEALTH: true
+};
+defExports.betaOctagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Octagon',
+    VALUE: 40000,
+    SHAPE: 8,
+    SIZE: 42, //42.5,
+    COLOR: 242,
+    BODY: {
+        DAMAGE: 2.5,
+        DENSITY: 82.5,
+        HEALTH: 320,
+        RESIST: 1.475,
+        SHIELD: 51.5,
+        REGEN: .005
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+};
+defExports.octagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Octagon',
+    VALUE: 65000,
+    SHAPE: -8,
+    SIZE: 57,
+    COLOR: 242, //0,
+    BODY: {
+        DAMAGE: 3.25,
+        DENSITY: 85,
+        HEALTH: 600,
+        RESIST: 1.6,//Math.pow(1.325, 3),
+        SHIELD: 95,
+        REGEN: .01
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["nonagon", 100]]
+};
+defExports.newNonagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Nonagon',
+    VALUE: 2e4,
+    SHAPE: 9,
+    SIZE: 32,
+    COLOR: 195,
+    BODY: {
+        DAMAGE: 1.8,
+        DENSITY: 80,
+        HEALTH: 45,
+        RESIST: 1.75,
+        SHIELD: 8
+    },
+    DRAW_HEALTH: true
+};
+defExports.betaNonagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Nonagon',
+    VALUE: 55000,
+    SHAPE: 9,
+    SIZE: 45,
+    COLOR: 195,
+    BODY: {
+        DAMAGE: 2.65,
+        DENSITY: 85,
+        HEALTH: 322.5,
+        RESIST: 1.7,
+        SHIELD: 54,
+        REGEN: .005
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+defExports.nonagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Nonagon',
+    VALUE: 90000,
+    SHAPE: -9,
+    SIZE: 58,
+    COLOR: 195, // 28,
+    BODY: {
+        DAMAGE: 3.5,
+        DENSITY: 90,
+        HEALTH: 600,
+        RESIST: 1.65,//Math.pow(1.35, 3),
+        SHIELD: 100,
+        REGEN: .01
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [
+        ["decagon", 99],
+        ["burntNonagon", 1]
+    ]
+};
+defExports.newDecagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Decagon',
+    VALUE: 25000,
+    SHAPE: 10,
+    SIZE: 36,
+    COLOR: 6,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 85,
+        HEALTH: 50,
+        RESIST: 2,
+        SHIELD: 8.5
+    },
+    DRAW_HEALTH: true
+};
+defExports.betaDecagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Beta Decagon',
+    VALUE: 62500,
+    SHAPE: 10,
+    SIZE: 47, //47.5,
+    COLOR: 6,
+    BODY: {
+        DAMAGE: 2.875,
+        DENSITY: 90,
+        HEALTH: 325,
+        RESIST: 1.85,
+        SHIELD: 54.75,
+        REGEN: .005
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+defExports.decagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Alpha Decagon',
+    VALUE: 100000,
+    SHAPE: -10,
+    SIZE: 59,
+    COLOR: 6, // 207,
+    BODY: {
+        DAMAGE: 3.75,
+        DENSITY: 95,
+        HEALTH: 600,
+        RESIST: 1.7,//Math.pow(1.375, 3),
+        SHIELD: 101,
+        REGEN: .01
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["icosagon", 100]]
+};
+defExports.hendecagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Hendecagon',
+    VALUE: 50000,
+    SHAPE: 11,
+    SIZE: 24,
+    COLOR: 190,
+    BODY: {
+        DAMAGE: 5,
+        DENSITY: 30,
+        HEALTH: 150,
+        RESIST: Math.pow(1.3, 2)
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+	ON_DEAD: function({ sockets, ran, Entity}) {
+		let positions = [{
+				x: this.x - 10,
+				y: this.y - 10
+			}, {
+				x: this.x - 10,
+				y: this.y + 10
+			}, {
+				x: this.x + 10,
+				y: this.y - 10
+			}];
+		for (let i = 0; i < 3; i++) {
+			let o = new Entity(positions[i]);
+			o.team = this.team;
+			o.define([Class.crasher, Class.square, Class.triangle][i]);
+		}
+	}
+};
+defExports.icosagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Icosagon',
+    VALUE: 105000,
+    SHAPE: -20,
+    SIZE: 120,
+    COLOR: 160,
+    BODY: {
+        DAMAGE: 4.5,
+        DENSITY: 140,
+        HEALTH: 670.5,
+        RESIST: 1.6,//Math.pow(1.375, 3),
+        SHIELD: 110,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+// Green Foods
+defExports.greenSquare = {
+    PARENT: [defExports.food],
+    LABEL: 'Green Square',
+    VALUE: 2000,
+    SHAPE: 4,
+    SIZE: 10,
+    COLOR: 31,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 4,
+        HEALTH: 20,
+        PENETRATION: 2
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(31)],
+    ON_DEALT_DAMAGE: (me, them) => poison(me, them, 1.5, 1),
+    EVOLUTIONS: [
+        ["greenTriangle", 80],
+        ["orangeSquare", 15],
+        ["greensplitterSquare", 5]
+    ]
+};
+defExports.greenTriangle = {
+    PARENT: [defExports.food],
+    LABEL: 'Green Triangle',
+    VALUE: 4000,
+    SHAPE: 3,
+    SIZE: 9,
+    COLOR: 31,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 6,
+        HEALTH: 60,
+        RESIST: 1.15,
+        PENETRATION: 1.5
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(31)],
+    ON_DEALT_DAMAGE: (me, them) => poison(me, them, 1.5, 1),
+    EVOLUTIONS: [
+        ["greenPentagon", 85],
+        ["orangeTriangle", 15]
+    ]
+};
+defExports.greenPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Green Pentagon',
+    VALUE: 6000,
+    SHAPE: 5,
+    SIZE: 12,
+    COLOR: 31,
+    BODY: {
+        DAMAGE: 3,
+        DENSITY: 8,
+        HEALTH: 125,//200
+        RESIST: 1.25,
+        PENETRATION: 1.1
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(31)],
+    ON_DEALT_DAMAGE: (me, them) => poison(me, them, 1.5, 1),
+    EVOLUTIONS: [
+        ["greenBetaPentagon", 60],
+        ["orangePentagon", 40]
+    ]
+};
+defExports.greenBetaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Green Beta Pentagon',
+    VALUE: 1e4,
+    SHAPE: 5,
+    SIZE: 26,
+    COLOR: 31,
+    BODY: {
+        DAMAGE: 2.5,
+        DENSITY: 30,
+        HEALTH: 250,
+        RESIST: 1.2,//Math.pow(1.3, 2),
+        SHIELD: 40,
+        REGEN: .3
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    PROPS: [makeAura(31)],
+    ON_DEALT_DAMAGE: (me, them) => poison(me, them, 1.5, 1),
+    EVOLUTIONS: [["orangeBetaPentagon", 100]]
+};
+// Orange Foods
+defExports.orangeSquare = {
+    PARENT: [defExports.food],
+    LABEL: 'Orange Square',
+    SHAPE: 4,
+    SIZE: 10,
+    VALUE: 30000,
+    COLOR: 207,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 4,
+        HEALTH: 20,
+        PENETRATION: 2
+    },
+    DOES_TORCH: true,
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(207)],
+    ON_DAMAGED: (me, them) => torch(me, them, 1, 2, me.team),
+    EVOLUTIONS: [
+        ["orangeTriangle", 85],
+        ["mysticSquare", 15]
+    ]
+};
+defExports.orangeTriangle = {
+    PARENT: [defExports.food],
+    LABEL: 'Orange Triangle',
+    SHAPE: 3,
+    SIZE: 6.5,
+    VALUE: 40000,
+    COLOR: 207,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 6,
+        HEALTH: 60,
+        RESIST: 1.15,
+        PENETRATION: 1.5
+    },
+    DOES_TORCH: true,
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(207)],
+    ON_DAMAGED: (me, them) => torch(me, them, 1, 2, me.team),
+    EVOLUTIONS: [
+        ["orangePentagon", 85],
+        ["mysticTriangle", 15]
+    ]
+};
+defExports.orangePentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Orange Pentagon',
+    SHAPE: 5,
+    SIZE: 12,
+    VALUE: 50000,
+    COLOR: 207,
+    BODY: {
+        DAMAGE: 3,
+        DENSITY: 8,
+        HEALTH: 125,//200
+        RESIST: 1.25,
+        PENETRATION: 1.1
+    },
+    DOES_TORCH: true,
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(207)],
+    ON_DAMAGED: (me, them) => torch(me, them, 1, 2, me.team),
+    EVOLUTIONS: [
+        ["orangeBetaPentagon", 85],
+        ["mysticPentagon", 15]
+    ],
+};
+defExports.orangeBetaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Orange Beta Pentagon',
+    VALUE: 1e5,
+    SHAPE: 5,
+    SIZE: 26,
+    COLOR: 207,
+    BODY: {
+        DAMAGE: 2.5,
+        DENSITY: 30,
+        HEALTH: 300,
+        RESIST: 1.2,//Math.pow(1.3, 2),
+        SHIELD: 40,
+        REGEN: .3
+    },
+    DOES_TORCH: true,
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    PROPS: [makeAura(207)],
+    ON_DAMAGED: (me, them) => torch(me, them, 1.5, 1, me.team),
+    EVOLUTIONS: [["mysticBetaPentagon", 100]]
+};
+// Lavender Foods
+defExports.lavenderSquare = {
+    PARENT: [defExports.food],
+    LABEL: 'Lavender Square',
+    VALUE: 3000,
+    SHAPE: 4,
+    SIZE: 7.5,
+    COLOR: 337,
+    BODY: {
+        DAMAGE: .1,
+        DENSITY: 4,
+        HEALTH: 100,
+        PENETRATION: 2
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(337)],
+    ON_DEALT_DAMAGE: (me, them) => swell(them, 1, 2),
+    EVOLUTIONS: [["lavenderTriangle", 100]]
+};
+defExports.lavenderTriangle = {
+    PARENT: [defExports.food],
+    LABEL: 'Lavender Triangle',
+    VALUE: 5000,
+    SHAPE: 3,
+    SIZE: 6.5,
+    COLOR: 337,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 6,
+        HEALTH: 60,
+        RESIST: 1.15,
+        PENETRATION: 1.5
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(337)],
+    ON_DEALT_DAMAGE: (me, them) => swell(them, 1, 2),
+    EVOLUTIONS: [["lavenderPentagon", 100]]
+};
+defExports.lavenderPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Lavender Pentagon',
+    VALUE: 8000,
+    SHAPE: 5,
+    SIZE: 12,
+    COLOR: 337,
+    BODY: {
+        DAMAGE: 3,
+        DENSITY: 8,
+        HEALTH: 125,//200
+        RESIST: 1.25,
+        PENETRATION: 1.1
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(337)],
+    ON_DEALT_DAMAGE: (me, them) => swell(them, 1, 2),
+    EVOLUTIONS: [
+        ["cranberryPentagon", 52.5],
+        ["lavenderBetaPentagon", 47.5]
+    ]
+};
+defExports.lavenderBetaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Lavender Beta Pentagon',
+    VALUE: 14000,
+    SHAPE: 5,
+    SIZE: 26,
+    COLOR: 337,
+    BODY: {
+        DAMAGE: 2.5,
+        DENSITY: 30,
+        HEALTH: 250,
+        RESIST: 1.2,
+        SHIELD: 40,
+        REGEN: .3
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    PROPS: [makeAura(337)],
+    ON_DEALT_DAMAGE: (me, them) => swell(them, 1, 2)
+};
+// Cranberry Foods
+defExports.cranberryPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Cranberry Pentagon',
+    VALUE: 8000,
+    SHAPE: 5,
+    SIZE: 12,
+    COLOR: 340,
+    BODY: {
+        DAMAGE: 3,
+        DENSITY: 8,
+        HEALTH: 200,
+        RESIST: 1.25,
+        PENETRATION: 1.1
+    },
+    DRAW_HEALTH: true,
+    PROPS: [makeAura(340)],
+    ON_DEALT_DAMAGE: (me, them) => shrivel(them, 1.01, 2),
+    EVOLUTIONS: []
+};
+// Mystic Foods
+defExports.mysticSquare = {
+    PARENT: [defExports.food],
+    LABEL: 'Mystic Square',
+    VALUE: 15000,
+    SHAPE: 4,
+    SIZE: 7.5,
+    COLOR: 261,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 400,
+        RESIST: Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    ON_DAMAGED: function(me, them) {
+        if (Math.random() < 0.05) {
+            me.x += 30 * Math.floor(Math.random() * 21 - 10);
+            me.y += 30 * Math.floor(Math.random() * 21 - 10);
+        }
+    },
+    EVOLUTIONS: [["mysticTriangle", 100]]
+};
+defExports.mysticTriangle = {
+    PARENT: [defExports.food],
+    LABEL: 'Mystic Triangle',
+    VALUE: 28000,
+    SHAPE: 3,
+    SIZE: 6.5,
+    COLOR: 261,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 400,
+        RESIST: Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    ON_DAMAGED: function(me, them) {
+        if (Math.random() < 0.05) {
+            me.x += 30 * Math.floor(Math.random() * 21 - 10);
+            me.y += 30 * Math.floor(Math.random() * 21 - 10);
+        }
+    },
+    EVOLUTIONS: [["mysticPentagon", 100]]
+};
+defExports.mysticPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Mystic Pentagon',
+    VALUE: 32000,
+    SHAPE: 5,
+    SIZE: 12,
+    COLOR: 261,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 400,
+        RESIST: Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    ON_DAMAGED: function(me, them) {
+        if (Math.random() < 0.05) {
+            me.x += 30 * Math.floor(Math.random() * 21 - 10);
+            me.y += 30 * Math.floor(Math.random() * 21 - 10);
+        }
+    },
+    EVOLUTIONS: [["mysticBetaPentagon", 100]]
+};
+defExports.mysticBetaPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Mystic Beta Pentagon',
+    VALUE: 5e5,
+    SHAPE: 5,
+    SIZE: 28,
+    COLOR: 261,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 600,
+        RESIST: 1.3,//Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    ON_DAMAGED: function (me, them) {
+        if (Math.random() < 0.05) {
+            me.x += 30 * Math.floor(Math.random() * 21 - 10);
+            me.y += 30 * Math.floor(Math.random() * 21 - 10);
+        }
+    }
+};
+// Golden Foods
+defExports.burntNonagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Golden Nonagon',
+    VALUE: 4e5,
+    SHAPE: -9,
+    SIZE: 72,
+    COLOR: 234, // 207
+    BODY: {
+        DAMAGE: 3.5,
+        DENSITY: 90,
+        HEALTH: 1250,
+        RESIST: Math.pow(1.35, 3),
+        SHIELD: 90,
+        REGEN: .01
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    MISC_IDENTIFIER: 'Golden Nonagon',
+    EVOLUTIONS: [['burntIcosagon', 100]]
+};
+defExports.burntIcosagonRing = {
+    LABEL: 'Ring',
+    TYPE: 'bullet',
+    SHAPE: 136,
+    ALPHA: .7,
+    ACCEPTS_SCORE: false,
+    BODY: {
+        PENETRATION: 1,
+        SPEED: 3.75,
+        RANGE: 90,
+        DENSITY: 1.25,
+        HEALTH: .165,
+        DAMAGE: 6,
+        PUSHABILITY: .3
+    },
+    MOTION_TYPE: 'plasma',
+    FACING_TYPE: 'smoothWithMotion',
+    INDEPENDENT: true,
+    CAN_GO_OUTSIDE_ROOM: true,
+    HITS_OWN_TYPE: 'forcedNever',
+    PERSISTS_AFTER_DEATH: true,
+    DIE_AT_RANGE: true,
+    GO_THRU_OBSTACLES: true,
+};
+defExports.burntIcosagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Golden Icosagon',
+    VALUE: 6e5,
+    SHAPE: -20,
+    SIZE: 120,
+    COLOR: 234, // 207
+    BODY: {
+        FOV: 1.5,
+        DAMAGE: 5,
+        DENSITY: 110,
+        HEALTH: 1750,
+        RESIST: Math.pow(1.35, 3),
+        SHIELD: 140,
+        REGEN: .005
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    GUNS: [{
+        POSITION: [0, 5, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.plasma, g.no_recoil, g.extra_range]),
+            TYPE: defExports.burntIcosagonRing,
+            AUTOFIRE: true,
+            ON_FIRE: function(gun, gunInfo) {
+                if (gun.body.master.variables.bossSpawn) gun.fire(gunInfo);
+            }
+        }
+    }],
+    VARIABLES: { bossSpawn: false },
+    ON_DEFINED: function(me, entities, sockets, Entity, ran) {
+        setTimeout(function() {
+            if (me && me.isAlive()) {
+                sockets.broadcast("The Golden Icosagon is sending out messages, move away from it!");
+                me.variables.bossSpawn = true;
+                setTimeout(function() {
+                    let r = ran.irandom(20),
+                        boss = new Entity({
+                        x: me.x + me.SIZE * 3 * Math.cos(r * Math.PI / 40),
+                        y: me.y + me.SIZE * 3 * Math.sin(r * Math.PI / 40)
+                    });
+                    boss.team = me.team;
+                    boss.master = me;
+                    boss.squiggle = me.squiggle;
+                    boss.define(Class.goldenMladicAI);
+                    me.childrenMap.set(boss.id, boss);
+                    me.variables.bossSpawn = false;
+                }, 7500);
+            }
+        }, 15000);
+    }
+};
+// Obsidian Foods
+defExports.obsidianEgg = {
+    PARENT: [defExports.egg],
+    LABEL: 'Obsidian Egg',
+    COLOR: 19,
+    VALUE: 10000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 500,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["obsidianSquareStill", 100]]
+};
+defExports.obsidianSquareStill = {
+    PARENT: [defExports.square],
+    LABEL: 'Obsidian Square',
+    COLOR: 19,
+    VALUE: 50000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 1000,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [
+        ["obsidianTriangle", 52.5],
+        ["obsidianSquare", 47.5]
+    ]
+};
+defExports.obsidianTriangle = {
+    PARENT: [defExports.triangle],
+    LABEL: 'Obsidian Triangle',
+    COLOR: 19,
+    VALUE: 100000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 5000,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["obsidianPentagon", 100]]
+};
+defExports.obsidianPentagon = {
+    PARENT: [defExports.pentagon],
+    LABEL: 'Obsidian Pentagon',
+    COLOR: 19,
+    VALUE: 500000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 10000,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["obsidianBetaPentagon", 100]]
+};
+defExports.obsidianBetaPentagon = {
+    PARENT: [defExports.betaPentagon],
+    LABEL: 'Obsidian Beta Pentagon',
+    COLOR: 19,
+    VALUE: 1000000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 50000,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: [["obsidianAlphaPentagon", 100]]
+};
+defExports.obsidianAlphaPentagon = {
+    PARENT: [defExports.alphaPentagon],
+    LABEL: 'Obsidian Alpha Pentagon',
+    COLOR: 19,
+    VALUE: 5000000,
+    BODY: {
+        DAMAGE: 10,
+        DENSITY: 30,
+        HEALTH: 100000,
+        RESIST: Math.pow(1.25, 2),
+        SHIELD: -1,
+        REGEN: -1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true
+};
+// Food Nests & Spawners
+defExports.eggColonySpawner = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function ({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 6; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 3),
+				y: y + 200 * Math.sin(i * Math.PI / 3)
+			});
+			crash.team = this.team;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
+			crash.define(Class.eggCrasher);
+		}
+		for (let i = 0; i < 20; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 10),
+				y: y + 250 * Math.sin(i * Math.PI / 10)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 10);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 10);
+			shape.define(Class.egg);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 100 * Math.cos(i * Math.PI / 2),
+				y: y + 100 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 100 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 100 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.hardshellegg);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+	}
+};
+defExports.squareNest = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 12; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 6),
+				y: y + 200 * Math.sin(i * Math.PI / 6)
+			});
+			crash.team = -100;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 6);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 6);
+			crash.define(Class.summonerSquare);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 2 + Math.PI / 4),
+				y: y + 250 * Math.sin(i * Math.PI / 2 + Math.PI / 4)
+			});
+			shape.team = -100;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2 + Math.PI / 4);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2 + Math.PI / 4);
+			shape.define(Class.greenSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 350 * Math.cos(i * Math.PI / 2),
+				y: y + 350 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = -100;
+			shape.control.target.x = 350 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 350 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.splitterSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 20; i++) {
+			let shape = new Entity({
+				x: x + 400 * Math.cos(i * Math.PI / 10),
+				y: y + 400 * Math.sin(i * Math.PI / 10)
+			});
+			shape.team = -100;
+			shape.control.target.x = 400 * Math.cos(i * Math.PI / 10);
+			shape.control.target.y = 400 * Math.sin(i * Math.PI / 10);
+			shape.define(Class.singularSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 2; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI),
+				y: y + 275 * Math.sin(i * Math.PI)
+			});
+			sentry.team = -100;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
+			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
+			sentry.define(Class.squareGunSentry);
+		}
+	}
+};
+defExports.squareColonySpawner = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 6; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 3),
+				y: y + 200 * Math.sin(i * Math.PI / 3)
+			});
+			crash.team = this.team;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
+			crash.define(Class.summonerSquare);
+		}
+		for (let i = 0; i < 3; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 1.5),
+				y: y + 200 * Math.sin(i * Math.PI / 1.5)
+			});
+			crash.team = this.team;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
+			crash.define(Class.cashCrash);
+		}
+		for (let i = 0; i < 2; i++) {
+			let shape = new Entity({
+				x: x + 100 * Math.cos(i * Math.PI / 1),
+				y: y + 100 * Math.sin(i * Math.PI / 1)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 100 * Math.cos(i * Math.PI / 1);
+			shape.control.target.y = 100 * Math.sin(i * Math.PI / 1);
+			shape.define(Class.splitterSplitterSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 125 * Math.cos(i * Math.PI / 2),
+				y: y + 125 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 125 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 125 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.splitterSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 125 * Math.cos(i * Math.PI / 2),
+				y: y + 125 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 125 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 125 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.lavenderSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 26; i++) {
+			let shape = new Entity({
+				x: x + 400 * Math.cos(i * Math.PI / 13),
+				y: y + 400 * Math.sin(i * Math.PI / 13)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 150 * Math.cos(i * Math.PI / 13);
+			shape.control.target.y = 150 * Math.sin(i * Math.PI / 13);
+			shape.define(Class.square);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 5; i++) {
+			let shape = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI / 2.5),
+				y: y + 275 * Math.sin(i * Math.PI / 2.5)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 275 * Math.cos(i * Math.PI / 2.5);
+			shape.control.target.y = 275 * Math.sin(i * Math.PI / 2.5);
+			shape.define(Class.greenSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 300 * Math.cos(i * Math.PI / 2),
+				y: y + 300 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 300 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 300 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.boomsquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 3; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 1.5),
+				y: y + 250 * Math.sin(i * Math.PI / 1.5)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 1.5);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 1.5);
+			shape.define(Class.orangeSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 1; i++) {
+			let shape = new Entity({
+				x: x + 225 * Math.cos(i * Math.PI / 1),
+				y: y + 225 * Math.sin(i * Math.PI / 1)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
+			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
+			shape.define(Class.scutiSquare);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 2; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI),
+				y: y + 275 * Math.sin(i * Math.PI)
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
+			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
+			sentry.define(Class.squareGunSentry);
+		}
+		for (let i = 0; i < 1; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI),
+				y: y
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
+			sentry.control.target.y = y;
+			sentry.define(Class.summonerLiteAI);
+		}
+		for (let i = 0; i < 1; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI),
+				y: y
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
+			sentry.control.target.y = y;
+			sentry.define(Class.squareSwarmerAI);
+		}
+		for (let i = 0; i < 1; i++) {
+			let sentry = new Entity({
+				x: x,
+				y: y + 275 * Math.cos(i * Math.PI)
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = x;
+			sentry.control.target.y = 275 * Math.cos(i * Math.PI);
+			sentry.define(Class.squareSwarmerAI);
+		}
+	}
+};
+defExports.triangleNest = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 10; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 5),
+				y: y + 200 * Math.sin(i * Math.PI / 5)
+			});
+			crash.team = -100;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 5);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 5);
+			crash.define(Class.crasher);
+		}
+		for (let i = 0; i < 4; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 2),
+				y: y + 200 * Math.sin(i * Math.PI / 2)
+			});
+			crash.team = -100;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 2);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 2);
+			crash.define(Class.redRunner1);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 2),
+				y: y + 250 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = -100;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.greenTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 8; i++) {
+			let crash = new Entity({
+				x: x + 350 * Math.cos(i * Math.PI / 4),
+				y: y + 350 * Math.sin(i * Math.PI / 4)
+			});
+			crash.team = -100;
+			crash.control.target.x = 350 * Math.cos(i * Math.PI / 4);
+			crash.control.target.y = 350 * Math.sin(i * Math.PI / 4);
+			crash.define(Class.bladeCrasher);
+		}
+		for (let i = 0; i < 20; i++) {
+			let shape = new Entity({
+				x: x + 400 * Math.cos(i * Math.PI / 10),
+				y: y + 400 * Math.sin(i * Math.PI / 10)
+			});
+			shape.team = -100;
+			shape.control.target.x = 400 * Math.cos(i * Math.PI / 10);
+			shape.control.target.y = 400 * Math.sin(i * Math.PI / 10);
+			shape.define(Class.singularTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 2; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI),
+				y: y + 275 * Math.sin(i * Math.PI)
+			});
+			sentry.team = -100;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
+			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
+			sentry.define(Class.sentryGunAI);
+		}
+	}
+};
+defExports.triangleColonySpawner = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 6; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 3),
+				y: y + 200 * Math.sin(i * Math.PI / 3)
+			});
+			crash.team = this.team;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
+			crash.define(Class.triangleCrasher);
+		}
+		for (let i = 0; i < 3; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 1.5),
+				y: y + 200 * Math.sin(i * Math.PI / 1.5)
+			});
+			crash.team = this.team;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
+			crash.define(Class.poisonBlades);
+		}
+		for (let i = 0; i < 3; i++) {
+			let shape = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 1.5),
+				y: y + 200 * Math.sin(i * Math.PI / 1.5)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
+			shape.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
+			shape.define(Class.lavenderTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 8; i++) {
+			let shape = new Entity({
+				x: x + 100 * Math.cos(i * Math.PI / 4),
+				y: y + 100 * Math.sin(i * Math.PI / 4)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 100 * Math.cos(i * Math.PI / 4);
+			shape.control.target.y = 100 * Math.sin(i * Math.PI / 4);
+			shape.define(Class.splitterTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 30; i++) {
+			let shape = new Entity({
+				x: x + 400 * Math.cos(i * Math.PI / 15),
+				y: y + 400 * Math.sin(i * Math.PI / 15)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 150 * Math.cos(i * Math.PI / 15);
+			shape.control.target.y = 150 * Math.sin(i * Math.PI / 15);
+			shape.define(Class.triangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 5; i++) {
+			let shape = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI / 2.5),
+				y: y + 275 * Math.sin(i * Math.PI / 2.5)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 275 * Math.cos(i * Math.PI / 2.5);
+			shape.control.target.y = 275 * Math.sin(i * Math.PI / 2.5);
+			shape.define(Class.greenTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 300 * Math.cos(i * Math.PI / 2),
+				y: y + 300 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 300 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 300 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.boomtriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 3; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 1.5),
+				y: y + 250 * Math.sin(i * Math.PI / 1.5)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 1.5);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 1.5);
+			shape.define(Class.orangeTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 1; i++) {
+			let shape = new Entity({
+				x: x - 225 * Math.cos(i * Math.PI / 1),
+				y: y - 225 * Math.sin(i * Math.PI / 1)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
+			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
+			shape.define(Class.rightTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 1; i++) {
+			let shape = new Entity({
+				x: x + 225 * Math.cos(i * Math.PI / 1),
+				y: y + 225 * Math.sin(i * Math.PI / 1)
+			});
+			shape.team = this.team;
+			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
+			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
+			shape.define(Class.carbonFiberTriangle);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 3; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI / 1.5),
+				y: y + 275 * Math.sin(i * Math.PI / 1.5)
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI / 1.5);
+			sentry.control.target.y = 275 * Math.sin(i * Math.PI / 1.5);
+			sentry.define(Class.bladeSentryAI);
+		}
+		for (let i = 0; i < 3; i++) {
+			let sentry = new Entity({
+				x: x + 300 * Math.cos(i * Math.PI / 1.5),
+				y: y + 300 * Math.sin(i * Math.PI / 1.5)
+			});
+			sentry.team = this.team;
+			sentry.control.target.x = 300 * Math.cos(i * Math.PI / 1.5);
+			sentry.control.target.y = 300 * Math.sin(i * Math.PI / 1.5);
+			sentry.define([Class.sentryGunAI, Class.sentryTrapAI, Class.sentrySwarmAI][i]);
+		}
+	}
+};
+defExports.pentaNest = {
+    PARENT: [defExports.food],
+    ALPHA: 0,
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		let x = this.x,
+			y = this.y;
+		for (let i = 0; i < 10; i++) {
+			let crash = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 5),
+				y: y + 200 * Math.sin(i * Math.PI / 5)
+			});
+			crash.team = -100;
+			crash.control.target.x = 200 * Math.cos(i * Math.PI / 5);
+			crash.control.target.y = 200 * Math.sin(i * Math.PI / 5);
+			crash.define(Class.semiCrushCrasher);
+		}
+		for (let i = 0; i < 5; i++) {
+			let shape = new Entity({
+				x: x + 200 * Math.cos(i * Math.PI / 2.5),
+				y: y + 200 * Math.sin(i * Math.PI / 2.5)
+			});
+			shape.team = -100;
+			shape.control.target.x = 200 * Math.cos(i * Math.PI / 2.5);
+			shape.control.target.y = 200 * Math.sin(i * Math.PI / 2.5);
+			shape.define(Class.splitterPentagon);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let shape = new Entity({
+				x: x + 250 * Math.cos(i * Math.PI / 2),
+				y: y + 250 * Math.sin(i * Math.PI / 2)
+			});
+			shape.team = -100;
+			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2);
+			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2);
+			shape.define(Class.greenPentagon);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 8; i++) {
+			let crash = new Entity({
+				x: x + 350 * Math.cos(i * Math.PI / 4),
+				y: y + 350 * Math.sin(i * Math.PI / 4)
+			});
+			crash.team = -100;
+			crash.control.target.x = 350 * Math.cos(i * Math.PI / 4);
+			crash.control.target.y = 350 * Math.sin(i * Math.PI / 4);
+			crash.define(Class.crushCrasher);
+		}
+		for (let i = 0; i < 18; i++) {
+			let shape = new Entity({
+				x: x + 400 * Math.cos(i * Math.PI / 9),
+				y: y + 400 * Math.sin(i * Math.PI / 9)
+			});
+			shape.team = -100;
+			shape.control.target.x = 400 * Math.cos(i * Math.PI / 9);
+			shape.control.target.y = 400 * Math.sin(i * Math.PI / 9);
+			shape.define(Class.singularPentagon);
+			shape.ACCELERATION = .015 / (shape.size * 0.2);
+		}
+		for (let i = 0; i < 4; i++) {
+			let sentry = new Entity({
+				x: x + 275 * Math.cos(i * Math.PI / 2),
+				y: y + 275 * Math.sin(i * Math.PI / 2)
+			});
+			sentry.team = -100;
+			sentry.control.target.x = 275 * Math.cos(i * Math.PI / 2);
+			sentry.control.target.y = 275 * Math.sin(i * Math.PI / 2);
+			sentry.define(Class.sentryGunAI);
+		}
+	}
+};
 defExports.pentagonColonySpawner = {
     PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
     ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
 		let x = this.x,
 			y = this.y;
 		for (let i = 0; i < 10; i++) {
@@ -4386,893 +5200,50 @@ defExports.pentagonColonySpawner = {
 		}
 	}
 };
-defExports.pentagonColony = {
-    PARENT: [defExports.food],
-    LABEL: 'Pentagon Colony',
-    VALUE: 4e5,
-    SHAPE: 5,
-    LAYER: 11,
-    SIZE: 36,
-    COLOR: 14,
-    BODY: {
-        DAMAGE: 5,
-        DENSITY: 40,
-        HEALTH: 900,
-        ACCELERATION: 0.01,
-        SHIELD: 40,
-        REGEN: 0.25,
-    },
-    GIVE_KILL_MESSAGE: true,
-    DRAW_HEALTH: true,
-    GUNS: [{
-        POSITION: [0, 10, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.shoot_once]),
-            TYPE: defExports.pentagonColonySpawner,
-            AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        },
-    },],
-    PROPS: [{
-        POSITION: [1.4, 0, 0, 0, 0],
-        SHAPE: -5,
-        COLOR: 17,
-    }, {
-        POSITION: [1.3, 0, 0, 0, 0],
-        SHAPE: -5,
-    }, {
-        POSITION: [1.2, 0, 0, 36, 0],
-        SHAPE: 5,
-    }, {
-        POSITION: [1.2, 0, 0, 0, 0],
-        SHAPE: -5,
-    }, {
-        POSITION: [1.15, 0, 0, 36, 0],
-        SHAPE: 5,
-        COLOR: 17,
-    }, {
-        POSITION: [0.95, 0, 0, 0, 1],
-        SHAPE: 5,
-    }, {
-        POSITION: [0.9, 0, 0, 0, 1],
-        SHAPE: 5,
-        COLOR: 17,
-    }, {
-        POSITION: [0.8, 0, 0, 0, 1],
-        SHAPE: 5,
-    }, {
-        POSITION: [0.6, 0, 0, 0, 1],
-        SHAPE: 5,
-        COLOR: 17,
-    }, {
-        POSITION: [0.55, 0, 0, 0, 1],
-        SHAPE: 5,
-    }, {
-        POSITION: [1.1, 0, 0, 0, 0],
-        SHAPE: 5,
-    }, {
-        POSITION: [0.5, 0, 0, 0, 1],
-        SHAPE: -5,
-    }, {
-        POSITION: [0.4, 0, 0, 0, 1],
-        SHAPE: 5,
-    }, {
-        POSITION: [0.25, 0, 0, 36, 1],
-        SHAPE: -5,
-    }, {
-        POSITION: [0.25, 0, 0, 0, 1],
-        SHAPE: -5,
-    },],
-    EVOLUTIONS: []
-};
-defExports.triangleColonySpawner = {
-    PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 6; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 3),
-				y: y + 200 * Math.sin(i * Math.PI / 3)
-			});
-			crash.team = this.team;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
-			crash.define(Class.triangleCrasher);
-		}
-		for (let i = 0; i < 3; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 1.5),
-				y: y + 200 * Math.sin(i * Math.PI / 1.5)
-			});
-			crash.team = this.team;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
-			crash.define(Class.poisonBlades);
-		}
-		for (let i = 0; i < 3; i++) {
-			let shape = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 1.5),
-				y: y + 200 * Math.sin(i * Math.PI / 1.5)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
-			shape.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
-			shape.define(Class.lavenderTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 8; i++) {
-			let shape = new Entity({
-				x: x + 100 * Math.cos(i * Math.PI / 4),
-				y: y + 100 * Math.sin(i * Math.PI / 4)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 100 * Math.cos(i * Math.PI / 4);
-			shape.control.target.y = 100 * Math.sin(i * Math.PI / 4);
-			shape.define(Class.splitterTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 30; i++) {
-			let shape = new Entity({
-				x: x + 400 * Math.cos(i * Math.PI / 15),
-				y: y + 400 * Math.sin(i * Math.PI / 15)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 150 * Math.cos(i * Math.PI / 15);
-			shape.control.target.y = 150 * Math.sin(i * Math.PI / 15);
-			shape.define(Class.triangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 5; i++) {
-			let shape = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI / 2.5),
-				y: y + 275 * Math.sin(i * Math.PI / 2.5)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 275 * Math.cos(i * Math.PI / 2.5);
-			shape.control.target.y = 275 * Math.sin(i * Math.PI / 2.5);
-			shape.define(Class.greenTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 300 * Math.cos(i * Math.PI / 2),
-				y: y + 300 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 300 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 300 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.boomtriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 3; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 1.5),
-				y: y + 250 * Math.sin(i * Math.PI / 1.5)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 1.5);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 1.5);
-			shape.define(Class.orangeTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 1; i++) {
-			let shape = new Entity({
-				x: x - 225 * Math.cos(i * Math.PI / 1),
-				y: y - 225 * Math.sin(i * Math.PI / 1)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
-			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
-			shape.define(Class.rightTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 1; i++) {
-			let shape = new Entity({
-				x: x + 225 * Math.cos(i * Math.PI / 1),
-				y: y + 225 * Math.sin(i * Math.PI / 1)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
-			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
-			shape.define(Class.carbonFiberTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 3; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI / 1.5),
-				y: y + 275 * Math.sin(i * Math.PI / 1.5)
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI / 1.5);
-			sentry.control.target.y = 275 * Math.sin(i * Math.PI / 1.5);
-			sentry.define(Class.bladeSentryAI);
-		}
-		for (let i = 0; i < 3; i++) {
-			let sentry = new Entity({
-				x: x + 300 * Math.cos(i * Math.PI / 1.5),
-				y: y + 300 * Math.sin(i * Math.PI / 1.5)
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = 300 * Math.cos(i * Math.PI / 1.5);
-			sentry.control.target.y = 300 * Math.sin(i * Math.PI / 1.5);
-			sentry.define([Class.sentryGunAI, Class.sentryTrapAI, Class.sentrySwarmAI][i]);
-		}
-	}
-};
-defExports.triangleColony = {
-    PARENT: [defExports.food],
-    LABEL: 'Triangle Colony',
-    VALUE: 2e5,
-    SHAPE: 3,
-    LAYER: 11,
-    SIZE: 32,
-    COLOR: 2,
-    BODY: {
-        DAMAGE: 4.5,
-        DENSITY: 40,
-        HEALTH: 600,
-        ACCELERATION: 0.01,
-        SHIELD: 30,
-        REGEN: 0.5,
-    },
-    GIVE_KILL_MESSAGE: true,
-    DRAW_HEALTH: true,
-    GUNS: [{
-        POSITION: [0, 10, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.shoot_once]),
-            TYPE: defExports.triangleColonySpawner,
-            AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        },
-    },],
-    PROPS: [{
-        POSITION: [1.35, 0, 0, 120, 0],
-        SHAPE: -3,
-        COLOR: 17,
-    }, {
-        POSITION: [1.2, 0, 0, 60, 0],
-        SHAPE: -3,
-        COLOR: 17,
-    }, {
-        POSITION: [1, 0, 0, 0, 0],
-        SHAPE: 3,
-        COLOR: 2,
-    }, {
-        POSITION: [0.8, 0, 0, 0, 0],
-        SHAPE: 3,
-        COLOR: 2,
-    }, {
-        POSITION: [0.75, 0, 0, 60, 0],
-        SHAPE: -3,
-        COLOR: 2,
-    }, {
-        POSITION: [0.8, 0, 0, 180, 1],
-        SHAPE: 3,
-    }, {
-        POSITION: [0.6, 0, 0, 180, 1],
-        SHAPE: 3,
-        COLOR: 17,
-    }, {
-        POSITION: [1.1, 0, 0, 180, 0],
-        SHAPE: 3,
-    }, {
-        POSITION: [0.6, 0, 0, 120, 1],
-        SHAPE: -3,
-    }, {
-        POSITION: [0.5, 0, 0, 120, 1],
-        SHAPE: 3,
-    }, {
-        POSITION: [0.25, 0, 0, 120, 1],
-        SHAPE: -3,
-    }, {
-        POSITION: [0.25, 0, 0, 180, 1],
-        SHAPE: -3,
-    },],
-    EVOLUTIONS: []
-};
-defExports.squareColonySpawner = {
-    PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 6; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 3),
-				y: y + 200 * Math.sin(i * Math.PI / 3)
-			});
-			crash.team = this.team;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
-			crash.define(Class.summonerSquare);
-		}
-		for (let i = 0; i < 3; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 1.5),
-				y: y + 200 * Math.sin(i * Math.PI / 1.5)
-			});
-			crash.team = this.team;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 1.5);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 1.5);
-			crash.define(Class.cashCrash);
-		}
-		for (let i = 0; i < 2; i++) {
-			let shape = new Entity({
-				x: x + 100 * Math.cos(i * Math.PI / 1),
-				y: y + 100 * Math.sin(i * Math.PI / 1)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 100 * Math.cos(i * Math.PI / 1);
-			shape.control.target.y = 100 * Math.sin(i * Math.PI / 1);
-			shape.define(Class.splitterSplitterSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 125 * Math.cos(i * Math.PI / 2),
-				y: y + 125 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 125 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 125 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.splitterSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 125 * Math.cos(i * Math.PI / 2),
-				y: y + 125 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 125 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 125 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.lavenderSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 26; i++) {
-			let shape = new Entity({
-				x: x + 400 * Math.cos(i * Math.PI / 13),
-				y: y + 400 * Math.sin(i * Math.PI / 13)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 150 * Math.cos(i * Math.PI / 13);
-			shape.control.target.y = 150 * Math.sin(i * Math.PI / 13);
-			shape.define(Class.square);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 5; i++) {
-			let shape = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI / 2.5),
-				y: y + 275 * Math.sin(i * Math.PI / 2.5)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 275 * Math.cos(i * Math.PI / 2.5);
-			shape.control.target.y = 275 * Math.sin(i * Math.PI / 2.5);
-			shape.define(Class.greenSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 300 * Math.cos(i * Math.PI / 2),
-				y: y + 300 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 300 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 300 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.boomsquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 3; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 1.5),
-				y: y + 250 * Math.sin(i * Math.PI / 1.5)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 1.5);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 1.5);
-			shape.define(Class.orangeSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 1; i++) {
-			let shape = new Entity({
-				x: x + 225 * Math.cos(i * Math.PI / 1),
-				y: y + 225 * Math.sin(i * Math.PI / 1)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 225 * Math.cos(i * Math.PI / 1);
-			shape.control.target.y = 225 * Math.sin(i * Math.PI / 1);
-			shape.define(Class.scutiSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 2; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI),
-				y: y + 275 * Math.sin(i * Math.PI)
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
-			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
-			sentry.define(Class.squareGunSentry);
-		}
-		for (let i = 0; i < 1; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI),
-				y: y
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
-			sentry.control.target.y = y;
-			sentry.define(Class.summonerLiteAI);
-		}
-		for (let i = 0; i < 1; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI),
-				y: y
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
-			sentry.control.target.y = y;
-			sentry.define(Class.squareSwarmerAI);
-		}
-		for (let i = 0; i < 1; i++) {
-			let sentry = new Entity({
-				x: x,
-				y: y + 275 * Math.cos(i * Math.PI)
-			});
-			sentry.team = this.team;
-			sentry.control.target.x = x;
-			sentry.control.target.y = 275 * Math.cos(i * Math.PI);
-			sentry.define(Class.squareSwarmerAI);
-		}
-	}
-};
-defExports.squareColony = {
-    PARENT: [defExports.food],
-    LABEL: 'Square Colony',
-    VALUE: 1e5,
-    SHAPE: 4,
-    SIZE: 28,
-    LAYER: 11,
-    COLOR: 13,
-    BODY: {
-        DAMAGE: 4,
-        DENSITY: 30,
-        HEALTH: 450,
-        ACCELERATION: 0.01,
-        SHIELD: 20,
-        REGEN: 1,
-    },
-    GIVE_KILL_MESSAGE: true,
-    DRAW_HEALTH: true,
-    GUNS: [{
-        POSITION: [0, 10, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.shoot_once]),
-            TYPE: defExports.squareColonySpawner,
-            AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        },
-    },],
-    PROPS: [{
-        POSITION: [1.25, 0, 0, 45, 0],
-        SHAPE: -4,
-        COLOR: 17,
-    }, {
-        POSITION: [0.8, 0, 0, 0, 1],
-        SHAPE: 4,
-    }, {
-        POSITION: [1.1, 0, 0, 0, 0],
-        SHAPE: 4,
-    }, {
-        POSITION: [0.75, 0, 0, 0, 1],
-        SHAPE: -8,
-    }, {
-        POSITION: [0.8, 0, 0, 45, 1],
-        SHAPE: 4,
-    }, {
-        POSITION: [0.65, 0, 0, 45, 1],
-        SHAPE: 4,
-        COLOR: 17,
-    }, {
-        POSITION: [0.55, 0, 0, 45, 1],
-        SHAPE: -4,
-    },],
-    EVOLUTIONS: []
-};
-defExports.eggColonySpawner = {
-    PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 6; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 3),
-				y: y + 200 * Math.sin(i * Math.PI / 3)
-			});
-			crash.team = this.team;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 3);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 3);
-			crash.define(Class.eggCrasher);
-		}
-		for (let i = 0; i < 20; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 10),
-				y: y + 250 * Math.sin(i * Math.PI / 10)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 10);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 10);
-			shape.define(Class.egg);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 100 * Math.cos(i * Math.PI / 2),
-				y: y + 100 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = this.team;
-			shape.control.target.x = 100 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 100 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.hardshellegg);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-	}
-};
-defExports.eggColony = {
-    PARENT: [defExports.food],
-    LABEL: 'Egg Colony',
-    VALUE: 6e4,
-    SHAPE: 0,
-    LAYER: 11,
-    SIZE: 24,
-    COLOR: 6,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 20,
-        HEALTH: 250,
-        ACCELERATION: 0.01,
-        SHIELD: 10,
-        REGEN: 1,
-    },
-    GIVE_KILL_MESSAGE: true,
-    DRAW_HEALTH: true,
-    GUNS: [{
-        POSITION: [0, 10, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.shoot_once]),
-            TYPE: defExports.eggColonySpawner,
-            AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        },
-    },],
-    PROPS: [{
-        POSITION: [1.25, 0, 0, 0, 0],
-        SHAPE: -20,
-        COLOR: 17,
-    }, {
-        POSITION: [0.8, 0, 0, 0, 1],
-        SHAPE: 0,
-    }, {
-        POSITION: [1.1, 0, 0, 0, 0],
-        SHAPE: 0,
-    }, {
-        POSITION: [1.1, 0, 0, 0, 1],
-        SHAPE: -3,
-    }, {
-        POSITION: [0.6, 0, 0, 0, 1],
-        SHAPE: 0,
-    },],
-    EVOLUTIONS: []
-};
-defExports.hardshellegg = {
-    PARENT: [defExports.food],
-    LABEL: 'Hardshell Egg',
-    VALUE: 1e5,
-    SHAPE: 0, // 292
-    SIZE: 10,
-    COLOR: 6, // 243
-    GIVE_KILL_MESSAGE: true,
-    BODY: {
-        DAMAGE: 4,
-        DENSITY: 2,
-        HEALTH: 35,
-        ACCELERATION: 0.01,
-        PUSHABILITY: 0
-    },
-    DRAW_HEALTH: true,
-    PROPS: [{
-        POSITION: [1.3, 0, 0, 0, 0],
-        SHAPE: 6,
-        COLOR: 17
-    }],
-    EVOLUTIONS: []
-};
-defExports.egg = {
-    PARENT: [defExports.food],
-    LABEL: 'Egg',
-    VALUE: 10,
-    SHAPE: 0, // 292
-    SIZE: 5,
-    COLOR: 6, // 243
-    INTANGIBLE: true,
-    BODY: {
-        DAMAGE: 0,
-        DENSITY: 2,
-        HEALTH: .0011,
-        ACCELERATION: 0.01,
-        PUSHABILITY: 0
-    },
-    DRAW_HEALTH: false,
-    EVOLUTIONS: [
-        ["square", 98],
-        ["friedEgg", .9],
-        ["hardshellegg", .6],
-        ["gem", .25],
-        ["rogueEgg", .2],
-        ["obsidianEgg", .04],
-        ["eggColony", .006],
-        ["fakeegg", .004]
-    ]
-};
-defExports.gem = {
-    PARENT: [defExports.food],
-    LABEL: 'Gem',
-    VALUE: 1e5,
-    SHAPE: 6,
-    SIZE: 7,
-    COLOR: 0,
-    INTANGIBLE: false,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 100,
-        HEALTH: .0011 * 50,
-        PUSHABILITY: 0
-    },
-    DRAW_HEALTH: true,
-    EVOLUTIONS: []
-};
-defExports.lmfaoloser = {
-    BODY: { RANGE: 0 },
-    DIE_AT_RANGE: true,
-	ON_DEAD: function({ sockets, ran, Entity }) {
-		for (let i = 0; i < 16; i++) {
-			let egg = new Entity({
-				x: this.x,
-				y: this.y
-			});
-			egg.team = this.team;
-			egg.define(Class.egg);
-		}
-		for (let i = 0; i < 8; i++) {
-			let square = new Entity({
-				x: this.x,
-				y: this.y
-			});
-			square.team = this.team;
-			square.define(Class.square);
-		}
-		for (let i = 0; i < 4; i++) {
-			let triangle = new Entity({
-				x: this.x,
-				y: this.y
-			});
-			triangle.team = this.team;
-			triangle.define(Class.triangle);
-		}
-		for (let i = 0; i < 2; i++) {
-			let pentagon = new Entity({
-				x: this.x,
-				y: this.y
-			});
-			pentagon.team = this.team;
-			pentagon.define(Class.pentagon);
-		}
-        let polygon = new Entity({
-            x: this.x,
-            y: this.y
-        });
-        polygon.team = this.team;
-        polygon.define(Class.shapeThing);
-	}
-};
-defExports.betaPentagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Pentagon',
-    VALUE: 2500,
-    SHAPE: 5,
-    SIZE: 30,
-    COLOR: 14,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 30,
-        HEALTH: 100,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: 40,
-        REGEN: .25
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ['alphaPentagon', 40],
-        ['betaHexagon', 30],
-        ['greenBetaPentagon', 10],
-        ['splitterBetaPentagon', 10],
-        ['hendecagon', 8],
-        ['superstar', 2]
-    ],
-};
-defExports.fakeegg = {
-    PARENT: [defExports.egg],
-    LABEL: 'Mimic Egg',
-    GIVE_KILL_MESSAGE: true,
-	ON_DEAD: function({ sockets, ran, Entity }) {
-		setTimeout(() => {
-			let boss = new Entity({
-				x: this.x,
-				y: this.y
-			});
-			sockets.broadcast("An Ultra Cannon has arrived.");
-			boss.team = this.team;
-			boss.control.target.x = boss.control.target.y = 100;
-			boss.define(Class.ultraCannonAI);
-			boss.name = ran.chooseBossName("b", 1)[0];
-			boss.sandboxId = this.sandboxId;
-		}, 3000);
-	}
-};
-/*defExports.egg2 = {
-    PARENT: [defExports.egg],
-    VALUE: 180000,
-    TYPE: 'miniboss'
-};*/
+// Sanctuary Foods
 defExports.singularEgg = {
     PARENT: [defExports.egg],
     LABEL: 'Sanctuary Egg',
-    EVOLUTIONS: [],
     ON_DEFINED: me => {
         me.necromizable = false;
         setTimeout(() => me.necromizable = true, 3000);
     }
 };
-defExports.obsidianEgg = {
+defExports.snowballPoly = {
     PARENT: [defExports.egg],
-    LABEL: 'Obsidian Egg',
-    COLOR: 19,
-    VALUE: 15000,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 500,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["obsidianSquareStill", 100]
-    ]
+    LABEL: 'Sanctuary Snowball',
+    COLOR: 222,
+    ON_DEALT_DAMAGE: (me, them) => ice(them, 1.5, 1),
+    ON_DEFINED: function(me) {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
-defExports.obsidianSquareStill = {
+defExports.singularSquare = {
     PARENT: [defExports.square],
-    LABEL: 'Obsidian Square',
-    VALUE: 50000,
-    COLOR: 19,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 1000,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["obsidianTriangle", 52.5],
-        ["obsidianSquare", 47.5]
-    ]
+    LABEL: 'Sanctuary Square',
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
-defExports.obsidianTriangle = {
+defExports.singularTriangle = {
     PARENT: [defExports.triangle],
-    LABEL: 'Obsidian Triangle',
-    COLOR: 19,
-    VALUE: 100000,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 5000,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["obsidianPentagon", 100]
-    ]
+    LABEL: 'Sanctuary Triangle',
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
-defExports.obsidianPentagon = {
+defExports.singularPentagon = {
     PARENT: [defExports.pentagon],
-    LABEL: 'Obsidian Pentagon',
-    COLOR: 19,
-    VALUE: 500000,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 10000,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["obsidianBetaPentagon", 100]
-    ]
+    LABEL: 'Sanctuary Pentagon',
+    ON_DEFINED: me => {
+        me.necromizable = false;
+        setTimeout(() => me.necromizable = true, 3000);
+    }
 };
-defExports.obsidianBetaPentagon = {
-    PARENT: [defExports.betaPentagon],
-    LABEL: 'Obsidian Beta Pentagon',
-    COLOR: 19,
-    VALUE: 1000000,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 50000,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [
-        ["obsidianAlphaPentagon", 100]
-    ]
-};
-defExports.obsidianAlphaPentagon = {
-    PARENT: [defExports.alphaPentagon],
-    LABEL: 'Obsidian Alpha Pentagon',
-    COLOR: 19,
-    VALUE: 5000000,
-    BODY: {
-        DAMAGE: 10,
-        DENSITY: 30,
-        HEALTH: 100000,
-        RESIST: Math.pow(1.25, 2),
-        SHIELD: -1,
-        REGEN: -1
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: []
-};
+// Sanctuaries
 defExports.eggSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Egg Sanctuary',
@@ -5331,18 +5302,6 @@ defExports.eggSanctuary = {
         }, 5000)
     }
 };
-defExports.snowballPoly = {
-    PARENT: [defExports.egg],
-    LABEL: 'Sanctuary Snowball',
-    COLOR: 222,
-    //PROPS: [makeAura(222)],
-    EVOLUTIONS: [],
-    ON_DEALT_DAMAGE: (me, them) => ice(them, 1.5, 1),
-    ON_DEFINED: me => {
-        me.necromizable = false;
-        setTimeout(() => me.necromizable = true, 3000);
-    }
-};
 defExports.snowballSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Snowball Sanctuary',
@@ -5397,170 +5356,36 @@ defExports.snowballSanctuary = {
         }, 5000)
     }
 };
-defExports.singularTriangle = {
-    PARENT: [defExports.triangle],
-    LABEL: 'Sanctuary Triangle',
-    EVOLUTIONS: [],
-    ON_DEFINED: me => {
-        me.necromizable = false;
-        setTimeout(() => me.necromizable = true, 3000);
-    }
-};
-defExports.carbonFiberTriangle = {
-    PARENT: [defExports.singularTriangle],
-    LABEL: 'Carbon Fiber Triangle',
-    VALUE: 30000,
-    COLOR: 9,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 600,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    EVOLUTIONS: [],
-    ON_DAMAGED: function (me, them) {
-        if (!them || them.topSpeed > 0.5) return;
-        them.topSpeed -= 0.5;
-        setTimeout(() => {
-            if (!them.isAlive()) return;
-            them.topSpeed += 0.5;
-        }, 5000);
-    }
-};
-defExports.triangleNest = {
+defExports.burntSanctuary = {
     PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 10; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 5),
-				y: y + 200 * Math.sin(i * Math.PI / 5)
-			});
-			crash.team = -100;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 5);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 5);
-			crash.define(Class.crasher);
-		}
-		for (let i = 0; i < 4; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 2),
-				y: y + 200 * Math.sin(i * Math.PI / 2)
-			});
-			crash.team = -100;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 2);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 2);
-			crash.define(Class.redRunner1);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 2),
-				y: y + 250 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = -100;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.greenTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 8; i++) {
-			let crash = new Entity({
-				x: x + 350 * Math.cos(i * Math.PI / 4),
-				y: y + 350 * Math.sin(i * Math.PI / 4)
-			});
-			crash.team = -100;
-			crash.control.target.x = 350 * Math.cos(i * Math.PI / 4);
-			crash.control.target.y = 350 * Math.sin(i * Math.PI / 4);
-			crash.define(Class.bladeCrasher);
-		}
-		for (let i = 0; i < 20; i++) {
-			let shape = new Entity({
-				x: x + 400 * Math.cos(i * Math.PI / 10),
-				y: y + 400 * Math.sin(i * Math.PI / 10)
-			});
-			shape.team = -100;
-			shape.control.target.x = 400 * Math.cos(i * Math.PI / 10);
-			shape.control.target.y = 400 * Math.sin(i * Math.PI / 10);
-			shape.define(Class.singularTriangle);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 2; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI),
-				y: y + 275 * Math.sin(i * Math.PI)
-			});
-			sentry.team = -100;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
-			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
-			sentry.define(Class.sentryGunAI);
-		}
-	}
-};
-defExports.triSanctuary = {
-    PARENT: [defExports.food],
-    LABEL: 'Triangle Sanctuary',
-    SIZE: 32,
-    VALUE: 180000,
+    LABEL: 'Golden Sanctuary',
+    SIZE: 24,
     DRAW_HEALTH: true,
     BODY: {
         DAMAGE: 2,
         DENSITY: 80,
-        HEALTH: 1500,
-        RESIST: 1.25,//Math.pow(1.25, 3),
+        HEALTH: 2750,
+        RESIST: Math.pow(1.25, 3),
         SHIELD: 80,
-        REGEN: .4,
+        REGEN: .1,
         ACCELERATION: .00125
     },
-    SHAPE: 3,
-    COLOR: 2,
-    MAX_CHILDREN: 36,
+    SHAPE: 0,
+    VALUE: 325000,
+    COLOR: 234,
+    MAX_CHILDREN: 50,
     GUNS: [{
-        POSITION: [1, 11, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.shoot_once]),
-            TYPE: defExports.triangleNest,
-            AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        }
-    }, {
-        POSITION: [4, 11, 1.2, 8, 0, 60, 0],
+        POSITION: [4, 11, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
-            TYPE: defExports.singularTriangle,
-            AUTOFIRE: true,
-            SKIP_LABEL_CHANGE: true
-        }
-    }, {
-        POSITION: [4, 11, 1.2, 8, 0, 180, 1 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
-            TYPE: defExports.singularTriangle,
-            AUTOFIRE: true,
-            SKIP_LABEL_CHANGE: true
-        }
-    }, {
-        POSITION: [4, 11, 1.2, 8, 0, 300, 2 / 3],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
-            TYPE: defExports.singularTriangle,
+            TYPE: defExports.singularEgg,
             AUTOFIRE: true,
             SKIP_LABEL_CHANGE: true
         }
     }],
-    HAS_NO_RECOIL: true,
     GIVE_KILL_MESSAGE: true,
-	ON_DEAD: function({ sockets, ran, Entity }) {
-        sockets.broadcast("The Triangle Sanctuary seems to have left something in its demise...");
+    ON_DEAD: function({ sockets, ran, Entity }) {
+        sockets.broadcast("The Golden Sanctuary seems to have left something in its demise...");
         let smokeSpawner = new Entity({
             x: this.x,
             y: this.y
@@ -5569,125 +5394,16 @@ defExports.triSanctuary = {
         smokeSpawner.passive = true;
         setTimeout(() => {
             smokeSpawner.kill();
-            let boss = new Entity({
+            let poly = new Entity({
                 x: this.x,
                 y: this.y
-            }),
-                choices = [
-                    Class.defenderAI,
-                    Class.enchantressAI,
-                    Class.skimBossAI,
-                    Class.tk1AI,
-                    Class.triangleNestKeeperAI,
-                    Class.triSeekerAI
-                ];
-            boss.team = this.team;
-            boss.define(ran.choose(choices));
-            boss.name = ran.chooseBossName("b", 1)[0];
-            boss.control.target.x = boss.control.target.y = 100;
-            boss.sandboxId = this.sandboxId;
-            sockets.broadcast(`${util.addArticle(boss.label, true)} has spawned to avenge the Triangle Sanctuary!`);
+            });
+            poly.team = this.team;
+            poly.define(Class.burntNonagon);
+            poly.sandboxId = this.sandboxId;
+            sockets.broadcast("A Golden Nonagon has spawned!");
         }, 5000)
     }
-};
-defExports.singularSquare = {
-    PARENT: [defExports.square],
-    LABEL: 'Sanctuary Square',
-    EVOLUTIONS: [],
-    ON_DEFINED: me => {
-        me.necromizable = false;
-        setTimeout(() => me.necromizable = true, 3000);
-    }
-};
-defExports.scutiSquare = {
-    PARENT: [defExports.square],
-    LABEL: 'UY Scuti',
-    VALUE: 30000,
-    SHAPE: 4,
-    COLOR: 201,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 600,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1
-    },
-    DRAW_HEALTH: true,
-    INTANGIBLE: false,
-    EVOLUTIONS: [],
-    ON_DAMAGED: function (me, them) {
-        if (me.health.amount < me.health.max / 2) {
-            me.SIZE += 2;
-        }
-    }
-};
-defExports.squareNest = {
-    PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 12; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 6),
-				y: y + 200 * Math.sin(i * Math.PI / 6)
-			});
-			crash.team = -100;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 6);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 6);
-			crash.define(Class.summonerSquare);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 2 + Math.PI / 4),
-				y: y + 250 * Math.sin(i * Math.PI / 2 + Math.PI / 4)
-			});
-			shape.team = -100;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2 + Math.PI / 4);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2 + Math.PI / 4);
-			shape.define(Class.greenSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 350 * Math.cos(i * Math.PI / 2),
-				y: y + 350 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = -100;
-			shape.control.target.x = 350 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 350 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.splitterSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 20; i++) {
-			let shape = new Entity({
-				x: x + 400 * Math.cos(i * Math.PI / 10),
-				y: y + 400 * Math.sin(i * Math.PI / 10)
-			});
-			shape.team = -100;
-			shape.control.target.x = 400 * Math.cos(i * Math.PI / 10);
-			shape.control.target.y = 400 * Math.sin(i * Math.PI / 10);
-			shape.define(Class.singularSquare);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 2; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI),
-				y: y + 275 * Math.sin(i * Math.PI)
-			});
-			sentry.team = -100;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI);
-			sentry.control.target.y = 275 * Math.sin(i * Math.PI);
-			sentry.define(Class.squareGunSentry);
-		}
-	}
 };
 defExports.squareSanctuary = {
     PARENT: [defExports.food],
@@ -5766,10 +5482,10 @@ defExports.squareSanctuary = {
                 y: this.y
             }),
                 choices = [
-                    Class.mk1AI,
-                    Class.summonerAI,
                     Class.eliteDustbowlAI,
+                    Class.squareBossTier1AI,
                     Class.squareNestKeeperAI,
+                    Class.summonerAI,
                     Class.tetrafrasAI
                 ];
             boss.team = this.team;
@@ -5781,91 +5497,90 @@ defExports.squareSanctuary = {
         }, 5000)
     }
 };
-defExports.singularPentagon = {
-    PARENT: [defExports.pentagon],
-    LABEL: 'Sanctuary Pentagon',
-    EVOLUTIONS: [],
-    ON_DEFINED: me => {
-        me.necromizable = false;
-        setTimeout(() => me.necromizable = true, 3000);
-    }
-};
-defExports.pentaNest = {
+defExports.triSanctuary = {
     PARENT: [defExports.food],
+    LABEL: 'Triangle Sanctuary',
+    SIZE: 32,
+    VALUE: 180000,
+    DRAW_HEALTH: true,
     BODY: {
-        ACCELERATION: 1
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 1500,
+        RESIST: 1.25,//Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .4,
+        ACCELERATION: .00125
     },
-    ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
-		let x = this.x,
-			y = this.y;
-		for (let i = 0; i < 10; i++) {
-			let crash = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 5),
-				y: y + 200 * Math.sin(i * Math.PI / 5)
-			});
-			crash.team = -100;
-			crash.control.target.x = 200 * Math.cos(i * Math.PI / 5);
-			crash.control.target.y = 200 * Math.sin(i * Math.PI / 5);
-			crash.define(Class.semiCrushCrasher);
-		}
-		for (let i = 0; i < 5; i++) {
-			let shape = new Entity({
-				x: x + 200 * Math.cos(i * Math.PI / 2.5),
-				y: y + 200 * Math.sin(i * Math.PI / 2.5)
-			});
-			shape.team = -100;
-			shape.control.target.x = 200 * Math.cos(i * Math.PI / 2.5);
-			shape.control.target.y = 200 * Math.sin(i * Math.PI / 2.5);
-			shape.define(Class.splitterPentagon);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let shape = new Entity({
-				x: x + 250 * Math.cos(i * Math.PI / 2),
-				y: y + 250 * Math.sin(i * Math.PI / 2)
-			});
-			shape.team = -100;
-			shape.control.target.x = 250 * Math.cos(i * Math.PI / 2);
-			shape.control.target.y = 250 * Math.sin(i * Math.PI / 2);
-			shape.define(Class.greenPentagon);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 8; i++) {
-			let crash = new Entity({
-				x: x + 350 * Math.cos(i * Math.PI / 4),
-				y: y + 350 * Math.sin(i * Math.PI / 4)
-			});
-			crash.team = -100;
-			crash.control.target.x = 350 * Math.cos(i * Math.PI / 4);
-			crash.control.target.y = 350 * Math.sin(i * Math.PI / 4);
-			crash.define(Class.crushCrasher);
-		}
-		for (let i = 0; i < 18; i++) {
-			let shape = new Entity({
-				x: x + 400 * Math.cos(i * Math.PI / 9),
-				y: y + 400 * Math.sin(i * Math.PI / 9)
-			});
-			shape.team = -100;
-			shape.control.target.x = 400 * Math.cos(i * Math.PI / 9);
-			shape.control.target.y = 400 * Math.sin(i * Math.PI / 9);
-			shape.define(Class.singularPentagon);
-			shape.ACCELERATION = .015 / (shape.size * 0.2);
-		}
-		for (let i = 0; i < 4; i++) {
-			let sentry = new Entity({
-				x: x + 275 * Math.cos(i * Math.PI / 2),
-				y: y + 275 * Math.sin(i * Math.PI / 2)
-			});
-			sentry.team = -100;
-			sentry.control.target.x = 275 * Math.cos(i * Math.PI / 2);
-			sentry.control.target.y = 275 * Math.sin(i * Math.PI / 2);
-			sentry.define(Class.sentryGunAI);
-		}
-	}
+    SHAPE: 3,
+    COLOR: 2,
+    MAX_CHILDREN: 36,
+    GUNS: [{
+        POSITION: [1, 11, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.shoot_once]),
+            TYPE: defExports.triangleNest,
+            AUTOFIRE: true,
+            SKIN: 15,
+            SHOOT_ONCE: true
+        }
+    }, {
+        POSITION: [4, 11, 1.2, 8, 0, 60, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
+        }
+    }, {
+        POSITION: [4, 11, 1.2, 8, 0, 180, 1 / 3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
+        }
+    }, {
+        POSITION: [4, 11, 1.2, 8, 0, 300, 2 / 3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
+            TYPE: defExports.singularTriangle,
+            AUTOFIRE: true,
+            SKIP_LABEL_CHANGE: true
+        }
+    }],
+    HAS_NO_RECOIL: true,
+    GIVE_KILL_MESSAGE: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+        sockets.broadcast("The Triangle Sanctuary seems to have left something in its demise...");
+        let smokeSpawner = new Entity({
+            x: this.x,
+            y: this.y
+        });
+        smokeSpawner.define(Class.smokeSpawner);
+        smokeSpawner.passive = true;
+        setTimeout(() => {
+            smokeSpawner.kill();
+            let boss = new Entity({
+                x: this.x,
+                y: this.y
+            }),
+                choices = [
+                    Class.defenderAI,
+                    Class.enchantressAI,
+                    Class.skimBossAI,
+                    Class.triangleBossTier1AI,
+                    Class.triangleNestKeeperAI,
+                    Class.triSeekerAI
+                ];
+            boss.team = this.team;
+            boss.define(ran.choose(choices));
+            boss.name = ran.chooseBossName("b", 1)[0];
+            boss.control.target.x = boss.control.target.y = 100;
+            boss.sandboxId = this.sandboxId;
+            sockets.broadcast(`${util.addArticle(boss.label, true)} has spawned to avenge the Triangle Sanctuary!`);
+        }, 5000)
+    }
 };
 defExports.pentaSanctuary = {
     PARENT: [defExports.food],
@@ -5967,151 +5682,6 @@ defExports.pentaSanctuary = {
         }, 5000)
     }
 };
-defExports.burntSanctuary = {
-    PARENT: [defExports.food],
-    LABEL: 'Golden Sanctuary',
-    SIZE: 24,
-    DRAW_HEALTH: true,
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 2750,
-        RESIST: Math.pow(1.25, 3),
-        SHIELD: 80,
-        REGEN: .1,
-        ACCELERATION: .00125
-    },
-    SHAPE: 0,
-    VALUE: 325000,
-    COLOR: 234,
-    MAX_CHILDREN: 50,
-    GUNS: [{
-        POSITION: [4, 11, 1.2, 8, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.sanctuaryPoly]),
-            TYPE: defExports.singularEgg,
-            AUTOFIRE: true,
-            SKIP_LABEL_CHANGE: true
-        }
-    }],
-    GIVE_KILL_MESSAGE: true,
-    ON_DEAD: function({ sockets, ran, Entity }) {
-        sockets.broadcast("The Golden Sanctuary seems to have left something in its demise...");
-        let smokeSpawner = new Entity({
-            x: this.x,
-            y: this.y
-        });
-        smokeSpawner.define(Class.smokeSpawner);
-        smokeSpawner.passive = true;
-        setTimeout(() => {
-            smokeSpawner.kill();
-            let poly = new Entity({
-                x: this.x,
-                y: this.y
-            });
-            poly.team = this.team;
-            poly.define(Class.burntNonagon);
-            poly.sandboxId = this.sandboxId;
-            sockets.broadcast("A Golden Nonagon has spawned!");
-        }, 5000)
-    }
-};
-defExports.burntNonagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Golden Nonagon',
-    VALUE: 4e5,
-    SHAPE: -9,
-    SIZE: 72,
-    COLOR: 234, // 207
-    BODY: {
-        DAMAGE: 3.5,
-        DENSITY: 90,
-        HEALTH: 1250,
-        RESIST: Math.pow(1.35, 3),
-        SHIELD: 90,
-        REGEN: .01
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    MISC_IDENTIFIER: 'Golden Nonagon',
-    EVOLUTIONS: [['burntIcosagon', 100]]
-};
-defExports.burntIcosagonRing = {
-    LABEL: 'Ring',
-    TYPE: 'bullet',
-    SHAPE: 136,
-    ALPHA: .7,
-    ACCEPTS_SCORE: false,
-    BODY: {
-        PENETRATION: 1,
-        SPEED: 3.75,
-        RANGE: 90,
-        DENSITY: 1.25,
-        HEALTH: .165,
-        DAMAGE: 6,
-        PUSHABILITY: .3
-    },
-    MOTION_TYPE: 'plasma',
-    FACING_TYPE: 'smoothWithMotion',
-    INDEPENDENT: true,
-    CAN_GO_OUTSIDE_ROOM: true,
-    HITS_OWN_TYPE: 'forcedNever',
-    PERSISTS_AFTER_DEATH: true,
-    DIE_AT_RANGE: true,
-    GO_THRU_OBSTACLES: true,
-};
-defExports.burntIcosagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Golden Icosagon',
-    VALUE: 6e5,
-    SHAPE: -20,
-    SIZE: 120,
-    COLOR: 234, // 207
-    BODY: {
-        FOV: 1.5,
-        DAMAGE: 5,
-        DENSITY: 110,
-        HEALTH: 1750,
-        RESIST: Math.pow(1.35, 3),
-        SHIELD: 140,
-        REGEN: .005
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    GUNS: [{
-        POSITION: [0, 5, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.plasma, g.no_recoil, g.extra_range]),
-            TYPE: defExports.burntIcosagonRing,
-            AUTOFIRE: true,
-            ON_FIRE: function(gun, gunInfo) {
-                if (gun.body.master.variables.bossSpawn) gun.fire(gunInfo);
-            }
-        }
-    }],
-    VARIABLES: { bossSpawn: false },
-    ON_DEFINED: function(me, entities, sockets, Entity, ran) {
-        setTimeout(function() {
-            if (me && me.isAlive()) {
-                sockets.broadcast("The Golden Icosagon is sending out messages, move away from it!");
-                me.variables.bossSpawn = true;
-                setTimeout(function() {
-                    let r = ran.irandom(20),
-                        boss = new Entity({
-                        x: me.x + me.SIZE * 3 * Math.cos(r * Math.PI / 40),
-                        y: me.y + me.SIZE * 3 * Math.sin(r * Math.PI / 40)
-                    });
-                    boss.team = me.team;
-                    boss.master = me;
-                    boss.squiggle = me.squiggle;
-                    boss.define(Class.goldenMladicAI);
-                    me.childrenMap.set(boss.id, boss);
-                    me.variables.bossSpawn = false;
-                }, 7500);
-            }
-        }, 15000);
-    }
-};
 defExports.megaSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Mega Sanctuary',
@@ -6195,9 +5765,527 @@ defExports.megaSanctuary = {
             AUTOFIRE: true
         }
     }],
-    IS_MEGA_SANCTUARY: true,
-    //BROADCAST_MESSAGE: 'The Mega Sanctuary has burst open!'
+    IS_MEGA_SANCTUARY: true/*
+    BROADCAST_MESSAGE: 'The Mega Sanctuary has burst open!'*/
 };
+// Colonies
+defExports.eggColony = {
+    PARENT: [defExports.food],
+    LABEL: 'Egg Colony',
+    VALUE: 6e4,
+    SHAPE: 0,
+    LAYER: 11,
+    SIZE: 24,
+    COLOR: 6,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 20,
+        HEALTH: 250,
+        ACCELERATION: .01,
+        SHIELD: 10,
+        REGEN: 1
+    },
+    GIVE_KILL_MESSAGE: true,
+    DRAW_HEALTH: true,
+    GUNS: [{
+        POSITION: [0, 10, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.shoot_once]),
+            TYPE: defExports.eggColonySpawner,
+            AUTOFIRE: true,
+            SKIN: 15,
+            SHOOT_ONCE: true
+        }
+    }],
+    PROPS: [{
+        POSITION: [1.25, 0, 0, 0, 0],
+        SHAPE: -20,
+        COLOR: 17
+    }, {
+        POSITION: [.8, 0, 0, 0, 1],
+        SHAPE: 0
+    }, {
+        POSITION: [1.1, 0, 0, 0, 0],
+        SHAPE: 0
+    }, {
+        POSITION: [1.1, 0, 0, 0, 1],
+        SHAPE: -3
+    }, {
+        POSITION: [.6, 0, 0, 0, 1],
+        SHAPE: 0
+    }]
+};
+defExports.squareColony = {
+    PARENT: [defExports.food],
+    LABEL: 'Square Colony',
+    VALUE: 1e5,
+    SHAPE: 4,
+    SIZE: 28,
+    LAYER: 11,
+    COLOR: 13,
+    BODY: {
+        DAMAGE: 4,
+        DENSITY: 30,
+        HEALTH: 450,
+        ACCELERATION: .01,
+        SHIELD: 20,
+        REGEN: 1
+    },
+    GIVE_KILL_MESSAGE: true,
+    DRAW_HEALTH: true,
+    GUNS: [{
+        POSITION: [0, 10, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.shoot_once]),
+            TYPE: defExports.squareColonySpawner,
+            AUTOFIRE: true,
+            SKIN: 15,
+            SHOOT_ONCE: true
+        }
+    }],
+    PROPS: [{
+        POSITION: [1.25, 0, 0, 45, 0],
+        SHAPE: -4,
+        COLOR: 17
+    }, {
+        POSITION: [.8, 0, 0, 0, 1],
+        SHAPE: 4
+    }, {
+        POSITION: [1.1, 0, 0, 0, 0],
+        SHAPE: 4
+    }, {
+        POSITION: [.75, 0, 0, 0, 1],
+        SHAPE: -8
+    }, {
+        POSITION: [.8, 0, 0, 45, 1],
+        SHAPE: 4
+    }, {
+        POSITION: [.65, 0, 0, 45, 1],
+        SHAPE: 4,
+        COLOR: 17
+    }, {
+        POSITION: [.55, 0, 0, 45, 1],
+        SHAPE: -4
+    }]
+};
+defExports.triangleColony = {
+    PARENT: [defExports.food],
+    LABEL: 'Triangle Colony',
+    VALUE: 2e5,
+    SHAPE: 3,
+    LAYER: 11,
+    SIZE: 32,
+    COLOR: 2,
+    BODY: {
+        DAMAGE: 4.5,
+        DENSITY: 40,
+        HEALTH: 600,
+        ACCELERATION: .01,
+        SHIELD: 30,
+        REGEN: .5,
+    },
+    GIVE_KILL_MESSAGE: true,
+    DRAW_HEALTH: true,
+    GUNS: [{
+        POSITION: [0, 10, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.shoot_once]),
+            TYPE: defExports.triangleColonySpawner,
+            AUTOFIRE: true,
+            SKIN: 15,
+            SHOOT_ONCE: true
+        }
+    }],
+    PROPS: [{
+        POSITION: [1.35, 0, 0, 120, 0],
+        SHAPE: -3,
+        COLOR: 17
+    }, {
+        POSITION: [1.2, 0, 0, 60, 0],
+        SHAPE: -3,
+        COLOR: 17
+    }, {
+        POSITION: [1, 0, 0, 0, 0],
+        SHAPE: 3,
+        COLOR: 2
+    }, {
+        POSITION: [.8, 0, 0, 0, 0],
+        SHAPE: 3,
+        COLOR: 2,
+    }, {
+        POSITION: [.75, 0, 0, 60, 0],
+        SHAPE: -3,
+        COLOR: 2
+    }, {
+        POSITION: [.8, 0, 0, 180, 1],
+        SHAPE: 3
+    }, {
+        POSITION: [.6, 0, 0, 180, 1],
+        SHAPE: 3,
+        COLOR: 17
+    }, {
+        POSITION: [1.1, 0, 0, 180, 0],
+        SHAPE: 3
+    }, {
+        POSITION: [.6, 0, 0, 120, 1],
+        SHAPE: -3
+    }, {
+        POSITION: [.5, 0, 0, 120, 1],
+        SHAPE: 3
+    }, {
+        POSITION: [.25, 0, 0, 120, 1],
+        SHAPE: -3
+    }, {
+        POSITION: [.25, 0, 0, 180, 1],
+        SHAPE: -3
+    }]
+};
+defExports.pentagonColony = {
+    PARENT: [defExports.food],
+    LABEL: 'Pentagon Colony',
+    VALUE: 4e5,
+    SHAPE: 5,
+    LAYER: 11,
+    SIZE: 36,
+    COLOR: 14,
+    BODY: {
+        DAMAGE: 5,
+        DENSITY: 40,
+        HEALTH: 900,
+        ACCELERATION: .01,
+        SHIELD: 40,
+        REGEN: .25
+    },
+    GIVE_KILL_MESSAGE: true,
+    DRAW_HEALTH: true,
+    GUNS: [{
+        POSITION: [0, 10, 1, 0, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.shoot_once]),
+            TYPE: defExports.pentagonColonySpawner,
+            AUTOFIRE: true,
+            SKIN: 15,
+            SHOOT_ONCE: true
+        }
+    }],
+    PROPS: [{
+        POSITION: [1.4, 0, 0, 0, 0],
+        SHAPE: -5,
+        COLOR: 17
+    }, {
+        POSITION: [1.3, 0, 0, 0, 0],
+        SHAPE: -5
+    }, {
+        POSITION: [1.2, 0, 0, 36, 0],
+        SHAPE: 5
+    }, {
+        POSITION: [1.2, 0, 0, 0, 0],
+        SHAPE: -5
+    }, {
+        POSITION: [1.15, 0, 0, 36, 0],
+        SHAPE: 5,
+        COLOR: 17
+    }, {
+        POSITION: [.95, 0, 0, 0, 1],
+        SHAPE: 5
+    }, {
+        POSITION: [.9, 0, 0, 0, 1],
+        SHAPE: 5,
+        COLOR: 17
+    }, {
+        POSITION: [.8, 0, 0, 0, 1],
+        SHAPE: 5
+    }, {
+        POSITION: [.6, 0, 0, 0, 1],
+        SHAPE: 5,
+        COLOR: 17
+    }, {
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 5
+    }, {
+        POSITION: [1.1, 0, 0, 0, 0],
+        SHAPE: 5
+    }, {
+        POSITION: [.5, 0, 0, 0, 1],
+        SHAPE: -5
+    }, {
+        POSITION: [.4, 0, 0, 0, 1],
+        SHAPE: 5
+    }, {
+        POSITION: [.25, 0, 0, 36, 1],
+        SHAPE: -5
+    }, {
+        POSITION: [.25, 0, 0, 0, 1],
+        SHAPE: -5
+    }]
+};
+// Miscellaneous Foods
+defExports.hardshellegg = {
+    PARENT: [defExports.food],
+    LABEL: 'Hardshell Egg',
+    VALUE: 1e5,
+    SHAPE: 0,
+    SIZE: 10,
+    COLOR: 6,
+    GIVE_KILL_MESSAGE: true,
+    BODY: {
+        DAMAGE: 4,
+        DENSITY: 2,
+        HEALTH: 35,
+        ACCELERATION: .01,
+        PUSHABILITY: 0
+    },
+    DRAW_HEALTH: true,
+    PROPS: [{
+        POSITION: [1.3, 0, 0, 0, 0],
+        SHAPE: 6,
+        COLOR: 17
+    }]
+};
+defExports.friedEgg = {
+    PARENT: [defExports.food],
+    LABEL: 'Fried Egg',
+    LAYER: -1,
+    VALUE: 300,
+    SHAPE: 0,
+    SIZE: 24,
+    COLOR: 8,
+    INTANGIBLE: true,
+    HITS_OWN_TYPE: 'never',
+    PROPS: [{
+        POSITION: [.25, 0, 0, 0, 1],
+        SHAPE: 0,
+        COLOR: 13
+    }],
+    BODY: {
+        DAMAGE: 0,
+        DENSITY: 0,
+        HEALTH: 10,
+        ACCELERATION: .01,
+        PUSHABILITY: 0
+    },
+    DRAW_HEALTH: true,
+    EVOLUTIONS: [["betaFriedEgg", 100]]
+};
+defExports.betaFriedEgg = {
+    PARENT: [defExports.food],
+    LABEL: 'Fried Egg',
+    LAYER: -1,
+    VALUE: 800,
+    SHAPE: 0,
+    SIZE: 4,
+    COLOR: 13,
+    INTANGIBLE: true,
+    HITS_OWN_TYPE: 'never',
+    PROPS: [{
+        POSITION: [7.5, 0, 0, 0, 1],
+        SHAPE: 0,
+        COLOR: 9
+    }],
+    BODY: {
+        DAMAGE: 0,
+        DENSITY: 0,
+        HEALTH: 40,
+        ACCELERATION: 0.01,
+        PUSHABILITY: 0
+    },
+    DRAW_HEALTH: false,
+    EVOLUTIONS: [["friedHardshellEgg", 100]]
+};
+defExports.friedHardshellEgg = {
+    PARENT: [defExports.food],
+    LABEL: 'Fried Hardshell Egg',
+    LAYER: -1,
+    VALUE: 1e6,
+    DANGER: 7,
+    SHAPE: 0,
+    SIZE: 12,
+    COLOR: 13,
+    INTANGIBLE: true,
+    HITS_OWN_TYPE: 'never',
+    GIVE_KILL_MESSAGE: true,
+    BODY: {
+        DAMAGE: 4,
+        DENSITY: 0,
+        HEALTH: 60,
+        ACCELERATION: 0.01,
+        PUSHABILITY: 0
+    },
+    PROPS: [{
+        POSITION: [4.5, 0, 0, 0, 0],
+        SHAPE: 0,
+        COLOR: 8
+    }, {
+        POSITION: [1.3, 0, 0, 0, 0],
+        SHAPE: 6,
+        COLOR: 13
+    }],
+    DRAW_HEALTH: false,
+    EVOLUTIONS: [["omegaEggSummon", 100]]
+};
+defExports.gem = {
+    PARENT: [defExports.food],
+    LABEL: 'Gem',
+    VALUE: 1e5,
+    SHAPE: 6,
+    SIZE: 7,
+    COLOR: 0,
+    INTANGIBLE: false,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 100,
+        HEALTH: .0011 * 50,
+        PUSHABILITY: 0
+    },
+    DRAW_HEALTH: true,
+    EVOLUTIONS: []
+};
+/*defExports.egg2 = {
+    PARENT: [defExports.egg],
+    VALUE: 180000,
+    TYPE: 'miniboss'
+};*/
+defExports.fakeegg = {
+    PARENT: [defExports.egg],
+    LABEL: 'Mimic Egg',
+    GIVE_KILL_MESSAGE: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		setTimeout(() => {
+			let boss = new Entity({
+				x: this.x,
+				y: this.y
+			});
+			sockets.broadcast("An Ultra Cannon has arrived.");
+			boss.team = this.team;
+			boss.control.target.x = boss.control.target.y = 100;
+			boss.define(Class.ultraCannonAI);
+			boss.name = ran.chooseBossName("b", 1)[0];
+			boss.sandboxId = this.sandboxId;
+		}, 3000);
+	}
+};
+defExports.scutiSquare = {
+    PARENT: [defExports.square],
+    LABEL: 'UY Scuti',
+    VALUE: 30000,
+    SHAPE: 4,
+    COLOR: 201,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 600,
+        RESIST: Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    INTANGIBLE: false,
+    ON_DAMAGED: function (me, them) {
+        if (me.health.amount < me.health.max / 2) me.SIZE += 2;
+    }
+};
+defExports.carbonFiberTriangle = {
+    PARENT: [defExports.triangle],
+    LABEL: 'Carbon Fiber Triangle',
+    VALUE: 30000,
+    COLOR: 9,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 80,
+        HEALTH: 600,
+        RESIST: Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    ON_DAMAGED: function (me, them) {
+        if (!them || them.topSpeed > 0.5) return;
+        them.topSpeed -= 0.5;
+        setTimeout(() => {
+            if (!them.isAlive()) return;
+            them.topSpeed += 0.5;
+        }, 5000);
+    }
+};
+defExports.flair = {
+    PARENT: [defExports.food],
+    LABEL: 'Flair',
+    VALUE: 120,
+    SHAPE: 314,
+    SIZE: 9,
+    COLOR: 2,
+    BODY: {
+        DAMAGE: 1,
+        DENSITY: 6,
+        HEALTH: 6,
+        RESIST: 1.15,
+        PENETRATION: 1.5
+    },
+    DRAW_HEALTH: true
+};
+defExports.seniorPentagon = {
+    PARENT: [defExports.food],
+    LABEL: 'Senior Pentagon',
+    VALUE: 25000,
+    SHAPE: 10021,
+    SIZE: 52,
+    COLOR: 14,
+    BODY: {
+        DAMAGE: 2,
+        DENSITY: 50,
+        HEALTH: 600,
+        RESIST: 1.5,//Math.pow(1.25, 3),
+        SHIELD: 80,
+        REGEN: .1
+    },
+    DRAW_HEALTH: true,
+    GIVE_KILL_MESSAGE: true,
+    EVOLUTIONS: []
+};
+defExports.lmfaoloser = {
+    BODY: { RANGE: 0 },
+    DIE_AT_RANGE: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
+		for (let i = 0; i < 16; i++) {
+			let egg = new Entity({
+				x: this.x,
+				y: this.y
+			});
+			egg.team = this.team;
+			egg.define(Class.egg);
+		}
+		for (let i = 0; i < 8; i++) {
+			let square = new Entity({
+				x: this.x,
+				y: this.y
+			});
+			square.team = this.team;
+			square.define(Class.square);
+		}
+		for (let i = 0; i < 4; i++) {
+			let triangle = new Entity({
+				x: this.x,
+				y: this.y
+			});
+			triangle.team = this.team;
+			triangle.define(Class.triangle);
+		}
+		for (let i = 0; i < 2; i++) {
+			let pentagon = new Entity({
+				x: this.x,
+				y: this.y
+			});
+			pentagon.team = this.team;
+			pentagon.define(Class.pentagon);
+		}
+        let polygon = new Entity({
+            x: this.x,
+            y: this.y
+        });
+        polygon.team = this.team;
+        polygon.define(Class.shapeThing);
+	}
+};
+
 defExports.megaObstacle = {
     LABEL: 'Boulder',
     TYPE: 'wall',
@@ -6475,13 +6563,10 @@ defExports.longboydrone = {
 };
 defExports.monekoDrone = {
     PARENT: [defExports.drone],
-    BODY: {
-        REGEN: 0.01,
-    },
+    BODY: { REGEN: 0.01 },
     DRAW_HEALTH: true,
     ABILITY_IMMUNE: true,
-    PROPS: [
-    makeShell({
+    PROPS: [makeShell({
         size: 1,
         shape: 3,
         color: 16
@@ -6489,7 +6574,7 @@ defExports.monekoDrone = {
         POSITION: [0.5, 0, 0, 180, 1],
         SHAPE: 3,
         COLOR: -2,
-    },],
+    }]
 };
 defExports.circleDrone = {
     PARENT: [defExports.drone],
@@ -9198,7 +9283,7 @@ defExports.basic = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet,
             LABEL: '',
             STAT_CALCULATOR: 0,
@@ -9247,7 +9332,7 @@ defExports.smash = {
     LABEL: 'Smasher',
     DANGER: 6,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -9271,7 +9356,7 @@ defExports.mysticSmasher = {
     LABEL: 'Mystic Smasher',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         HEALTH: base.HEALTH * 1.395,
         SHIELD: base.SHIELD * 1.4
     },
@@ -9309,7 +9394,7 @@ defExports.megaSmash = {
     LABEL: 'Mega Smasher',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.2,
         DENSITY: base.DENSITY * 4,
         HEALTH: base.HEALTH * 1.4,
@@ -9330,7 +9415,7 @@ defExports.spike = {
     LABEL: 'Spike',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.15,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2,
@@ -9456,7 +9541,7 @@ defExports.nailgun = {
     LABEL: 'Nailgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -9512,7 +9597,7 @@ defExports.double = {
     }]
 };
 defExports.autoDouble = makeAuto(defExports.double, 'Auto-Double');
-defExports. /*triple*/ tripleTwin = {
+defExports.tripleTwin = { //triple
     PARENT: [defExports.genericTank],
     LABEL: 'Triple Twin',
     DANGER: 7,
@@ -9712,7 +9797,7 @@ defExports.triplet = {
     LABEL: 'Triplet',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [17.5, 8, 1, 0, 5.5, 0, .5],
@@ -9739,7 +9824,7 @@ defExports.quintuplet = {
     LABEL: 'Quintuplet',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -9781,7 +9866,7 @@ defExports.dual = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 7, 1, 0, 5.5, 0, 0],
@@ -9815,7 +9900,7 @@ defExports.sniper = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -9832,7 +9917,7 @@ defExports.assassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -9852,7 +9937,7 @@ defExports.bountyHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         HEALTH: base.HEALTH * 0.9,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [30, 10, 1, 0, 0, 0, 0],
@@ -9895,7 +9980,7 @@ defExports.ranger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [32, 8.5, 1, 0, 0, 0, 0],
@@ -9946,9 +10031,7 @@ defExports.observerer = {
         DAMAGE: 1e-5,
         PUSHABILITY: .15
     },
-    GUNS: [{
-        POSITION: [5.5, 8, -1.8, 6.5, 0, 0, 0]
-    },],
+    GUNS: [{ POSITION: [5.5, 8, -1.8, 6.5, 0, 0, 0] }],
     ALPHA: .1,
     GO_THRU_OBSTACLES: true,
     HAS_NO_SKILL_POINTS: true,
@@ -9990,7 +10073,7 @@ defExports.hunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -10013,7 +10096,7 @@ defExports.predator = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -10043,7 +10126,7 @@ defExports.rocketeer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -0.5, 9.5, 0, 0, 0],
@@ -10084,7 +10167,7 @@ defExports.blackHoleThrower = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     TURRETS: [blackholeTurret(15)],
     GUNS: [{
@@ -10104,7 +10187,7 @@ defExports.director = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 6,
@@ -10127,7 +10210,7 @@ defExports.overseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 8,
@@ -10161,7 +10244,7 @@ defExports.overlord = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 8,
     GUNS: [{
@@ -10215,7 +10298,7 @@ defExports.guidedOverlord = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 8,
     GUNS: [{
@@ -10274,7 +10357,7 @@ defExports.overlordMoneko = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     ABILITY_IMMUNE: true,
     PROPS: [
@@ -10352,11 +10435,10 @@ defExports.master = {
     LABEL: 'Master',
     FACING_TYPE: 'autospin',
     DANGER: 7,
-    //MAX_CHILDREN: 18,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -10385,9 +10467,7 @@ defExports.master = {
         POSITION: [5, 12, 1.2, 8, 0, 240, 2 / 3],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.drone, g.master]),
-            TYPE: [defExports.drone, {
-                INDEPENDENT: true
-            }],
+            TYPE: [defExports.drone, { INDEPENDENT: true }],
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -10404,7 +10484,7 @@ defExports.commanderArras = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -10469,7 +10549,7 @@ defExports.overtrap = makeHybrid({
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -10489,7 +10569,7 @@ defExports.banshee = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -10544,7 +10624,7 @@ defExports.overgunner = makeHybrid({
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -10569,7 +10649,7 @@ defExports.cruiser = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 0, 0],
@@ -10595,7 +10675,7 @@ defExports.battleship = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 90, 0],
@@ -10638,7 +10718,7 @@ defExports.tempest = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TOOLTIP: "Right click to make the circle smaller. Doing so reduces the lifespan of the drones.",
     GUNS: [{
@@ -10673,7 +10753,7 @@ defExports.carrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 0, 0],
@@ -10706,7 +10786,7 @@ defExports.scarriertest = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     SCOPED: true,
     GUNS: [{
@@ -10760,7 +10840,7 @@ defExports.scarriertest = {
         }
     }, {
         POSITION: [10.5, 20, 0.9, 1.5, 0, 0, 0]
-    },],
+    }]
 };
 defExports.fortress = {
     PARENT: [defExports.genericTank],
@@ -10769,7 +10849,7 @@ defExports.fortress = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 60, 0],
@@ -10829,7 +10909,7 @@ defExports.underseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -10864,7 +10944,7 @@ defExports.necromancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -10919,7 +10999,7 @@ defExports.minisummoner = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     FACING_TYPE: ['autospin', { SPEED: .0075 }],
@@ -10969,7 +11049,7 @@ defExports.factory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     GUNS: [{
@@ -10994,7 +11074,7 @@ defExports.mob = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 7,
     GUNS: [{
@@ -11066,7 +11146,7 @@ defExports.mini = {
     LABEL: 'Minigun',
     DANGER: 6,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, 0, 0, 0],
@@ -11094,7 +11174,7 @@ defExports.stream = {
     LABEL: 'Streamliner',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 8, 1, 0, 0, 0, 0],
@@ -11133,7 +11213,7 @@ defExports.overfire = {
     LABEL: 'Over Fire',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, 0, 0, 0],
@@ -11199,7 +11279,7 @@ defExports.minitrap = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -11254,7 +11334,7 @@ defExports.gravityWall = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     TURRETS: [blackholeTurret(15, 1)],
@@ -11321,7 +11401,7 @@ defExports.hiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [14, 14, -1.2, 5, 0, 0, 0],
@@ -11339,7 +11419,7 @@ defExports.gigahiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 14, -1.2, 5, 0, 0, 0],
@@ -11368,7 +11448,7 @@ defExports.shotgun = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -11400,7 +11480,7 @@ defExports.builder = {
     DANGER: 6,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -11430,7 +11510,7 @@ defExports.engineer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -11451,7 +11531,7 @@ defExports.construct = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -11471,7 +11551,7 @@ defExports.boomer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -11560,7 +11640,7 @@ defExports.skimmer = {
     LABEL: 'Skimmer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 14, -0.5, 9, 0, 0, 0]
@@ -11609,7 +11689,7 @@ defExports.glider = {
     LABEL: 'Glider',
     DANGER: 7,
     BODY: {
-        FOV: 1.11
+        FOV: base.FOV * 1.11
     },
     GUNS: [{
         POSITION: diep2arras([65.5 * Math.SQRT2, 0.8, -1.75, 0, 0, 0, 0])
@@ -11811,7 +11891,7 @@ defExports.hexaTrap = {
     DANGER: 7,
     SHAPE: 6,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .8
     },
     STAT_NAMES: statNames.trap,
@@ -12157,7 +12237,7 @@ defExports.falcon = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -12255,7 +12335,7 @@ defExports.builder3 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.block,
     FACING_TYPE: 'autospin',
@@ -12277,7 +12357,7 @@ defExports.sniper3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     DANGER: 7,
     FACING_TYPE: 'autospin',
@@ -12339,7 +12419,7 @@ defExports.flankTrap = {
     DANGER: 6,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -12398,7 +12478,7 @@ defExports.guntrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -12431,7 +12511,7 @@ defExports.snipeGuard = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -12458,7 +12538,7 @@ defExports.twinBuilderOld = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -12859,7 +12939,7 @@ defExports.sentry = {
     SHAPE: 3,
     COLOR: 5,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .95
     },
@@ -12903,7 +12983,7 @@ defExports.eliteSprayer = {
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -12938,7 +13018,7 @@ defExports.eliteDestroyer = {
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 2500,
         DAMAGE: base.DAMAGE * 1.5,
         SPEED: base.SPEED * .25,
@@ -12996,7 +13076,7 @@ defExports.palisade = {
     SIZE: 30,
     COLOR: 34,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         RESIST: 50,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .5,
@@ -13057,7 +13137,7 @@ defExports.eliteGunner = {
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: base.HEALTH * 15,
         SHIELD: base.SHIELD * 1.5,
         DAMAGE: base.DAMAGE * 1.5,
@@ -13132,7 +13212,7 @@ defExports.developer_parent = {
     LABEL: 'Developer',
     DANGER: 10,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         HEALTH: base.HEALTH * 5,
         DAMAGE: base.DAMAGE * 2,
         SPEED: base.SPEED * 1.5
@@ -13164,7 +13244,7 @@ defExports.testbed_parent = {
     LEVEL: 60,
     DANGER: 4,
     BODY: {
-        FOV: 1,
+        FOV: base.FOV * 1,
         SPEED: base.SPEED * 1.1
     },
     GUNS: [{
@@ -13318,7 +13398,7 @@ defExports.blitzkrieg = makeAuto({
     SHAPE: 3,
     COLOR: 19,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         HEALTH: 750,
         SHIELD: base.SHIELD * 1.25,
         REGEN: base.REGEN * 1.25,
@@ -13610,7 +13690,7 @@ defExports.weirdSpike = {
     LABEL: 'Weird Spike',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.1,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2
@@ -13632,7 +13712,7 @@ defExports.quadBuilder1 = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     SCOPED: true,
@@ -13677,7 +13757,7 @@ defExports.bentBoomer = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     SCOPED: true,
     STAT_NAMES: statNames.boomer,
@@ -13996,7 +14076,7 @@ defExports.sentryAI = {
         NO_LEAD: true
     },
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         ACCELERATION: .75,
         HEALTH: base.HEALTH * .25,
         SPEED: base.SPEED * .5
@@ -14230,7 +14310,7 @@ defExports.crasherColony = {
             SKIN: 15,
             SHOOT_ONCE: true
         },
-    },],
+    }],
     PROPS: [{
         POSITION: [1.3, 0, 0, 180, 0],
         SHAPE: 3,
@@ -14275,7 +14355,6 @@ defExports.crasherColony = {
         POSITION: [0.25, 0, 0, 180, 1],
         SHAPE: -3,
     },],
-    EVOLUTIONS: []
 };
 defExports.varpAI = {
     PARENT: [defExports.sentryAI],
@@ -14406,7 +14485,7 @@ defExports.elite = {
     SKILL: setSkill(0, 9, 5, 9, 9, 9, 5, 0, 0, 0),
     CONTROLLERS: ['fleeAtLowHealth'],
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 7,
         DAMAGE: base.DAMAGE * 2.5
@@ -14523,74 +14602,27 @@ defExports.arenaCloserAI = {
     GO_THRU_OBSTACLES: true,
     BROADCAST_MESSAGE: 'An Arena Closer died? That seems bad...'
 };
-defExports.fallenBooster = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Fallen Booster',
-    DANGER: 8,
-    BODY: {
-        HEALTH: 1000,
-        REGEN: base.REGEN * .5,
-        ACCELERATION: base.ACCEL * .5,
-        PUSHABILITY: .4
+defExports.fallenBooster = makeFallen(defExports.booster, {
+    body: {
+        acceleration: base.ACCEL,
+        speed: base.SPEED
     },
-    COLOR: 18,
-    SIZE: 22,
-    GUNS: [{
-        POSITION: [18, 8, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.tri, g.tri_front]),
-            TYPE: defExports.bullet,
-            LABEL: 'Front'
-        }
-    }, {
-        POSITION: [13, 8, 1, 0, -1, 135, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.tri, g.thruster, g.half_recoil]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.thruster
-        }
-    }, {
-        POSITION: [13, 8, 1, 0, 1, 225, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.tri, g.thruster, g.half_recoil]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.thruster
-        }
-    }, {
-        POSITION: [16, 8, 1, 0, 0, 145, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.tri, g.thruster]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.thruster
-        }
-    }, {
-        POSITION: [16, 8, 1, 0, 0, 215, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.tri, g.thruster]),
-            TYPE: defExports.bullet,
-            STAT_CALCULATOR: gunCalcNames.thruster
-        }
-    }],
-    SKILL: setSkill(2, 2, 5, 3, 2, 3, 7, 2, 0, 0),
-    HAS_NO_SKILL_POINTS: true
-};
-defExports.fallenBoosterAI = {
-    PARENT: [defExports.fallenBooster],
-    TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        SKYNET: true
-    },
-    BROADCAST_MESSAGE: 'A Fallen Booster has been defeated!'
-};
+    facingType: 'smoothToTarget'
+});
+defExports.fallenBoosterAI = makeBossAI(defExports.fallenBooster, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0),
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'fallenDrifterAI')
+});
 defExports.sent = makeHybrid(defExports.assassin, 'under', {
     name: 'Sentinel',
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .85,
-    fov: 1.35
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .85,
+        FOV: base.FOV * 1.35
+    }
 });
 defExports.seek = {
     PARENT: [defExports.genericTank],
@@ -14599,7 +14631,7 @@ defExports.seek = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [19, 8, 1, 0, -2, -20, .5],
@@ -14627,7 +14659,7 @@ defExports.chimera = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -14690,7 +14722,7 @@ defExports.autoMaton = {
     LABEL: 'Automaton',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -14788,7 +14820,7 @@ defExports.borer = {
     LABEL: 'Borer',
     DANGER: 6,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -14857,7 +14889,7 @@ defExports.steamroll = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0]
@@ -15056,53 +15088,13 @@ defExports.derogator = makeAuto({
     type: defExports.superHeavyGun,
     size: 6
 });
-defExports.marauder = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Marauder',
-    DANGER: 7,
-    GUNS: [{
-        POSITION: [17, 3, 1, 0, -6, -7, .25],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.arty, g.flank]),
-            TYPE: defExports.bullet,
-            LABEL: 'Secondary'
-        }
-    }, {
-        POSITION: [17, 3, 1, 0, 6, 7, .75],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.arty, g.flank]),
-            TYPE: defExports.bullet,
-            LABEL: 'Secondary'
-        }
-    }, {
-        POSITION: [19, 12, 1, 0, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.arty, g.flank]),
-            TYPE: defExports.bullet,
-            LABEL: 'Primary'
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 7, 4, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.bit_less_reload, g.flank]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 7, -4, 180, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.bit_less_reload, g.flank]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }]
-};
+defExports.marauder = makeHybrid(defExports.artillery, 'swarm', { name: 'Marauder' });
 defExports.lib = {
     PARENT: [defExports.genericTank],
     LABEL: 'Liberator',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [28, 8.5, 1, 0, 0, 0, 0],
@@ -15539,7 +15531,7 @@ defExports.shift = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [20, 7, 1, 0, 0, 0, 0],
@@ -15589,7 +15581,7 @@ defExports.twinSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 5.5, 0, 0],
@@ -15641,21 +15633,10 @@ defExports.volcano = {
         }
     }]
 };
-defExports.fallenOverlord = {
+defExports.fallenOverlord = makeFallen({
     PARENT: [defExports.genericTank],
-    LABEL: 'Fallen Overlord',
-    DANGER: 8,
     STAT_NAMES: statNames.drone,
-    SIZE: 22,
-    COLOR: 18,
     MAX_CHILDREN: 28,
-    FACING_TYPE: ['autospin', { SPEED: .0075 }],
-    BODY: {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.32,
-        FOV: 1.1,
-        HEALTH: 1500
-    },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 90, 0],
         PROPERTIES: {
@@ -15697,23 +15678,12 @@ defExports.fallenOverlord = {
             WAIT_TO_CYCLE: true
         }
     }]
-};
-defExports.fallenOverlordAI = {
-    PARENT: [defExports.fallenOverlord],
-    LEVEL: 60,
-    VALUE: 1e5,
-    TYPE: 'miniboss',
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        BLIND: true
-    },
-    BODY: {
-        FOV: 1,
-        RANGE: 50
-    },
-    SKILL: setSkill(0, 0, 9, 6, 6, 6, 9, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Fallen Overlord has been defeated!'
-};
+}, 'Fallen Overlord', { facingType: ['autospin', { SPEED: .0075 }] });
+defExports.fallenOverlordAI = makeBossAI(defExports.fallenOverlord, {
+	variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.rotoMissile = {
     PARENT: [defExports.bullet],
     LABEL: 'Roto Missile',
@@ -15774,7 +15744,7 @@ defExports.demoman = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14, 10, -0.5, 9, 0, 0, 0]
@@ -15831,7 +15801,7 @@ defExports.hotshot = {
     LABEL: 'Hotshot', // Lack of Cool Shot
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 12, 1, 0, 0, 0, 0],
@@ -15961,7 +15931,7 @@ defExports.leviathan = makeAuto({
     DANGER: 8,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         HEALTH: 750,
         DAMAGE: base.DAMAGE * 1.2,
         SPEED: base.SPEED * .2,
@@ -16061,7 +16031,7 @@ defExports.stalk = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -16077,7 +16047,7 @@ defExports.landmine = {
     LABEL: 'Landmine',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: 1,
         HEALTH: base.HEALTH * 1.4,
@@ -16102,7 +16072,7 @@ defExports.manager = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     INVISIBLE: [.08, .03, .02],
     MAX_CHILDREN: 8,
@@ -16166,7 +16136,7 @@ defExports.jumpSmash = {
     LABEL: 'Jump Smasher',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: 1,
         HEALTH: base.HEALTH * 1.4,
@@ -16198,7 +16168,7 @@ defExports.littleFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
@@ -16223,7 +16193,7 @@ defExports.crowd = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 6.5, 0, 0, 0]
@@ -16249,7 +16219,7 @@ defExports.guidedLittleFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -16283,7 +16253,7 @@ defExports.sniperFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -16306,7 +16276,7 @@ defExports.bulwark = {
     LABEL: 'Bulwark',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -16348,7 +16318,7 @@ defExports.machineFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -16373,7 +16343,7 @@ defExports.blastFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -16484,7 +16454,7 @@ defExports.gatling = {
     LABEL: 'Gatling Gun',
     DANGER: 6,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -16501,7 +16471,7 @@ defExports.charger = {
     LABEL: 'Charger',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -17122,7 +17092,7 @@ defExports.carnivore = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [26, 7, 1, 4, 0, 0, 0],
@@ -17205,7 +17175,7 @@ defExports.shuriken = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -17350,7 +17320,7 @@ defExports.musket = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -17423,7 +17393,7 @@ defExports.swarmAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -17450,7 +17420,7 @@ defExports.fatCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 12, .6, 5, 3, 25, 0],
@@ -17476,7 +17446,7 @@ defExports.half = {
     BODY: {
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [9, 10, 1.6, 8, 0, 0, 0],
@@ -18173,7 +18143,7 @@ defExports.silo = {
     LABEL: 'Silo',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -18219,7 +18189,7 @@ defExports.sandstm = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 0, 0],
@@ -18266,7 +18236,7 @@ defExports.triCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -18448,7 +18418,7 @@ defExports.legendaryCrasher = {
         HEALTH: 2700,
         DAMAGE: 6.5,
         REGEN: base.REGEN * .5,
-        FOV: .9
+        FOV: base.FOV * .9
     },
     GUNS: [{
         POSITION: [4.35, 5, 1.5, 8, 0, 180, 0],
@@ -18648,7 +18618,7 @@ defExports.awp_neph = {
         HEALTH: 2000,
         DAMAGE: 4,
         REGEN: base.REGEN * .25,
-        FOV: .9
+        FOV: base.FOV * .9
     },
     TURRETS: [{
         POSITION: [3, 9.75, 0, 36, 190, 0],
@@ -18801,7 +18771,7 @@ defExports.lamper = {
         HEALTH: 2250,
         DAMAGE: 4,
         REGEN: base.REGEN * .25,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -19150,7 +19120,7 @@ defExports.clock = {
         HEALTH: 2500,
         DAMAGE: 6,
         REGEN: base.REGEN * .75,
-        FOV: .65
+        FOV: base.FOV * .65
     },
     GUNS: [{
         POSITION: [13, 2, 1, 0, 0, -30, 0],
@@ -19418,7 +19388,7 @@ defExports.octagron = {
         HEALTH: 2000,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     TURRETS: [{
         POSITION: [6.5, 9, 0, 45, 80, 0],
@@ -19477,7 +19447,7 @@ defExports.nightseeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     INVISIBLE: [.08, .01, .02],
     GUNS: [{
@@ -19502,7 +19472,7 @@ defExports.sounder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [14, 7, .6, 7, 4.25, 0, 0],
@@ -19600,7 +19570,7 @@ defExports.ultraCannon = {
         HEALTH: 1000,
         DAMAGE: 6,
         REGEN: base.REGEN * .25,
-        FOV: .95
+        FOV: base.FOV * .95
     },
     GUNS: [{
         POSITION: [26, 4, 1, 0, 0, 0, 0],
@@ -19709,11 +19679,9 @@ defExports.squareBossTier1 = {
     COLOR: 13,
     SIZE: 24,
     BOSS_TIER_TYPE: 1,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.5,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 500
@@ -19762,11 +19730,9 @@ defExports.squareBossTier2 = {
     COLOR: 13,
     SIZE: 26,
     BOSS_TIER_TYPE: 1,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .875,
+        FOV: base.FOV * .875,
         SPEED: 1.25,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1500,
@@ -20006,11 +19972,9 @@ defExports.squareBossTier3 = {
     COLOR: 13,
     SIZE: 40,
     BOSS_TIER_TYPE: 1,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .7,
+        FOV: base.FOV * .7,
         SPEED: 1.15,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 2000
@@ -20200,7 +20164,7 @@ defExports.flooder = {
     LABEL: 'Flooder',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .925
     },
     GUNS: [{
@@ -20556,8 +20520,6 @@ defExports.squareBossTier4 = {
     COLOR: 13,
     SIZE: 60,
     BOSS_TIER_TYPE: 1,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: ['autospin', { SPEED: .0075 }],
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -20773,7 +20735,7 @@ defExports.dreadnought = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 90, 0],
@@ -20833,25 +20795,10 @@ defExports.trapperFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     SHAPE: -3,
-    /*
-        GUNS: [{
-            POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
-        }, {
-            POSITION: [1.5, 12, 1.5, 15, 0, 0, 0],
-            PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
-                TYPE: defExports.trapion,
-                STAT_CALCULATOR: gunCalcNames.drone,
-                AUTOFIRE: true,
-                SYNCS_SKILLS: true
-            }
-        }, {
-            POSITION: [3.5, 12, 1, 8, 0, 0, 0]
-        }]*/
     GUNS: [{
         POSITION: [7, 12, 1.2, 7, 0, 180, 0],
         PROPERTIES: {
@@ -20915,7 +20862,7 @@ defExports.foghorn = {
     STAT_NAMES: statNames.generic,
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -20987,7 +20934,7 @@ defExports.flute = {
     STAT_NAMES: statNames.generic,
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14, 6, 1, 0, 0, 0, 0]
@@ -21083,7 +21030,7 @@ defExports.piccolo = {
     STAT_NAMES: statNames.generic,
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14, 6, 1, 0, 0, 0, 0]
@@ -21195,7 +21142,7 @@ defExports.oboe = {
     STAT_NAMES: statNames.generic,
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14, 6, 1, 0, 0, 0, 0]
@@ -21240,7 +21187,7 @@ defExports.fogseer = {
     LABEL: 'Fogseer',
     STAT_NAMES: statNames.generic,
     DANGER: 7,
-    BODY: { FOV: 1.1 },
+    BODY: { FOV: base.FOV * 1.1 },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
     GUNS: [{
@@ -21300,7 +21247,7 @@ defExports.cart = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .925,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -21323,7 +21270,7 @@ defExports.spreadTrap = {
     LABEL: 'Trapling',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [16, 4, 1, 0, -1, -45, .75],
@@ -21401,7 +21348,7 @@ defExports.rifle = {
     LABEL: 'Rifle',
     DANGER: 6,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
@@ -21419,7 +21366,7 @@ defExports.gunRifle = {
     LABEL: 'Sharpshooter',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -21443,7 +21390,7 @@ defExports.heavyRifle = {
     LABEL: 'Carbine',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -21460,7 +21407,7 @@ defExports.spreadRifle = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dispenser',
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -21516,7 +21463,7 @@ defExports.assaultRifle = {
     LABEL: 'Assault Rifle',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -21534,7 +21481,7 @@ defExports.sniperRifle = {
     LABEL: 'Sniper Rifle',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -21656,7 +21603,7 @@ defExports.awp_snipe = {
     SIZE: 30,
     COLOR: 33,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.4,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1500,
@@ -21734,7 +21681,7 @@ defExports.stalkRifle = {
     LABEL: 'Silencer',
     INVISIBLE: [.08, .03, .02],
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .65
     },
     DANGER: 7,
@@ -21955,7 +21902,7 @@ defExports.awp_machine = {
     SIZE: 32,
     COLOR: 2,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.35,
         ACCELERATION: .75,
         HEALTH: 1750,
@@ -22023,7 +21970,7 @@ defExports.beehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [6.6, 2.4, .7, 7, 2.5, 0, 0],
@@ -22570,8 +22517,6 @@ defExports.squareBossTier5 = {
     COLOR: 13,
     SIZE: 100,
     BOSS_TIER_TYPE: 1,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: ['autospin', { SPEED: .004 }],
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -22813,7 +22758,7 @@ defExports.fieldGun = {
     LABEL: 'Field Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [15, 10, -0.5, 7, 0, 0, 0],
@@ -22846,7 +22791,7 @@ defExports.aagun = {
     LABEL: 'AA Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -6, -7, .25],
@@ -23079,8 +23024,6 @@ defExports.triangleBossTier1 = {
     COLOR: 2,
     SIZE: 22,
     BOSS_TIER_TYPE: 2,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: 1.6,
@@ -23212,8 +23155,6 @@ defExports.triangleBossTier2 = {
     COLOR: 2,
     SIZE: 28,
     BOSS_TIER_TYPE: 2,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: 1.45,
@@ -23481,8 +23422,6 @@ defExports.triangleBossTier3 = {
     COLOR: 2,
     SIZE: 33,
     BOSS_TIER_TYPE: 2,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: 1.36,
@@ -24052,8 +23991,6 @@ defExports.triangleBossTier4 = {
     COLOR: 2,
     SIZE: 45,
     BOSS_TIER_TYPE: 2,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .9,
@@ -24264,7 +24201,7 @@ defExports.railgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: [{
@@ -25379,8 +25316,6 @@ defExports.triangleBossTier5 = {
     COLOR: 2,
     SIZE: 90,
     BOSS_TIER_TYPE: 2,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .85,
@@ -25555,9 +25490,7 @@ defExports.triangleBossTier5 = {
 };
 defExports.twinMinigunAuto = {
     LABEL: 'Dual Minigun',
-    BODY: {
-        FOV: 2
-    },
+    BODY: { FOV: 2 },
     COLOR: 14,
     CONTROLLERS: ['nearestDifferentMaster'],
     HAS_NO_RECOIL: true,
@@ -25600,7 +25533,7 @@ defExports.twinMinigunAuto = {
     }]
 };
 const pentagonBossProps1 = {
-    SHOOT_SETTINGS: combineStats([g.drone, g.over, g.meta, g.meta, g.bn3d]),
+    SHOOT_SETTINGS: combineStats([g.drone, g.over, g.less_reload, g.bn4d]),
     TYPE: defExports.drone,
     AUTOFIRE: true,
     SYNCS_SKILLS: true,
@@ -25609,10 +25542,8 @@ const pentagonBossProps1 = {
     MAX_CHILDREN: 3
 };
 const pentagonBossProps3 = c => ({
-    SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.one_third_reload, g.meta, g.meta, g.bn3d]),
-    TYPE: [defExports.swarm, {
-        CONTROLLERS: [c]
-    }],
+    SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.less_reload, g.meta, g.bn4d]),
+    TYPE: [defExports.swarm, { CONTROLLERS: [c] }],
     STAT_CALCULATOR: gunCalcNames.swarm
 });
 defExports.pentagonBossTier1 = {
@@ -25623,11 +25554,9 @@ defExports.pentagonBossTier1 = {
     COLOR: 14,
     SIZE: 28,
     BOSS_TIER_TYPE: 3,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.5,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1000,
@@ -25654,16 +25583,16 @@ defExports.pentagonBossTier1 = {
         POSITION: [7.8, 2, .61, 7, -5.44, 180, .5],
         PROPERTIES: pentagonBossProps3('canRepel')
     }, {
-        POSITION: [7.8, 2, .61, 7, 5.44, -108, 0],
+        POSITION: [7.8, 2, .61, 7, 5.44, 252, 0],
         PROPERTIES: pentagonBossProps3('nearestDifferentMaster')
     }, {
-        POSITION: [7.8, 2, .61, 7, -5.44, -108, .5],
+        POSITION: [7.8, 2, .61, 7, -5.44, 252, .5],
         PROPERTIES: pentagonBossProps3('canRepel')
     }, {
-        POSITION: [7.8, 2, .61, 7, 5.44, -36, 0],
+        POSITION: [7.8, 2, .61, 7, 5.44, 324, 0],
         PROPERTIES: pentagonBossProps3('nearestDifferentMaster')
     }, {
-        POSITION: [7.8, 2, .61, 7, -5.44, -36, .5],
+        POSITION: [7.8, 2, .61, 7, -5.44, 324, .5],
         PROPERTIES: pentagonBossProps3('canRepel')
     }, {
         POSITION: [2.7, 3.7, 2.2, 8, 0, 36, 0],
@@ -25675,10 +25604,10 @@ defExports.pentagonBossTier1 = {
         POSITION: [2.7, 3.7, 2.2, 8, 0, 180, .4],
         PROPERTIES: pentagonBossProps1
     }, {
-        POSITION: [2.7, 3.7, 2.2, 8, 0, -108, .6],
+        POSITION: [2.7, 3.7, 2.2, 8, 0, 252, .6],
         PROPERTIES: pentagonBossProps1
     }, {
-        POSITION: [2.7, 3.7, 2.2, 8, 0, -36, .8],
+        POSITION: [2.7, 3.7, 2.2, 8, 0, 324, .8],
         PROPERTIES: pentagonBossProps1
     }],
     TURRETS: [{
@@ -25771,11 +25700,9 @@ defExports.pentagonBossTier2 = {
     COLOR: 14,
     SIZE: 34,
     BOSS_TIER_TYPE: 3,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.5,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1000,
@@ -26062,8 +25989,6 @@ defExports.pentagonBossTier3 = {
     COLOR: 14,
     SIZE: 45,
     BOSS_TIER_TYPE: 3,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .8,
@@ -26781,8 +26706,6 @@ defExports.pentagonBossTier4 = {
     COLOR: 14,
     SIZE: 76,
     BOSS_TIER_TYPE: 3,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .75,
@@ -26980,7 +26903,7 @@ defExports.gunborer = {
     LABEL: 'Gunner Borer',
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [20, 2.5, 1, 0, 4, 0, 0],
@@ -27016,7 +26939,7 @@ defExports.scorpion = {
     LABEL: 'Scorpion',
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 3.5, 1, 0, 3.2, 0, 0],
@@ -27040,7 +26963,7 @@ defExports.piercer = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 2.5, 1, 0, 3, 0, 0],
@@ -27244,7 +27167,7 @@ defExports.warship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [18, 2, 1, 0, 3, 0, 0],
@@ -27940,8 +27863,6 @@ defExports.eggBossTier5 = {
     COLOR: 8,
     SIZE: 100,
     BOSS_TIER_TYPE: 0,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: ['autospin', { SPEED: .004 }],
     HAS_NO_RECOIL: true,
     STAT_NAMES: statNames.generic,
@@ -28144,7 +28065,7 @@ defExports.clicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 0, 0, 0],
@@ -28164,7 +28085,7 @@ defExports.rifleClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [17, 8.5, 1, 5, 0, 0, 0]
@@ -28184,7 +28105,7 @@ defExports.megaClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 4, 1.1, 0, 0, 0, 0],
@@ -28204,7 +28125,7 @@ defExports.longClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [26, 4, 1, 0, 0, 0, 0],
@@ -28286,7 +28207,7 @@ defExports.eggQueenTier1 = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -28352,15 +28273,13 @@ defExports.eggQueenTier2 = {
     LABEL: "EQ-2",
     DANGER: 8,
     BOSS_TIER_TYPE: 18,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 6,
     SIZE: 32,
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.25,
         ACCELERATION: .25,
         HEALTH: 1000,
@@ -28507,14 +28426,12 @@ defExports.eggQueenTier3 = {
     LABEL: "EQ-3",
     DANGER: 8,
     BOSS_TIER_TYPE: 18,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 12,
     SIZE: 42,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .78,
+        FOV: base.FOV * .78,
         SPEED: 1.15,
         ACCELERATION: .2,
         HEALTH: 825,
@@ -28700,9 +28617,7 @@ defExports.surgeonBarrel = {
         POSITION: [4, 6, 1.7, 14, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.pure_gunner, g.machgun, g.fast, g.less_damage, g.less_health]),
-            TYPE: [defExports.trap, {
-                CAN_GO_OUTSIDE_ROOM: true
-            }],
+            TYPE: [defExports.trap, { CAN_GO_OUTSIDE_ROOM: true }],
             STAT_CALCULATOR: gunCalcNames.trap,
             AUTOFIRE: true
         }
@@ -28710,9 +28625,7 @@ defExports.surgeonBarrel = {
         POSITION: [4, 6, 1.7, 14, 0, 180, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.pure_gunner, g.machgun, g.fast, g.less_damage, g.less_health]),
-            TYPE: [defExports.trap, {
-                CAN_GO_OUTSIDE_ROOM: true
-            }],
+            TYPE: [defExports.trap, { CAN_GO_OUTSIDE_ROOM: true }],
             STAT_CALCULATOR: gunCalcNames.trap,
             AUTOFIRE: true
         }
@@ -28767,9 +28680,7 @@ defExports.surgeonifitwasbetter = {
     LABEL: 'Surgeon',
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
-        PROPERTIES: {
-            SKIN: 3
-        }
+        PROPERTIES: { SKIN: 3 }
     }, {
         POSITION: [17, 13, 1, 0, 0, 0, 0],
         PROPERTIES: {
@@ -28785,16 +28696,11 @@ defExports.surgeonifitwasbetter = {
 };
 defExports.empBullet = {
     PARENT: [defExports.bullet],
-    ON_DEALT_DAMAGE: (me, them) => {
-        emp(them, 2);
-    }
+    ON_DEALT_DAMAGE: (me, them) => emp(them, 2)
 };
 defExports.empTrap = {
     PARENT: [defExports.trap],
     HITS_OWN_TYPE: "forcedNever",
-    /*ON_DEALT_DAMAGE: (me, them) => {
-        emp(them, 2);
-    },/*/
     CONTROLLERS: ['targetSelf'],
     GUNS: [{
         POSITION: [0, 8, 1, -3, 0, 0, 0],
@@ -28803,21 +28709,17 @@ defExports.empTrap = {
             TYPE: [defExports.bullet, {
                 ALPHA: 0,
                 CONTROLLERS: ['goToMasterTarget'],
-                ON_DEALT_DAMAGE: (me, them) => {
-                    emp(them, 4);
-                },
-            },],
+                ON_DEALT_DAMAGE: (me, them) => emp(them, 4)
+            }],
             AUTOFIRE: true,
             SKIN: 15,
             MAX_CHILDREN: 1,
         }
-    },],
+    }]
 }
 defExports.EQ4EMPTrapper = {
     LABEL: 'Mega Trapper',
-    BODY: {
-        FOV: 1.5
-    },
+    BODY: { FOV: 1.5 },
     COLOR: 16,
     HAS_NO_RECOIL: true,
     GUNS: [{
@@ -28844,7 +28746,7 @@ defExports.falconMinionifitwascooler = {
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.assassin, g.less_reload]),
-            TYPE: defExports.bullet,
+            TYPE: defExports.bullet
         }
     }, {
         POSITION: [5, 8.5, -1.6, 8, 0, 0, 0]
@@ -28856,7 +28758,7 @@ defExports.falconMinionifitwascooler = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }, {
         POSITION: [12, 8, 1, 0, 0, 210, 0]
@@ -28866,7 +28768,7 @@ defExports.falconMinionifitwascooler = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }, {
         POSITION: [15, 8, 1, 0, 0, 180, 0]
@@ -28876,7 +28778,7 @@ defExports.falconMinionifitwascooler = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }]
 };
@@ -28885,14 +28787,12 @@ defExports.eagleMinionbadassvariant1 = {
     LABEL: 'Eagle Minion',
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
-        PROPERTIES: {
-            SKIN: 3
-        }
+        PROPERTIES: { SKIN: 3 }
     }, {
         POSITION: [17, 13, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.surgeon]),
-            TYPE: defExports.surgeonBullet,
+            TYPE: defExports.surgeonBullet
         }
     }, {
         POSITION: [12, 8, 1, 0, 0, 150, 0]
@@ -28902,7 +28802,7 @@ defExports.eagleMinionbadassvariant1 = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }, {
         POSITION: [12, 8, 1, 0, 0, 210, 0]
@@ -28912,7 +28812,7 @@ defExports.eagleMinionbadassvariant1 = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }, {
         POSITION: [15, 8, 1, 0, 0, 180, 0]
@@ -28922,7 +28822,7 @@ defExports.eagleMinionbadassvariant1 = {
             SHOOT_SETTINGS: combineStats([g.trap, g.flank, g.tri, g.thruster, g.half_recoil]),
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.thruster,
-            COLOR_OVERRIDE: 8,
+            COLOR_OVERRIDE: 8
         }
     }]
 };
@@ -28952,7 +28852,7 @@ defExports.EQ4trapper = {
             TYPE: defExports.trap,
             STAT_CALCULATOR: gunCalcNames.trap
         }
-    },],
+    }]
 };
 defExports.EQ4_Minion = {
     PARENT: [defExports.minion],
@@ -29014,8 +28914,7 @@ defExports.EQ4_Minion = {
             TYPE: [defExports.swarm, { LAYER: 5.5 }],
             STAT_CALCULATOR: gunCalcNames.swarm
         },
-    },
-    ],
+    }],
     TURRETS: [{
         POSITION: [15, 0, 0, 0, 0, 1],
         TYPE: [defExports.bullet, { COLOR: 8 }]
@@ -29031,20 +28930,18 @@ defExports.EQ4_Minion = {
     }, {
         POSITION: [5.5, 9, 0, (360 / 6) * 6, 190, 0],
         TYPE: defExports.EQ4trapper
-    },],
+    }]
 };
 defExports.eggQueenTier4 = {
     PARENT: [defExports.genericTank],
     LABEL: "EQ-4",
     DANGER: 8,
     BOSS_TIER_TYPE: 18,
-    LEVEL: 60,
     COLOR: 34,
-    VALUE: 59212,
     SHAPE: 12,
     SIZE: 56,
     BODY: {
-        FOV: .74,
+        FOV: base.FOV * .74,
         SPEED: 1,
         ACCELERATION: .18,
         HEALTH: 2000,
@@ -29139,7 +29036,7 @@ defExports.eggQueenTier4 = {
             AUTOFIRE: true,
             MAX_CHILDREN: 10,
         }
-    },],
+    }],
     TURRETS: [{
         POSITION: [18, 0, 0, 0, 0, 1],
         TYPE: [defExports.bullet, { COLOR: 8 }]
@@ -29186,18 +29083,18 @@ defExports.eggBossTier1 = {
     LABEL: 'EK-1',
     DANGER: 8,
     BOSS_TIER_TYPE: 0,
-    COLOR: 34,
     SHAPE: 6,
+    COLOR: 34,
     SIZE: 25,
-    FACING_TYPE: 'autospin',
-    STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
         DENSITY: base.DENSITY * 2
     },
+    FACING_TYPE: 'autospin',
+    STAT_NAMES: statNames.generic,
     TURRETS: [{
         POSITION: [16.5, 0, 0, 0, 360, 1],
         TYPE: defExports.eggBossCircleProp
@@ -29267,15 +29164,13 @@ defExports.eggBossTier2 = {
     LABEL: 'EK-2',
     DANGER: 8,
     BOSS_TIER_TYPE: 0,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 6,
     SIZE: 32,
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.25,
         ACCELERATION: .25,
         HEALTH: 1000,
@@ -29451,7 +29346,7 @@ defExports.spark = {
     PARENT: [defExports.genericTank],
     LABEL: 'Sparkler',
     DANGER: 7,
-    BODY: { FOV: 1.2 },
+    BODY: { FOV: base.FOV * 1.2 },
     GUNS: [{
         POSITION: [10, 14, -0.9, 9, 0, 0, 0],
         PROPERTIES: {
@@ -29544,14 +29439,12 @@ defExports.eggBossTier3 = {
     LABEL: 'EK-3',
     DANGER: 8,
     BOSS_TIER_TYPE: 0,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 12,
     SIZE: 42,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .78,
+        FOV: base.FOV * .78,
         SPEED: 1.15,
         ACCELERATION: .2,
         HEALTH: 825,
@@ -29971,14 +29864,12 @@ defExports.eggBossTier4 = {
     LABEL: 'EK-4',
     DANGER: 8,
     BOSS_TIER_TYPE: 0,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 12,
     SIZE: 56,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .75,
+        FOV: base.FOV * .75,
         SPEED: 1.1,
         ACCELERATION: .15,
         HEALTH: 2000,
@@ -30195,9 +30086,7 @@ defExports.eggBossTier4 = {
 };
 defExports.boomerAutoGun = {
     LABEL: 'Boomer',
-    BODY: {
-        FOV: 1.15
-    },
+    BODY: { FOV: 1.15 },
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
     COLOR: 16,
     HAS_NO_RECOIL: true,
@@ -30221,12 +30110,9 @@ defExports.hexagonBossTier1 = {
     COLOR: 0,
     SIZE: 35,
     BOSS_TIER_TYPE: 4,
-    LEVEL: 60,
-    VALUE: 59212,
-    HAS_NO_RECOIL: true,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.25,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1000,
@@ -30342,8 +30228,6 @@ defExports.hexagonBossTier2 = {
     COLOR: 0,
     SIZE: 40,
     BOSS_TIER_TYPE: 4,
-    LEVEL: 60,
-    VALUE: 59212,
     HAS_NO_RECOIL: true,
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -30430,8 +30314,6 @@ defExports.hexagonBossTier3 = {
     COLOR: 0,
     SIZE: 45,
     BOSS_TIER_TYPE: 4,
-    LEVEL: 60,
-    VALUE: 59212,
     HAS_NO_RECOIL: true,
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -30597,8 +30479,6 @@ defExports.hexagonBossTier4 = {
     COLOR: 0,
     SIZE: 50,
     BOSS_TIER_TYPE: 4,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .85,
@@ -30831,7 +30711,7 @@ defExports.longFalcon = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [32, 8.5, 1, 0, 0, 0, 0],
@@ -30954,7 +30834,7 @@ defExports.devastator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 13, 1, 0, 0, 0, 0],
@@ -30978,7 +30858,7 @@ defExports.lightning = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     MAX_CHILDREN: 10,
     GUNS: [{
@@ -31013,7 +30893,7 @@ defExports.oldlaser = {
     LABEL: 'Laser',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
@@ -31064,7 +30944,7 @@ defExports.littleSkimmer = {
     LABEL: 'Launcher',
     DANGER: 6,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 12, -0.5, 9, 0, 0, 0]
@@ -31100,7 +30980,7 @@ defExports.fatLittleSkimmer = {
     LABEL: 'Bumper',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [9, 17, -0.5, 9, 0, 0, 0]
@@ -31152,7 +31032,7 @@ defExports.twinAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 7.5, 1, 0, 5.4, 0, 0],
@@ -31178,7 +31058,7 @@ defExports.trapper = {
     DANGER: 5,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -31204,7 +31084,7 @@ defExports.obliterator = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -31227,7 +31107,7 @@ defExports.plow = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.4, 13.4, 0, 0, 0],
@@ -31251,7 +31131,7 @@ defExports.bulldozer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [15, 12, 1.01, 13.4, 0, 0, 0],
@@ -31323,7 +31203,7 @@ defExports.twister = {
     LABEL: 'Twister',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 13, -0.5, 9, 0, 0, 0]
@@ -31344,7 +31224,7 @@ defExports.miniClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 0, 0, 0],
@@ -31522,8 +31402,6 @@ defExports.obp1 = {
     SHAPE: 5,
     SIZE: 26,
     BOSS_TIER_TYPE: 7,
-    LEVEL: 60,
-    VALUE: 59212,
     BODY: {
         FOV: .9,
         SPEED: 1.3,
@@ -31559,8 +31437,6 @@ defExports.obp2 = {
     SHAPE: 5,
     SIZE: 30,
     BOSS_TIER_TYPE: 7,
-    LEVEL: 60,
-    VALUE: 59212,
     BODY: {
         FOV: .9,
         SPEED: 1.15,
@@ -31592,8 +31468,6 @@ defExports.obp3 = {
     SHAPE: 5,
     SIZE: 34,
     BOSS_TIER_TYPE: 7,
-    LEVEL: 60,
-    VALUE: 59212,
     BODY: {
         FOV: .9,
         SPEED: 1.1,
@@ -31660,9 +31534,6 @@ defExports.obt1 = {
     COLOR: 2,
     SHAPE: 3,
     SIZE: 28,
-    //BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     BODY: {
         FOV: 1.2,
         SPEED: 1.2,
@@ -31889,7 +31760,7 @@ defExports.contagion = {
     LABEL: 'Contagion',
     DANGER: 6,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -31919,7 +31790,7 @@ defExports.fort = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -31943,7 +31814,7 @@ defExports.droneTrapper = {
     LABEL: 'Magician',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -31976,7 +31847,7 @@ defExports.gunCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 6.5, .6, 0, 6.75, 0, .5],
@@ -32013,7 +31884,7 @@ defExports.longBorer = {
     LABEL: 'Driller',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .9
     },
@@ -32041,7 +31912,7 @@ defExports.multishot = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -32095,7 +31966,7 @@ defExports.buckshot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -32155,7 +32026,7 @@ defExports.machshot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -32213,7 +32084,7 @@ defExports.miniMultishot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -32298,7 +32169,7 @@ defExports.megaTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -32318,7 +32189,7 @@ defExports.gigaTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14.5, 19.5, 1, 0, 0, 0, 0]
@@ -32359,7 +32230,7 @@ defExports.gigaGravyGuy = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     TURRETS: [blackholeTurret(15, 1)],
     GUNS: [{
@@ -32381,7 +32252,7 @@ defExports.megaContagion = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .76,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [19, 5.5 /*12*/, 1, 0, 0, 0, .5],
@@ -32407,7 +32278,7 @@ defExports.plaguer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -32470,7 +32341,7 @@ defExports.spreadHunter = {
     LABEL: 'Spreadhunt',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -32567,7 +32438,7 @@ defExports.flankBuilder = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -32592,7 +32463,7 @@ defExports.swarmTrapper = {
     DANGER: 6,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -32619,7 +32490,7 @@ defExports.swarmBuilder = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -32645,7 +32516,7 @@ defExports.swarmContagion = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -32679,7 +32550,7 @@ defExports.swarmMegaTrapper = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -32805,14 +32676,12 @@ defExports.heptagonBossTier1 = {
     LABEL: 'HPK-1',
     DANGER: 8,
     SHAPE: -7,
-    COLOR: 24,
+    COLOR: 26,
     SIZE: 38,
     BOSS_TIER_TYPE: 5,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.25,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1000,
@@ -32853,7 +32722,7 @@ defExports.protector = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [12, 12, 1, 6, 0, 0, 0],
@@ -33022,11 +32891,9 @@ defExports.heptagonBossTier2 = {
     LABEL: 'HPK-2',
     DANGER: 8,
     SHAPE: -7,
-    COLOR: 24,
+    COLOR: 26,
     SIZE: 46,
     BOSS_TIER_TYPE: 5,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .82,
@@ -33051,14 +32918,10 @@ defExports.heptagonBossTier2 = {
         TYPE: defExports.factoryAutoGun
     }, {
         POSITION: [7.5, 8, 0, 154.29, 220, 0],
-        TYPE: [defExports.factoryAutoGun, {
-            MAX_CHILDREN: 2
-        }]
+        TYPE: [defExports.factoryAutoGun, { MAX_CHILDREN: 2 }]
     }, {
         POSITION: [7.5, 8, 0, 205.72, 220, 0],
-        TYPE: [defExports.factoryAutoGun, {
-            MAX_CHILDREN: 2
-        }]
+        TYPE: [defExports.factoryAutoGun, { MAX_CHILDREN: 2 }]
     }, {
         POSITION: [7.5, 8, 0, 257.15, 220, 0],
         TYPE: defExports.factoryAutoGun
@@ -33105,11 +32968,9 @@ defExports.heptagonBossTier3 = {
     LABEL: 'HPK-3',
     DANGER: 8,
     SHAPE: -7,
-    COLOR: 24,
+    COLOR: 26,
     SIZE: 54,
     BOSS_TIER_TYPE: 5,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .82,
@@ -33134,14 +32995,10 @@ defExports.heptagonBossTier3 = {
         TYPE: defExports.fiveNailgunAuto
     }, {
         POSITION: [7.5, 8, 0, 154.29, 220, 0],
-        TYPE: [defExports.gunCruiserAutoGun, {
-            MAX_CHILDREN: 2
-        }]
+        TYPE: defExports.gunCruiserAutoGun
     }, {
         POSITION: [7.5, 8, 0, 205.72, 220, 0],
-        TYPE: [defExports.gunCruiserAutoGun, {
-            MAX_CHILDREN: 2
-        }]
+        TYPE: defExports.gunCruiserAutoGun
     }, {
         POSITION: [7.5, 8, 0, 257.15, 220, 0],
         TYPE: defExports.fiveNailgunAuto
@@ -33169,19 +33026,19 @@ defExports.comet = {
         POSITION: [4, 12, 1.3, 8, 0, 222, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.more_recoil, g.thruster, g.smaller]),
-            TYPE: defExports.bullet,
+            TYPE: defExports.bullet
         }
     }, {
         POSITION: [4, 12, 1.3, 8, 0, 138, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.more_recoil, g.thruster, g.smaller]),
-            TYPE: defExports.bullet,
+            TYPE: defExports.bullet
         }
     }, {
-        POSITION: [39, 9, 1.69, 5, 0, 180, 0],
+        POSITION: [39, 9, 1.7, 5, 0, 180, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.much_more_recoil, g.thruster]),
-            TYPE: defExports.bullet,
+            TYPE: defExports.bullet
         }
     }],
     TURRETS: [{
@@ -33218,7 +33075,7 @@ defExports.weirdTripletAutoGunBetterCommet = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.single, g.half_recoil, g.fast, g.fast, g.fast, g.fast, g.more_spread, g.more_spread, g.bigger, g.less_reload]),
             TYPE: defExports.bulletLayer6,
-            TIMES_TO_FIRE: 2,
+            TIMES_TO_FIRE: 2
         }
     }, {
         POSITION: [9.5, 7.5, .65, 2, 6, 0, 0]
@@ -33227,7 +33084,7 @@ defExports.weirdTripletAutoGunBetterCommet = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.single, g.half_recoil, g.fast, g.fast, g.fast, g.fast, g.more_spread, g.more_spread, g.bigger, g.less_reload]),
             TYPE: defExports.bulletLayer6,
-            TIMES_TO_FIRE: 2,
+            TIMES_TO_FIRE: 2
         }
     }, {
         POSITION: [9.5, 7.5, .65, 2, -6, 0, 0]
@@ -33236,7 +33093,7 @@ defExports.weirdTripletAutoGunBetterCommet = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.single, g.half_recoil, g.fast, g.fast, g.fast, g.fast, g.more_spread, g.more_spread, g.less_damage, g.less_reload]),
             TYPE: defExports.bulletLayer6,
-            TIMES_TO_FIRE: 3,
+            TIMES_TO_FIRE: 3
         }
     }, {
         POSITION: [9.5, 7.5, .65, 2, 0, 0, 0]
@@ -33425,7 +33282,7 @@ defExports.fastGatling = {
     LABEL: 'Chain Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -33445,12 +33302,15 @@ defExports.defenderAI = makeBossAI(defExports.defender1, {
     value: 15e4,
     skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
     onDefined: function(me, entities, sockets) {
-        switch (Math.floor(Math.random() * 2) + 1) {
+        switch (Math.floor(Math.random() * 3) + 1) {
             case 1:
                 setGreaterEvolution(me, sockets, 'custodianAI', { animation: { frameDef: 'defenderToCustodian' } });
                 break;
             case 2:
                 setGreaterEvolution(me, sockets, 'anniversaryDefenderAI', { animation: { frameDef: 'baseToAnniversaryDefender' } });
+                break;
+            case 3:
+                setGreaterEvolution(me, sockets, 'eliteDefenderAIWeak');
                 break;
         }
     }
@@ -33459,9 +33319,7 @@ defExports.eliteSprayerAI = {
     PARENT: [defExports.elite],
     LABEL: 'Elite Sprayer',
     SKILL: setSkill(0, 9, 3, 5, 5, 5, 3, 0, 0, 0),
-    AI: {
-        NO_LEAD: false
-    },
+    AI: { NO_LEAD: false },
     TURRETS: [{
         POSITION: [14, 6, 0, 180, 190, 0],
         TYPE: [defExports.spray, {
@@ -33937,8 +33795,6 @@ defExports.rocketBossTier1 = {
     DANGER: 8,
     SIZE: 30,
     COLOR: 13,
-    LEVEL: 60,
-    VALUE: 59212,
     BOSS_TIER_TYPE: 6,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
@@ -34096,8 +33952,6 @@ defExports.rocketBossTier2 = {
     DANGER: 8,
     SIZE: 32,
     COLOR: 13,
-    LEVEL: 60,
-    VALUE: 59212,
     BOSS_TIER_TYPE: 6,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
@@ -34347,7 +34201,7 @@ defExports.gatlingSpray = {
     LABEL: 'Searcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .6
     },
@@ -34373,7 +34227,7 @@ defExports.twinFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -34410,7 +34264,7 @@ defExports.rifleTrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -34437,20 +34291,22 @@ defExports.swarmArtillery = {
     LABEL: 'Swarmsman',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
         POSITION: [17, 6, -1.4, 0, -5.8, 0, .25],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.stronger]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [17, 6, -1.4, 0, 5.8, 0, .75],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.stronger]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [19, 12, 1, 0, 0, 0, 0],
@@ -34801,7 +34657,7 @@ defExports.twinRifle = {
     LABEL: 'Twin Rifle',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .75
     },
@@ -35078,12 +34934,12 @@ defExports.darkPolygunMinion = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1.5, 5);
                 }
-            },],
+            }],
             COLOR_OVERRIDE: 19,
             AUTOFIRE: true,
             SKIN: 15,
         }
-    },],
+    }],
     PROPS: [makeAura(261)],
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 190, 0],
@@ -35408,7 +35264,7 @@ defExports.overdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -35450,7 +35306,7 @@ defExports.skimBossAI = {
     VARIES_IN_SIZE: true,
     VALUE: 25e4,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 12,
         REGEN: base.REGEN * .5,
@@ -35473,7 +35329,7 @@ defExports.thrower = {
     LABEL: 'Consumer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.trap,
@@ -35499,7 +35355,7 @@ defExports.muncher = {
     LABEL: 'Muncher',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.trap,
@@ -35573,7 +35429,7 @@ defExports.diver = {
         HEALTH: base.HEALTH * .8,
         SHIELD: base.SHIELD * .8,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -35648,7 +35504,7 @@ defExports.trapSkimmer = {
     LABEL: 'Pather',
     DANGER: 7,
     BODY: {
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [13, 13, 1, 0, 0, 0, 0]
@@ -35891,7 +35747,7 @@ defExports.hexaship = {
     COLOR: 1,
     SIZE: 36,
     BODY: {
-        FOV: 1,
+        FOV: base.FOV * 1,
         HEALTH: 850,
         DAMAGE: 5,
         SPEED: base.SPEED * .2
@@ -35964,7 +35820,7 @@ defExports.twinTrapper = {
     LABEL: 'Twin Trapper',
     DANGER: 6,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -35993,7 +35849,7 @@ defExports.twinContagion = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -36034,7 +35890,7 @@ defExports.swarmTwinTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 7, 1, 0, 6.5, 0, 0]
@@ -36075,7 +35931,7 @@ defExports.longContagion = {
     LABEL: 'Virus',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -36105,7 +35961,7 @@ defExports.submarine = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7.1, 4, 10, 0],
@@ -36134,7 +35990,7 @@ defExports.heavyOverseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 6,
@@ -36275,8 +36131,6 @@ defExports.rocketBossTier3 = {
     DANGER: 8,
     SIZE: 34,
     COLOR: 13,
-    LEVEL: 60,
-    VALUE: 59212,
     BOSS_TIER_TYPE: 6,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
@@ -36848,8 +36702,6 @@ defExports.rocketBossTier5 = {
     DANGER: 8,
     SIZE: 65,
     COLOR: 13,
-    LEVEL: 60,
-    VALUE: 59212,
     BOSS_TIER_TYPE: 6,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
@@ -36887,7 +36739,7 @@ defExports.manyshot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -37111,12 +36963,10 @@ defExports.AWP_11 = {
     COLOR: 13,
     SIZE: 26,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .9,
+        FOV: base.FOV * .9,
         SPEED: 1.5,
         ACCELERATION: .8,
         HEALTH: 300,
@@ -37268,12 +37118,10 @@ defExports.AWP_8 = {
     COLOR: 13,
     SIZE: 28,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .89,
+        FOV: base.FOV * .89,
         SPEED: 1.45,
         ACCELERATION: .75,
         HEALTH: 250,
@@ -37382,8 +37230,6 @@ defExports.AWP_4 = {
     COLOR: 13,
     SIZE: 30,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -37577,8 +37423,6 @@ defExports.AWP_5 = {
     COLOR: 13,
     SIZE: 20,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -37764,8 +37608,6 @@ defExports.AWP_6 = {
     COLOR: 13,
     SIZE: 26,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -37912,8 +37754,6 @@ defExports.AWP_7 = {
     COLOR: 13,
     SIZE: 32,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -38005,8 +37845,6 @@ defExports.AWP_8_alt = {
     COLOR: 13,
     SIZE: 48,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: ['autospin', { SPEED: .0075 }],
     STAT_NAMES: statNames.generic,
     SHAPE: 4,
@@ -38285,8 +38123,6 @@ defExports.AWP_9 = {
     COLOR: 13,
     SIZE: 36,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -38335,7 +38171,7 @@ defExports.trapDweller = {
     COLOR: 13,
     FACING_TYPE: ['autospin', { SPEED: .0125 }],
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .08,
         HEALTH: 1750
     },
@@ -38415,7 +38251,7 @@ defExports.testboss2 = {
     SIZE: 32,
     COLOR: 13,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .075,
         HEALTH: 1250
     },
@@ -38573,7 +38409,7 @@ defExports.multitool1 = {
     DANGER: 8,
     BODY: {
         SPEED: base.SPEED * .85,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .8
     },
     STAT_NAMES: statNames.generic,
@@ -38662,14 +38498,18 @@ defExports.undergunner = makeHybrid({
     }]
 }, 'under', {
     name: 'Undergunner',
-    accel: base.ACCEL * .75,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .75,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.undertrap = makeHybrid(defExports.trapper, 'under', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.commander = {
     PARENT: [defExports.genericTank],
@@ -38678,7 +38518,7 @@ defExports.commander = {
     DANGER: 7,
     MAX_CHILDREN: 3,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.minion,
     GUNS: [{
@@ -38738,7 +38578,7 @@ defExports.machTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 7, 1.75, 0, 0, 0, 0]
@@ -38778,7 +38618,7 @@ defExports.antimatter = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     TURRETS: [blackholeTurret(15, 1)],
     GUNS: [{
@@ -38799,7 +38639,7 @@ defExports.sprayTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 7, 1.5, 0, 0, 0, 0]
@@ -38828,7 +38668,7 @@ defExports.blasterTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12.5, 8.1, 2, 0, 0, 0, 0]
@@ -38848,7 +38688,7 @@ defExports.gatlingTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [17, 8, 1.7, 0, 0, 0, 0]
@@ -38868,7 +38708,7 @@ defExports.machBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -38888,7 +38728,7 @@ defExports.tyrant = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -38999,8 +38839,6 @@ defExports.AWP_12 = {
     COLOR: 13,
     SIZE: 38,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -39089,12 +38927,10 @@ defExports.AWP_21 = {
     COLOR: 13,
     SIZE: 27,
     BOSS_TIER_TYPE: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: 'smoothWithMotion',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .89,
+        FOV: base.FOV * .89,
         SPEED: 1.5,
         ACCELERATION: .8,
         HEALTH: 300,
@@ -39318,7 +39154,7 @@ defExports.bentTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -39399,7 +39235,7 @@ defExports.riftWizard = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     TURRETS: [blackholeTurret(15)],
@@ -39438,7 +39274,7 @@ defExports.doubleTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -39501,7 +39337,7 @@ defExports.splitSummonerCore = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 4,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 300,
         REGEN: .0063
     },
@@ -39643,7 +39479,7 @@ defExports.splitterSummoner = {
     LABEL: 'Splitter Summoner',
     DANGER: 8,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 36,
         DAMAGE: base.DAMAGE * 2.6
@@ -39834,7 +39670,7 @@ defExports.superSplitSummonerCore = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 6,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 900,
         REGEN: .0063
     },
@@ -40001,7 +39837,7 @@ defExports.superSplitterSummoner = {
     LABEL: 'Super Splitter Summoner',
     DANGER: 8,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 120,
         DAMAGE: base.DAMAGE * 2.6
@@ -40331,7 +40167,7 @@ defExports.torpedoer = {
     LABEL: 'Molotov',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 10, -0.5, 9, 0, 0, 0]
@@ -40444,7 +40280,7 @@ defExports.snipewark = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .825,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -40486,7 +40322,7 @@ defExports.twinRanger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [30, 7.5, 1, 0, 5.4, 0, 0],
@@ -40529,7 +40365,7 @@ defExports.tripleDual = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 7, 1, 0, 2.5, 20, .5],
@@ -40751,7 +40587,7 @@ defExports.hyperSkimmer = {
     LABEL: 'Hyperskimmer',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -40772,7 +40608,7 @@ defExports.rangerGatling = {
     LABEL: 'Ultling',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .5
     },
@@ -40840,7 +40676,7 @@ defExports.longRanger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.5//buffed 1.5
+        FOV: base.FOV * 1.5//buffed 1.5
     },
     GUNS: [{
         POSITION: [36, 8.5, 1, 0, 0, 0, 0],
@@ -40919,7 +40755,7 @@ defExports.tripleTwinTrapper = {
     LABEL: 'Slicer',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .85
     },
     STAT_NAMES: statNames.trap,
@@ -40985,7 +40821,7 @@ defExports.streamTrap = {
     DANGER: 7, //7.5
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .975
     },
     GUNS: [{
@@ -41032,7 +40868,7 @@ defExports.miniBuilder = {
     LABEL: 'Blockade',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .8
     },
     STAT_NAMES: statNames.block,
@@ -41094,7 +40930,7 @@ defExports.sniper5 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -41176,7 +41012,7 @@ defExports.assassin3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -41217,7 +41053,7 @@ defExports.obliterator3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -41238,7 +41074,7 @@ defExports.overwork = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -41294,7 +41130,7 @@ defExports.hottershot = {
     LABEL: 'Hotliner',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [16, 12, 1, 9, 0, 0, 0],
@@ -41349,7 +41185,7 @@ defExports.builderFactory = {
     SHAPE: -4,
     BODY: {
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -41419,7 +41255,7 @@ defExports.longHotshot = {
     LABEL: 'Steam Shot',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [22, 12, 1, 3, 0, 0, 0],
@@ -41448,7 +41284,7 @@ defExports.smother = {
     LABEL: 'Smotherer',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .935
     },
     GUNS: [{
@@ -41500,7 +41336,7 @@ defExports.siloStream = {
     LABEL: 'Sealer',
     DANGER: 7,
     BODY: {
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
@@ -41545,7 +41381,7 @@ defExports.heavyOverlord = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 7,
     TOOLTIP: 'Do not dishonor the academic community.',
@@ -41675,7 +41511,7 @@ defExports.xPredator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [23.5, 4, 1, 0, 0, 0, 0],
@@ -41709,7 +41545,7 @@ defExports.boomer3 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.boomer,
@@ -41731,7 +41567,7 @@ defExports.teraTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [16, 20, 1.4, 0, 0, 0, 0]
@@ -41782,7 +41618,7 @@ defExports.maleficitor = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -41807,7 +41643,7 @@ defExports.gundrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 11, 1.2, 8, 0, 125, 0],
@@ -41859,7 +41695,7 @@ defExports.trapdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -41907,7 +41743,7 @@ defExports.harddrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     INVISIBLE: [.08, .02, .02],
@@ -41936,7 +41772,7 @@ defExports.hyperdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 8,
@@ -41975,7 +41811,7 @@ defExports.juggernaut = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 0, 0],
@@ -42058,7 +41894,7 @@ defExports.quadCarrier = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 2, 40, .5],
@@ -42095,7 +41931,7 @@ defExports.megaBarricade = {
     LABEL: 'Clogger',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85
     },
     STAT_NAMES: statNames.trap,
@@ -42153,7 +41989,7 @@ defExports.fatFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .725,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     MAX_CHILDREN: 8,
     GUNS: [{
@@ -42246,7 +42082,7 @@ defExports.flankSeeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [19, 8, 1, 0, -2, -20, .5],
@@ -42293,7 +42129,7 @@ defExports.quadBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.block,
     FACING_TYPE: 'autospin',
@@ -42529,7 +42365,7 @@ defExports.sniperSingle = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [25, 8.5, 1, 0, 0, 0, 0],
@@ -42622,7 +42458,7 @@ defExports.tripletTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [13.5, 8, 1, 0, 6, 0, 0]
@@ -42730,7 +42566,7 @@ defExports.twinTrapperConq = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -42874,7 +42710,7 @@ defExports.anniSteamroll = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 11.5, 1, 0, 0, 0, 0]
@@ -42892,7 +42728,7 @@ defExports.hexaContagion = {
     DANGER: 7,
     SHAPE: 6,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .75
     },
@@ -42997,7 +42833,7 @@ defExports.rangerObliterator = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [17, 12, 1.01, 18.4, 0, 0, 0],
@@ -43025,7 +42861,7 @@ defExports.builderArtillery = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -43059,7 +42895,7 @@ defExports.builderMortar = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -43106,7 +42942,7 @@ defExports.pebbler = {
     LABEL: 'Pebbler',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -43166,7 +43002,7 @@ defExports.nanogun = {
     LABEL: 'Nanogun',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85
     },
     GUNS: [{
@@ -43276,7 +43112,7 @@ defExports.predatorDual = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [18, 5.5, 1, 0, 5.5, 0, 0],
@@ -43323,7 +43159,7 @@ defExports.megafort = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.12
+        FOV: base.FOV * 1.12
     },
     STAT_NAMES: statNames.generic,
     FACING_TYPE: 'autospin',
@@ -43373,7 +43209,7 @@ defExports.assassinTrapGuard = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -43548,7 +43384,7 @@ defExports.rewinder = {
     LABEL: 'Rewinder',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 13, -0.5, 12, 0, 0, 0]
@@ -43572,7 +43408,7 @@ defExports.trebuchet = {
     LABEL: 'Trebuchet',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [15, 6, -1.4, 9, 0, 0, 0]
@@ -43590,7 +43426,7 @@ defExports.scythe = {
     LABEL: 'Scythe',
     DANGER: 7,
     BODY: {
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [10, 14, -0.5, 9, 0, 0, 0]
@@ -43610,7 +43446,7 @@ defExports.snipeBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -43641,7 +43477,7 @@ defExports.xCarnivore = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [26, 7, 1, 4, 0, 0, 0],
@@ -43735,7 +43571,7 @@ defExports.poundTriplet = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [15, 10, 1, 6, 6.5, 0, .5],
@@ -43766,7 +43602,7 @@ defExports.invisibuilder = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     INVISIBLE: [.08, .01, .02],
@@ -43787,7 +43623,7 @@ defExports.megaConstruct = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .675,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -43806,7 +43642,7 @@ defExports.machTriplet = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [18, 10, 1.4, 0, 5, 0, .5],
@@ -43835,7 +43671,7 @@ defExports.sniperTriplet = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [21, 10, 1, 0, 5, 0, .5],
@@ -43863,7 +43699,7 @@ defExports.flankTriTrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -43909,7 +43745,7 @@ defExports.flankTriplet = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .95,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [18, 10, 1, 0, 5, 0, .5],
@@ -43957,7 +43793,7 @@ defExports.dreadning = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [6, 10, 1.2, 8, 0, 45, 0],
@@ -44005,7 +43841,7 @@ defExports.drivenaught = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 90, 0],
@@ -44063,7 +43899,7 @@ defExports.flankBentTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .85
     },
@@ -44193,7 +44029,7 @@ defExports.predaNightseeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     INVISIBLE: [.08, .01, .02],
     GUNS: [{
@@ -44243,7 +44079,7 @@ defExports.pistol = {
     LABEL: 'Pistol',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.05,
         ACCELERATION: base.ACCEL * .7
     },
@@ -44263,7 +44099,7 @@ defExports.xSpreadHunter = {
     LABEL: 'Spreadator',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .8
     },
@@ -44307,7 +44143,7 @@ defExports.ySpreadHunter = {
     LABEL: 'X-Spreadhunt',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .85
     },
@@ -44420,7 +44256,7 @@ defExports.toolshed = {
     LABEL: 'Toolshed',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .8
     },
     FACING_TYPE: 'autospin',
@@ -44600,15 +44436,17 @@ defExports.pelletception = makeAuto(defExports.pellet, 'Pelletception', { // mak
 defExports.destroyception = makeCeption(defExports.destroyer, 'Destroyception');
 defExports.overdriveHybrid = makeHybrid(defExports.destroyer, 'drive', {
     name: 'Drivebrid',
-    speed: base.SPEED * .95,
-    accel: base.ACCEL * .7
+    body: {
+        speed: base.SPEED * .95,
+        acceleration: base.ACCEL * .7
+    }
 });
 defExports.gatlingMachGunner = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gatling Gunner',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -44689,7 +44527,7 @@ defExports.floodStream = {
     LABEL: 'Inundator', //Floodliner, Flash Flooder
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -44812,7 +44650,7 @@ defExports.wreckingBall = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 6, 2, 5, 0, 0, 0]
@@ -44889,7 +44727,7 @@ defExports.nailtrap = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, .25],
@@ -44929,7 +44767,7 @@ defExports.invisispawner = {
     BODY: {
         SPEED: base.SPEED * .775,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -44958,7 +44796,7 @@ defExports.pentamancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 5,
     CAN_NECROMIZE: defaultPentagonNecros,
@@ -45052,7 +44890,7 @@ defExports.blockSkimmer = {
     LABEL: 'Crane',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -45101,7 +44939,7 @@ defExports.overdriveMaster = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [5, 12, 1.2, 8, 0, 0, 0],
@@ -45147,7 +44985,7 @@ defExports.staplegun = {
     LABEL: 'Staplegun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85
     },
     GUNS: [{
@@ -45190,7 +45028,7 @@ defExports.invisispike = {
     INVISIBLE: [.08, .01, .02],
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.15,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2,
@@ -45218,7 +45056,7 @@ defExports.chainsaw = {
     LABEL: 'Chainsaw',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.2,
         SPEED: base.SPEED * 1.125,
         DENSITY: base.DENSITY * 2,
@@ -45264,7 +45102,7 @@ defExports.overmaster = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [5, 11, 1.2, 8, 0, 0, 0],
@@ -45331,7 +45169,7 @@ defExports.battlenaught = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 14.29, 1.2, 8, 0, 90, 0],
@@ -45532,7 +45370,7 @@ defExports.puntTrapGuard = {
     LABEL: 'Trooper',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .95
     },
     GUNS: [{
@@ -45731,7 +45569,7 @@ defExports.operator = {
     BODY: {
         SPEED: base.SPEED * .7,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -45755,7 +45593,7 @@ defExports.octoTrap = {
     LABEL: 'Octo Trapper',
     DANGER: 7, //7.5
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .75
     },
     STAT_NAMES: statNames.trap,
@@ -45880,7 +45718,7 @@ defExports.pistolTrap = {
     LABEL: 'Impulser',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         ACCELERATION: base.ACCEL * .675
     },
     GUNS: [{
@@ -45907,7 +45745,7 @@ defExports.machPistol = {
     LABEL: 'AP Pistol',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -45927,7 +45765,7 @@ defExports.moreFortress = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46051,7 +45889,7 @@ defExports.stalkFalcon = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .02, .02],
     GUNS: [{
@@ -46094,7 +45932,7 @@ defExports.boostFalcon = {
         HEALTH: base.HEALTH * .5,
         SHIELD: base.SHIELD * .5,
         DENSITY: base.DENSITY * .2,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -46306,7 +46144,7 @@ defExports.megaEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46330,7 +46168,7 @@ defExports.fatBattleship = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 12, .6, 5, 3, 115, 0],
@@ -46373,7 +46211,7 @@ defExports.engineer3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     FACING_TYPE: 'autospin',
@@ -46395,7 +46233,7 @@ defExports.twinEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46422,7 +46260,7 @@ defExports.machEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46445,7 +46283,7 @@ defExports.boomerEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46468,7 +46306,7 @@ defExports.poundEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46553,7 +46391,7 @@ defExports.fatCarrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [9, 12, .6, 5, 3, 27, .5],
@@ -46669,7 +46507,7 @@ defExports.pentaTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -46726,7 +46564,7 @@ defExports.flankGuardEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .875,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46753,7 +46591,7 @@ defExports.snipeEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .875,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -46805,7 +46643,7 @@ defExports.sidewind = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [10, 11, -0.5, 14, 0, 0, 0]
@@ -46823,7 +46661,7 @@ defExports.arsenal = {
     LABEL: 'Arsenal',
     DANGER: 6,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -46848,7 +46686,7 @@ defExports.machArsenal = {
     LABEL: 'Armory',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -46873,7 +46711,7 @@ defExports.megaArsenal = {
     LABEL: 'Bearer',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -46898,7 +46736,7 @@ defExports.triArsenal = {
     LABEL: 'Tri-Arsenal',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -46950,7 +46788,7 @@ defExports.gigaArsenal = {
     LABEL: 'Giga Arsenal',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .825,
         ACCELERATION: base.ACCEL * .675
     },
@@ -46976,7 +46814,7 @@ defExports.trapGunner = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -47024,7 +46862,7 @@ defExports.triMachTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 7, 1.75, 0, 0, 0, 0]
@@ -47062,7 +46900,7 @@ defExports.machMegaTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1.5, 0, 0, 0, 0]
@@ -47136,7 +46974,7 @@ defExports.triMachArsenal = {
     LABEL: 'Tri-Armory',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -47189,7 +47027,7 @@ defExports.trapMachGunner = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -47285,7 +47123,7 @@ defExports.megamine = {
     LABEL: 'Megamine',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.2,
         DENSITY: base.DENSITY * 4,
         HEALTH: base.HEALTH * 1.4,
@@ -47313,7 +47151,7 @@ defExports.gigaSmash = {
     LABEL: 'Giga Smasher',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.125,
         HEALTH: base.HEALTH * 1.1,
         DENSITY: base.DENSITY * 5,
@@ -47337,7 +47175,7 @@ defExports.constructArtillery = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .675,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -47372,7 +47210,7 @@ defExports.streamClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 0, 0, 0],
@@ -47420,7 +47258,7 @@ defExports.miniPuncher = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [24, 4, 1.1, 0, 0, 0, 0],
@@ -47538,7 +47376,7 @@ defExports.trapClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .875,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 4, 1, 0, 0, 0, 0]
@@ -47564,7 +47402,7 @@ defExports.gigaClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 5, 1, 0, 0, 0, 0],
@@ -47582,7 +47420,7 @@ defExports.miniRifle = {
     LABEL: 'Archer',
     DANGER: 7,
     BODY: {
-        FOV: 1.275,
+        FOV: base.FOV * 1.275,
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .975
     },
@@ -47613,7 +47451,7 @@ defExports.streamRifle = {
     LABEL: 'Bowman',
     DANGER: 7,
     BODY: {
-        FOV: 1.325,
+        FOV: base.FOV * 1.325,
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .925
     },
@@ -47658,7 +47496,7 @@ defExports.miniClipper = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     GUNS: [{
         POSITION: [25, 4, 1, 0, 0, 0, 0],
@@ -47821,7 +47659,7 @@ defExports.heavyManager = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     INVISIBLE: [.08, .02, .02],
     MAX_CHILDREN: 6,
@@ -47844,7 +47682,7 @@ defExports.engineerArtillery = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .725,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -47880,7 +47718,7 @@ defExports.invisiCarrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     INVISIBLE: [.08, .02, .02],
     GUNS: [{
@@ -47924,7 +47762,7 @@ defExports.engineerContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .95,
         SPEED: base.SPEED * .725,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -48068,7 +47906,7 @@ defExports.hexahedron = {
         HEALTH: 1750,
         DAMAGE: 4,
         REGEN: base.REGEN * .5,
-        FOV: .8
+        FOV: base.FOV * .8
     },
     TURRETS: []
 };
@@ -48203,7 +48041,7 @@ defExports.stalkRanger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -48223,7 +48061,7 @@ defExports.miniHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 6, 1, 0, 0, 0, 0],
@@ -48270,7 +48108,7 @@ defExports.invisibattleship = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .775,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .02, .02],
     GUNS: [{
@@ -48342,7 +48180,7 @@ defExports.cruisedrive = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -48373,7 +48211,7 @@ defExports.pentaSeeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .85,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [16, 8, 1, 0, -3, -30, 2 / 3],
@@ -48414,7 +48252,7 @@ defExports.invisimaster = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .725,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     STAT_NAMES: statNames.drone,
     INVISIBLE: [.08, .02, .02],
@@ -48465,7 +48303,7 @@ defExports.masterBanshee = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -48694,7 +48532,7 @@ defExports.mythicalCrasher = {
         HEALTH: 3500,
         DAMAGE: 8,
         REGEN: base.REGEN * .45,
-        FOV: .775
+        FOV: base.FOV * .775
     },
     GUNS: [{
         POSITION: [3.5, 2.8, 1.4, 8, 0, 180, 0],
@@ -49146,7 +48984,7 @@ defExports.awp_33 = {
         HEALTH: 2500,
         DAMAGE: 8,
         REGEN: base.REGEN * .25,
-        FOV: 1.925
+        FOV: base.FOV * 1.925
     },
     FACING_TYPE: 'smoothWithMotion',
     TURRETS: [{
@@ -49424,14 +49262,18 @@ defExports.awp_33 = {
     }]
 };
 defExports.overbuild = makeHybrid(defExports.builder, 'over', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .75,
-    fov: 1.175
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .75,
+        fov: base.FOV * 1.175
+    }
 });
 defExports.underbuild = makeHybrid(defExports.builder, 'under', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .75,
-    fov: 1.175
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .75,
+        fov: base.FOV * 1.175
+    }
 });
 defExports.builderBomber = {
     PARENT: [defExports.genericTank],
@@ -49481,7 +49323,7 @@ defExports.fastSteamroll = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .775,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [24, 8, 1, 0, 0, 0, 0]
@@ -49601,7 +49443,7 @@ defExports.miniHiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 13.5, -1.2, 5, 0, 0, 0],
@@ -49698,7 +49540,7 @@ defExports.megaHiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [16.5, 15, -1.2, 5, 0, 0, 0],
@@ -49717,7 +49559,7 @@ defExports.hunterEagle = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -49802,7 +49644,7 @@ defExports.nailGunRifle = {
     LABEL: 'Nailshooter',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .825,
         ACCELERATION: base.ACCEL * .65
     },
@@ -49873,7 +49715,7 @@ defExports.hunter3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .825,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -49894,7 +49736,7 @@ defExports.constructor3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.block,
     FACING_TYPE: 'autospin',
@@ -50084,7 +49926,7 @@ defExports.heptahedron = {
         HEALTH: 2000,
         DAMAGE: 4,
         REGEN: base.REGEN * .5,
-        FOV: .7
+        FOV: base.FOV * .7
     },
     GUNS: [],
     TURRETS: []
@@ -50129,7 +49971,7 @@ defExports.gigaContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -50156,7 +49998,7 @@ defExports.predatorEagle = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -50258,7 +50100,7 @@ defExports.twinFlankSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .45,
         SPEED: base.SPEED * .825,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 5.5, 0, 0],
@@ -50293,7 +50135,7 @@ defExports.tripleTwinSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .45,
         SPEED: base.SPEED * .825,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 5.5, 0, 0],
@@ -50340,7 +50182,7 @@ defExports.twinFlankAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 7.5, 1, 0, 5.4, 0, 0],
@@ -50451,7 +50293,7 @@ defExports.megaTrapClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0]
@@ -50753,7 +50595,7 @@ defExports.minigun3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .775,
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -50774,7 +50616,7 @@ defExports.minigun100 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .775,
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     FACING_TYPE: 'autospin',
     TURRETS: []
@@ -50790,7 +50632,7 @@ defExports.trapGuardPursuer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -50847,7 +50689,7 @@ defExports.doubleDual = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 7, 1, 0, 5.5, 0, 0],
@@ -50932,7 +50774,7 @@ defExports.pentaArsenal = {
     LABEL: 'Protostar',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .5
     },
@@ -51012,7 +50854,7 @@ defExports.oscilloscope = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 7.25, 1.25, 10, 0, 0, 0]
@@ -51075,7 +50917,7 @@ defExports.autoMatonStream = {
     LABEL: 'Cyborg',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -51087,7 +50929,7 @@ defExports.hunterPistol = {
     LABEL: 'Revolver',
     DANGER: 7,
     BODY: {
-        FOV: .95,
+        FOV: base.FOV * .95,
         SPEED: base.SPEED * 1.025,
         ACCELERATION: base.ACCEL * .7
     },
@@ -51116,7 +50958,7 @@ defExports.gunHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [16, 2, 1, 0, 6.6, 0, .6],
@@ -51169,7 +51011,7 @@ defExports.destroyMini = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 14, 1, 0, 0, 0, 0],
@@ -51198,7 +51040,7 @@ defExports.surferFalcon = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -51315,7 +51157,7 @@ defExports.huntguard = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -51345,7 +51187,7 @@ defExports.rifleHunter = {
     LABEL: 'Infantryman',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -51455,7 +51297,7 @@ defExports.trapGuardPredator = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -51501,7 +51343,7 @@ defExports.wildfowler = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 1, 1, 11, -3, 0, 0],
@@ -51760,7 +51602,7 @@ defExports.megaHuntguard = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -51792,7 +51634,7 @@ defExports.swarmHuntguard = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -51838,7 +51680,7 @@ defExports.longOsci = {
     BODY: {
         ACCELERATION: base.ACCEL * .45,
         SPEED: base.SPEED * .725,
-        FOV: 1.675
+        FOV: base.FOV * 1.675
     },
     GUNS: [{
         POSITION: [7, 7.25, 1.25, 10, 0, 0, 0]
@@ -51866,7 +51708,7 @@ defExports.blasterFlooder = {
     LABEL: 'Fusilier',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -51903,7 +51745,7 @@ defExports.seismograph = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [8, .1, -55, 28.25, 0, 0, 0],
@@ -51945,7 +51787,7 @@ defExports.boomerContagion = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -51973,7 +51815,7 @@ defExports.poundOscilloscope = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 12.25, 1.25, 10, 0, 0, 0]
@@ -51998,7 +51840,7 @@ defExports.phantasm = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 6,
     FACING_TYPE: 'autospin',
@@ -52053,7 +51895,7 @@ defExports.rampart = {
     LABEL: 'Rampart',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -52104,7 +51946,7 @@ defExports.trapperHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0]
@@ -52324,7 +52166,7 @@ defExports.sacredCrasher = {
         HEALTH: 2700,
         DAMAGE: 6.5,
         REGEN: base.REGEN * .5,
-        FOV: .9
+        FOV: base.FOV * .9
     },
     GUNS: [{
         POSITION: [5, 8, 1, 11.5, 0, 180, 0]
@@ -52498,7 +52340,7 @@ defExports.matchlock = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 1.5, 1, 11, 0, 0, 0],
@@ -52548,7 +52390,7 @@ defExports.assassinSilo = {
     LABEL: 'Depository',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .85
     },
@@ -52576,9 +52418,11 @@ defExports.assassinSilo = {
 };
 defExports.underPounder = makeHybrid(defExports.pounder, 'under', {
     name: 'Barracks',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.elamficitor = {
     PARENT: [defExports.genericTank],
@@ -52588,7 +52432,7 @@ defExports.elamficitor = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -52713,7 +52557,7 @@ defExports.spider = {
     LABEL: 'Spider',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .7
     },
@@ -52765,7 +52609,7 @@ defExports.streamstream = {
     LABEL: 'Stweamwinder',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: []
 };
@@ -52793,7 +52637,7 @@ defExports.anni360 = {
     LABEL: '360-Annihilator',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: []
 };
@@ -52809,7 +52653,7 @@ defExports.vortex = {
     LABEL: 'Vortex',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: []
 };
@@ -52963,7 +52807,7 @@ defExports.trimancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 3,
     CAN_NECROMIZE: defaultTriangleNecros,
@@ -53005,7 +52849,7 @@ defExports.megaBattery = {
     LABEL: 'Courser',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .7,
         ACCELERATION: base.ACCEL * .65
     },
@@ -53085,7 +52929,7 @@ defExports.streamstream2 = {
     LABEL: 'Stweamicane',
     DANGER: 7,
     BODY: {
-        FOV: 1.5
+        FOV: base.FOV * 1.5
     },
     GUNS: []
 };
@@ -53114,7 +52958,7 @@ defExports.streamstream3 = {
     LABEL: 'Stweamicane 2.0',
     DANGER: 7,
     BODY: {
-        FOV: 1.5
+        FOV: base.FOV * 1.5
     },
     GUNS: []
 };
@@ -53148,7 +52992,7 @@ defExports.aaaaa = {
     LABEL: 'UwU',
     DANGER: 7,
     BODY: {
-        FOV: 4
+        FOV: base.FOV * 4
     },
     GUNS: []
 };
@@ -53226,7 +53070,7 @@ defExports.constructContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -53250,7 +53094,7 @@ defExports.gunnerHunter = {
     LABEL: 'Ferreter',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12, 3.5, 1, 0, 7.25, 0, .5],
@@ -53295,7 +53139,7 @@ defExports.hewnFerreter = {
     LABEL: 'Hewn Ferreter',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12, 3.5, 1, 0, 7.25, 0, .5],
@@ -53355,7 +53199,7 @@ defExports.cruiserFerreter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 6.5, .6, 0, 6.75, 0, .5],
@@ -53409,7 +53253,7 @@ defExports.hewnGunCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 6.5, .6, 0, 6.75, 0, .5],
@@ -53462,7 +53306,7 @@ defExports.engineer360 = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: []
 };
@@ -53492,7 +53336,7 @@ defExports.boomerEngineer360 = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: []
 };
@@ -53520,7 +53364,7 @@ defExports.gunnerDual = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14, 2, 1, 0, 7.25, 0, .5],
@@ -53578,7 +53422,7 @@ defExports.gunnerPredator = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [12, 3.5, 1, 0, 7.25, 0, .5],
@@ -53657,7 +53501,7 @@ defExports.redistributor = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0],
@@ -53684,7 +53528,7 @@ defExports.redistliner = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         HEALTH: base.HEALTH * 1.1,
         DAMAGE: base.DAMAGE * 1.1
     },
@@ -53804,7 +53648,7 @@ defExports.trueMaster = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     SHAPE: -6,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -53850,7 +53694,7 @@ defExports.bansheeOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -53937,7 +53781,7 @@ defExports.twoHiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 13.5, -1.2, 5, 0, 0, 0],
@@ -53956,7 +53800,7 @@ defExports.megaColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 17.5, 1.2, 0, 0, 0, 0],
@@ -54090,7 +53934,7 @@ defExports.streamstream4 = {
     LABEL: 'Nwefwoid!',
     DANGER: 7,
     BODY: {
-        FOV: 1.5
+        FOV: base.FOV * 1.5
     },
     GUNS: []
 };
@@ -54129,7 +53973,7 @@ defExports.chargerReloader = {
     LABEL: 'Spiraler',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -54159,7 +54003,7 @@ defExports.rocketFalcon = {
         SHIELD: base.SHIELD * .7,
         DENSITY: base.DENSITY * .5,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -54203,7 +54047,7 @@ defExports.masterLightning = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SHAPE: 9,
     MAX_CHILDREN: 10,
@@ -54285,7 +54129,7 @@ defExports.newColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 13.5, -1.2, 5, 0, 0, 0],
@@ -54306,7 +54150,7 @@ defExports.riflePreda = {
     LABEL: 'Grunt',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .7
     },
@@ -54341,7 +54185,7 @@ defExports.streamstream5 = {
     LABEL: 'Twi-Nwefwoid!',
     DANGER: 7,
     BODY: {
-        FOV: 1.5
+        FOV: base.FOV * 1.5
     },
     GUNS: []
 };
@@ -54393,7 +54237,7 @@ defExports.fortressFrigate = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 12, .6, 7, 0, 60, 0],
@@ -54572,7 +54416,7 @@ defExports.machHexaTrap = {
     DANGER: 7,
     SHAPE: 6,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9
     },
@@ -54645,7 +54489,7 @@ defExports.autoMiniSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 13.5, 1.2, 5, 0, 0, 0],
@@ -54696,7 +54540,7 @@ defExports.driveColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     PROPS: [{
         POSITION: [.55, 0, 0, 0, 1],
@@ -54749,7 +54593,7 @@ defExports.miniMiniSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [25, 14, -1.3, 0, 0, 0, 0],
@@ -54778,7 +54622,7 @@ defExports.alterEagle = {
     LABEL: 'Alter Eagle',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: []
 };
@@ -54886,7 +54730,7 @@ defExports.twinStalk = {
     BODY: {
         ACCELERATION: base.ACCEL * .525,
         SPEED: base.SPEED * .825,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -54908,7 +54752,7 @@ defExports.doubleContagion = {
     LABEL: 'Blight',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -55076,7 +54920,7 @@ defExports.arsenalBarricade = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -55119,7 +54963,7 @@ defExports.pentaFrigate = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     FACING_TYPE: 'autospin',
@@ -55168,7 +55012,7 @@ defExports.megaShotgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .925,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 5, 1, 11, -3, 0, 0],
@@ -55245,7 +55089,7 @@ defExports.flooderBarricade = {
     LABEL: 'Cathedral',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .9
     },
@@ -55369,7 +55213,7 @@ defExports.twinMiniSwarm = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 6.75, -1.2, 5, 4, 0, 0],
@@ -55495,7 +55339,7 @@ defExports.splitHiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .725,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [14, 14, -1.2, 5, 0, 0, 0],
@@ -55552,7 +55396,7 @@ defExports.bentMiniSwarm = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .725,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 6.75, -1.2, 5, 2, 22.5, .5],
@@ -55747,7 +55591,7 @@ defExports.skimmerHiveShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 12, -0.5, 12, 0, 0, 0]
@@ -55792,7 +55636,7 @@ defExports.bentFactory = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -55905,7 +55749,7 @@ defExports.carpenter = {
     LABEL: 'Carpenter',
     DANGER: 7,
     BODY: {
-        FOV: .95,
+        FOV: base.FOV * .95,
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .5
     },
@@ -55934,7 +55778,7 @@ defExports.poundNailgun = {
     LABEL: 'Screwgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .775,
         ACCELERATION: base.ACCEL * .8
     },
@@ -55967,7 +55811,7 @@ defExports.assassinSeeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [19, 8, 1, 0, -2, -20, .5],
@@ -56004,7 +55848,7 @@ defExports.blockClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .625,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -56084,7 +55928,7 @@ defExports.bonk2 = {
     DANGER: 7,
     SIZE: 8.25,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.6,
         HEALTH: base.HEALTH * .65,
         DAMAGE: base.DAMAGE * .5,
@@ -56103,7 +55947,7 @@ defExports.teleSmash = {
     LABEL: 'Emitter',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         HEALTH: base.HEALTH * 1.4,
         DAMAGE: base.DAMAGE * .8,
@@ -56161,7 +56005,7 @@ defExports.auger = {
     LABEL: 'Auger',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -56293,7 +56137,7 @@ defExports.battleColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 13.5, -1.2, 5, 0, 0, 0],
@@ -56441,7 +56285,7 @@ defExports.beehive2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [6.6, 2.4, .7, 7, 2.5, 0, 0],
@@ -56513,7 +56357,7 @@ defExports.azgun = {
     LABEL: 'AZ Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -6, -7, .25],
@@ -56583,7 +56427,7 @@ defExports.miniColo = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [25, 14, -1.3, 0, 0, 0, 0],
@@ -56618,7 +56462,7 @@ defExports.nectarine = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 13.5, 1.2, 5, 0, 0, 0],
@@ -56657,7 +56501,7 @@ defExports.beedrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -57022,7 +56866,7 @@ defExports.foghornBuilder = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -57139,7 +56983,7 @@ defExports.shellerAAGun = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -7.5, -5, .25],
@@ -57174,7 +57018,7 @@ defExports.arsenalClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .875,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 4, 1, 0, 0, 0, 0]
@@ -57198,7 +57042,7 @@ defExports.invisColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -57221,7 +57065,7 @@ defExports.invisipistol = {
     LABEL: 'Husher',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.025,
         ACCELERATION: base.ACCEL * .7
     },
@@ -57284,7 +57128,7 @@ defExports.gasser = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 13.5, -1.2, 5, 0, 0, 0],
@@ -57311,7 +57155,7 @@ defExports.hornetHornet = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [6, 13.5, 1.2, 5, 0, 0, 0],
@@ -57355,7 +57199,7 @@ defExports.smasherCeption = makeAuto({
     DANGER: 6,
     SIZE: 16,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 2.575,
         SHIELD: base.SHIELD * 2.2,
@@ -57385,7 +57229,7 @@ defExports.megaSmashCeption = {
     DANGER: 7,
     SIZE: 16,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 4,
         HEALTH: base.HEALTH * 2.575,
@@ -57404,7 +57248,7 @@ defExports.megaSmashCeption = {
     TURRETS: [{
         POSITION: [10, 0, 0, 0, 361, 1],
         TYPE: defExports.megaSmashTurret
-    },],
+    }]
 };
 defExports.minionception = {
     PARENT: [defExports.minion],
@@ -57425,7 +57269,7 @@ defExports.fact360 = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 3,
     GUNS: []
@@ -57460,7 +57304,7 @@ defExports.landmineCeption = makeAuto({
     DANGER: 6,
     SIZE: 16,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 2.8,
         SHIELD: base.SHIELD * 2.2,
@@ -57486,7 +57330,7 @@ defExports.bonkmine = {
     DANGER: 7,
     SIZE: 10.25,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.3,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * .8,
@@ -57559,7 +57403,7 @@ defExports.jumpCeption = makeAuto({
     DANGER: 6,
     SIZE: 16,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 2.8,
@@ -57600,7 +57444,7 @@ defExports.smasherCeption2 = makeAuto({
     DANGER: 6,
     SIZE: 19,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 4.5, // 6.5
@@ -57629,7 +57473,7 @@ defExports.halfhalf = {
     BODY: {
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [13, 6, 1.6, 8, 0, 0, 0],
@@ -57682,7 +57526,7 @@ defExports.basic2 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }]
@@ -57788,7 +57632,7 @@ defExports.trapColonist = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 13.5, -1.2, 5, 0, 0, 0],
@@ -57828,7 +57672,7 @@ defExports.firenado = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 7, 2, 0, 0]
@@ -57847,7 +57691,7 @@ defExports.typhoon = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 7, 2, 0, 0]
@@ -57863,9 +57707,11 @@ defExports.typhoon = {
 };
 defExports.snipemind = makeHivemind(defExports.sniper, 'Snipemind');
 defExports.poundOverdrive = makeHybrid(defExports.pounder, 'drive', {
-    speed: base.SPEED * .975,
-    accel: base.ACCEL * .75,
-    name: 'Poundrive'
+    name: 'Poundrive',
+    body: {
+        speed: base.SPEED * .975,
+        acceleration: base.ACCEL * .75
+    }
 });
 defExports.swagTurret = {
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
@@ -57924,7 +57770,7 @@ defExports.machOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -57961,7 +57807,7 @@ defExports.snipeInferno = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 2, 4, 0, 0]
@@ -57982,7 +57828,7 @@ defExports.huntInferno = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 2, 4, 0, 0]
@@ -58199,7 +58045,7 @@ defExports.minelayer = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -58224,7 +58070,7 @@ defExports.blockLayer = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -58244,7 +58090,7 @@ defExports.constructLayer = {
     BODY: {
         SPEED: base.SPEED * .55,
         ACCELERATION: base.ACCEL * .675,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -58309,7 +58155,7 @@ defExports.driveNado = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 7, 2, 0, 0]
@@ -58393,7 +58239,7 @@ defExports.flareshot = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 6, 1.5, 3, 5, 0, 0]
@@ -58485,7 +58331,7 @@ defExports.goose = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.075
+        FOV: base.FOV * 1.075
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -58571,7 +58417,7 @@ defExports.foghornConstruct = {
     BODY: {
         ACCELERATION: base.ACCEL * .45,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -58595,7 +58441,7 @@ defExports.trapFerreter = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -58662,7 +58508,7 @@ defExports.machGigaTrapper = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14.5, 19.5, 1.1, 0, 0, 0, 0]
@@ -58868,7 +58714,7 @@ defExports.stalkTrapGuard = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -58893,7 +58739,7 @@ defExports.miniTwin = {
     LABEL: 'Twinigun', //Twin Minigun
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -58941,7 +58787,7 @@ defExports.zoomHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .875,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     SCOPED: true,
     GUNS: [{
@@ -58967,7 +58813,7 @@ defExports.zoomPredator = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .825,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SCOPED: true,
     GUNS: [{
@@ -58999,7 +58845,7 @@ defExports.zoomPredator360 = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .825,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SCOPED: true,
     GUNS: []
@@ -59033,7 +58879,7 @@ defExports.infPred = {
     LABEL: 'Infinite Pred',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: []
 };
@@ -59052,7 +58898,7 @@ defExports.zoomSounder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .925,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.swarm,
     SCOPED: true,
@@ -59122,7 +58968,7 @@ defExports.zoomSniperSingle = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SCOPED: true,
     GUNS: [{
@@ -59224,7 +59070,7 @@ defExports.swarmSnipeguard = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -59269,7 +59115,7 @@ defExports.zoomShift = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     SCOPED: true,
     GUNS: [{
@@ -59295,7 +59141,7 @@ defExports.machEngineer2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -59321,7 +59167,7 @@ defExports.zoomStalk = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -59382,7 +59228,7 @@ defExports.turretHivemind = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -60045,7 +59891,7 @@ defExports.zoomCarnivore = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .775,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SCOPED: true,
     GUNS: [{
@@ -60073,7 +59919,7 @@ defExports.zoomOsci = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     SCOPED: true,
     GUNS: [{
@@ -60099,7 +59945,7 @@ defExports.rangerHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     GUNS: [{
         POSITION: [29, 7, 1, 4, 0, 0, 0],
@@ -60127,7 +59973,7 @@ defExports.directorContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -60156,7 +60002,7 @@ defExports.contagionOverseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -60202,7 +60048,7 @@ defExports.contagionOverlord = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -60282,7 +60128,7 @@ defExports.contagionApprentice = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -60324,7 +60170,7 @@ defExports.zoomJumpSmash = {
     LABEL: 'Minefield',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: 1,
         HEALTH: base.HEALTH * 1.4,
@@ -60365,7 +60211,7 @@ defExports.heavyDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 5,
@@ -60407,7 +60253,7 @@ defExports.heatseeker = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 8.5, 1, 0, 0, 0, 0],
@@ -60447,7 +60293,7 @@ defExports.quadHalf = {
     BODY: {
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [9, 10, 1.6, 8, 0, 0, 0],
@@ -60641,7 +60487,7 @@ defExports.swarmShotgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -60862,7 +60708,7 @@ defExports.falcon2 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -60934,7 +60780,7 @@ defExports.swallow2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -61035,7 +60881,7 @@ defExports.raven2 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -61109,7 +60955,7 @@ defExports.hummingbird2 = {
         HEALTH: base.HEALTH * .5,
         SHIELD: base.SHIELD * .5,
         DENSITY: base.DENSITY * .2,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -61564,7 +61410,7 @@ defExports.awp30 = { //AWP-30
         HEALTH: 1750,
         DAMAGE: 6,
         REGEN: base.REGEN * .1,
-        FOV: 2
+        FOV: base.FOV * 2
     },
     FACING_TYPE: 'smoothWithMotion',
     GUNS: [{
@@ -62592,7 +62438,7 @@ defExports.awpsqrt3 = {
         HEALTH: 2000,
         DAMAGE: 6,
         REGEN: base.REGEN * .1,
-        FOV: 1.9
+        FOV: base.FOV * 1.9
     },
     //FACING_TYPE: 'smoothWithMotion',
     GUNS: [{
@@ -62668,7 +62514,7 @@ defExports.dual2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [13.2, 5.3, 1, 0, 5.75, 0, 0],
@@ -62751,9 +62597,11 @@ defExports.dual2 = {
     }]
 };
 defExports.underSniper = makeHybrid(defExports.sniper, 'under', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.woodpeck2 = {
     PARENT: [defExports.genericTank],
@@ -62832,7 +62680,7 @@ defExports.apprenticeTrapper = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -62878,7 +62726,7 @@ defExports.navyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -62938,7 +62786,7 @@ defExports.flankNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -62967,7 +62815,7 @@ defExports.paratrooper = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 7,
@@ -63004,7 +62852,7 @@ defExports.guerrilla = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 7,
@@ -63110,7 +62958,7 @@ defExports.flankParatrooper = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -63169,7 +63017,7 @@ defExports.necroBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -63323,7 +63171,7 @@ defExports.awp39 = {
     SHAPE: 4,
     COLOR: 13,
     SIZE: 30,
-    FOV: 6,
+    BODY: { FOV: 6 },
     FACING_TYPE: 'smoothWithMotion',
     TURRETS: [{
         POSITION: [13, 32, 0, 0, 160, 0],
@@ -63431,7 +63279,7 @@ defExports.piston = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -63490,7 +63338,7 @@ defExports.fastNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -63529,7 +63377,7 @@ defExports.fasterNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -63608,7 +63456,7 @@ defExports.rotary = {
     LABEL: 'Rotary',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .95
     },
     GUNS: [{
@@ -63695,7 +63543,7 @@ defExports.miniTrebuchet = {
     LABEL: 'Catapult',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 6, -1.4, 9, 0, 0, 0]
@@ -63769,7 +63617,7 @@ defExports.inventory = {
     LABEL: 'Inventory',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 6, -1.4, 9, 0, 0, 0]
@@ -63789,7 +63637,7 @@ defExports.thiccRanger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 3
+        FOV: base.FOV * 3
     },
     GUNS: [{
         POSITION: [256, 8.5, 1, 0, 0, 0, 0],
@@ -63806,7 +63654,7 @@ defExports.twinLauncher = {
     LABEL: 'Ejector',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -63963,7 +63811,7 @@ defExports.artilleryShotgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -6, -7, .25],
@@ -64080,7 +63928,7 @@ defExports.driveBuckshot = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -64145,7 +63993,7 @@ defExports.homingMachshot = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -64203,7 +64051,7 @@ defExports.blockMusket = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -64297,7 +64145,7 @@ defExports.snipeBuilder3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     FACING_TYPE: 'autospin',
@@ -64492,7 +64340,7 @@ defExports.littleHunter = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [23, 5, 1, 0, 0, 0, 0],
@@ -64513,7 +64361,7 @@ defExports.miniGrower = {
     LABEL: 'Mini Grower',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [22, 9, 1, 0, 0, 0, 0],
@@ -64534,7 +64382,7 @@ defExports.switcheroo1 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }]
@@ -64619,7 +64467,7 @@ defExports.gatlingWoodpeck = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [16, 10, 1.4, 8, 0, 0, 0],
@@ -64759,7 +64607,7 @@ defExports.streamLaser = {
     LABEL: 'Lightsaber',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -65112,7 +64960,7 @@ defExports.assassinSounder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -65138,7 +64986,7 @@ defExports.cartographer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 16,
@@ -65209,7 +65057,7 @@ defExports.triFlankTrap = {
     LABEL: 'Hexidecimator',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -65264,7 +65112,7 @@ defExports.bigStreamstream = {
     LABEL: 'Thiccwinder',
     DANGER: 7,
     BODY: {
-        FOV: 2.5
+        FOV: base.FOV * 2.5
     },
     GUNS: []
 };
@@ -65326,7 +65174,7 @@ defExports.invisHivemind = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -65432,7 +65280,7 @@ defExports.ubercharge = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 8.5, 1, 0, 0, 0, 0],
@@ -65459,7 +65307,7 @@ defExports.poundUbercharge = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 11.5, 1, 0, 0, 0, 0],
@@ -66144,7 +65992,7 @@ defExports.poundHeatseeker = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 11.5, 1, 0, 0, 0, 0],
@@ -66182,7 +66030,7 @@ defExports.heatRocketeer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [16.5, 11.5, -1.5, 0, 0, 0, 0]
@@ -66228,7 +66076,7 @@ defExports.pulsar = {
     SHAPE: 102,
     COLOR: 4,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -66275,7 +66123,7 @@ defExports.aquamarine = {
     SHAPE: 103,
     COLOR: 0,
     BODY: {
-        FOV: .95,
+        FOV: base.FOV * .95,
         HEALTH: 2500,
         DAMAGE: base.DAMAGE * 1.2,
         REGEN: base.REGEN * .5,
@@ -66396,7 +66244,7 @@ defExports.sounderCarrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .9,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -66428,7 +66276,7 @@ defExports.fastEngineer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -66627,7 +66475,7 @@ defExports.sandCart = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -66656,7 +66504,7 @@ defExports.fasterMegaSmash = {
     LABEL: 'Nautica',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.3,
         DENSITY: base.DENSITY * 1.85,
         HEALTH: base.HEALTH * 1.4,
@@ -66677,7 +66525,7 @@ defExports.bufferer = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .7,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [20, 7, 1.25, 0, 0, 0, 0],
@@ -66737,7 +66585,7 @@ defExports.harrower = {
     LABEL: 'Harrower',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -67178,7 +67026,7 @@ defExports.kamikazeCrasherLite = {
     TURRETS: [{
         POSITION: [5, 6, 0, 180, 270, 0],
         TYPE: defExports.morningArmA
-    },],
+    }]
 };
 defExports.heavyMachSentry = {
     PARENT: [defExports.turretParent],
@@ -67196,7 +67044,7 @@ defExports.flashSentry = {
     COLOR: 0,
     SHAPE: 106,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         ACCELERATION: base.ACCEL * 1.1
     },
@@ -67214,7 +67062,7 @@ defExports.flashGunnerSentry = {
     COLOR: 234,
     SHAPE: 106,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         ACCELERATION: base.ACCEL * 1.1
     },
@@ -67526,7 +67374,7 @@ defExports.flashSentryAI = { // AI
     SKILL: setSkill(7, 0, 5, 4, 4, 4, 8, 5, 3, 0),
     VALUE: 4000,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         ACCELERATION: .8,
         DAMAGE: base.DAMAGE * 1.5,
         HEALTH: base.HEALTH * 2,
@@ -67553,7 +67401,7 @@ defExports.flashGunnerAI = { // AI
     SKILL: setSkill(7, 0, 5, 4, 4, 4, 8, 5, 3, 0),
     VALUE: 40000,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         ACCELERATION: .8,
         DAMAGE: base.DAMAGE * 1.5,
         HEALTH: base.HEALTH * 2,
@@ -67594,7 +67442,7 @@ defExports.semiCrushSentryAI = {
     SKILL: setSkill(7, 5, 6, 5, 6, 6, 7, 0, 6, 0),
     VALUE: 6000,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         ACCELERATION: .5,
         DAMAGE: base.DAMAGE * 2,
         HEALTH: base.HEALTH * 3,
@@ -67630,7 +67478,7 @@ defExports.crushSentryAI = makeAuto({
     SKILL: setSkill(7, 5, 6, 5, 6, 7, 7, 0, 6, 0),
     VALUE: 8000,
     BODY: {
-        FOV: .5,
+        FOV: base.FOV * .5,
         ACCELERATION: .4,
         DAMAGE: base.DAMAGE * 2,
         HEALTH: base.HEALTH * 3.5,
@@ -67660,7 +67508,7 @@ defExports.bladeSentryAI = {
     VALUE: 5000,
     FACING_TYPE: 'autospin',
     BODY: {
-        FOV: .6,
+        FOV: base.FOV * .6,
         ACCELERATION: .75,
         DAMAGE: base.DAMAGE * 1.6,
         HEALTH: base.HEALTH * 2,
@@ -68334,7 +68182,7 @@ defExports.messenger = {
     SHAPE: 111,
     COLOR: 4,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 900,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -68387,7 +68235,7 @@ defExports.icemessengerStreamTurret = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1, 0.5);
                 }
-            },],
+            }]
         }
     }, {
         POSITION: [13, 8, 1, 10, 0, 0, .2],
@@ -68397,7 +68245,7 @@ defExports.icemessengerStreamTurret = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1, 0.5);
                 }
-            },],
+            }]
         }
     }, {
         POSITION: [13, 8, 1, 8, 0, 0, .4],
@@ -68407,7 +68255,7 @@ defExports.icemessengerStreamTurret = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1, 0.5);
                 }
-            },],
+            }]
         }
     }, {
         POSITION: [13, 8, 1, 6, 0, 0, .6],
@@ -68417,7 +68265,7 @@ defExports.icemessengerStreamTurret = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1, 0.5);
                 }
-            },],
+            }]
         }
     }, {
         POSITION: [13, 8, 1, 4, 0, 0, .8],
@@ -68427,7 +68275,7 @@ defExports.icemessengerStreamTurret = {
                 ON_DEALT_DAMAGE: (me, them) => {
                     ice(them, 1, 0.5);
                 }
-            },],
+            }]
         }
     }, {
         POSITION: [6.5, 11, -1.6, 4.9, 0, 0, 0]
@@ -68441,7 +68289,7 @@ defExports.icemessenger = {
     SHAPE: 111,
     COLOR: 217,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 900,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -68683,7 +68531,7 @@ defExports.heron = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [20, 10.5, 1, 0, 0, 0, 0]
@@ -68760,7 +68608,7 @@ defExports.snipeConstruct = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .675,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -68780,7 +68628,7 @@ defExports.streamHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .625,
         SPEED: base.SPEED * .825,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [19, 6, 1, 12, 0, 0, 0],
@@ -68875,7 +68723,7 @@ defExports.machConstruct = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .675,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -68895,7 +68743,7 @@ defExports.machBuilder3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.block,
     FACING_TYPE: 'autospin',
@@ -68917,7 +68765,7 @@ defExports.heavyNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -69105,7 +68953,7 @@ defExports.spiker = {
     LABEL: 'Spiker',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     STAT_NAMES: statNames.trap,
@@ -69173,7 +69021,7 @@ defExports.tripleShotSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, -2, -19.5, .5],
@@ -69202,7 +69050,7 @@ defExports.flankBentSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, -2, -19.5, .5],
@@ -69249,7 +69097,7 @@ defExports.bentAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [23, 8, 1, 0, -1.75, -18, .5],
@@ -69286,7 +69134,7 @@ defExports.pentaSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .45,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, -3, -30, 2 / 3],
@@ -69402,7 +69250,7 @@ defExports.sniperNest = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -69425,7 +69273,7 @@ defExports.gradation2 = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gravity Well',
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     //CONTROLLERS: ['nearestDifferentMaster'],
     GUNS: [{
@@ -69626,7 +69474,7 @@ defExports.trapeFighter = {
     SHAPE: 115,
     COLOR: 216,
     BODY: {
-        FOV: 1.5,
+        FOV: base.FOV * 1.5,
         HEALTH: 1000,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -69698,7 +69546,7 @@ defExports.visUltima = {
     COLOR: 11,
     INVISIBLE: [.08, .03, .02],
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 1500,
         REGEN: base.REGEN * .25,
         SPEED: base.SPEED * .3,
@@ -69751,7 +69599,7 @@ defExports.spawnerContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -69783,7 +69631,7 @@ defExports.factoryContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .775,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -69815,7 +69663,7 @@ defExports.gatling3 = { // makeAuto3
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -69856,7 +69704,7 @@ defExports.clicker3 = { // makeAuto3
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -69876,7 +69724,7 @@ defExports.longSniperRifle = {
     LABEL: 'Savage',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -70037,7 +69885,7 @@ defExports.blockSpreadling = {
     LABEL: 'Firebrand',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95
     },
     GUNS: [{
@@ -70189,7 +70037,7 @@ defExports.bigUnderseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 4,
@@ -70221,7 +70069,7 @@ defExports.longPebbler = {
     LABEL: 'Ark',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .9
     },
@@ -70387,66 +70235,12 @@ defExports.bulwarkSword = {
         }
     }]
 };
-defExports.fallenPiston = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Fallen Piston',
-    DANGER: 8,
-    SIZE: 22,
-    COLOR: 18,
-    BODY: {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.32,
-        FOV: 1.1,
-        HEALTH: 1000
-    },
-    GUNS: [{
-        POSITION: [7, 7.5, .6, 7, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.double_reload, g.half_reload]),
-            TYPE: [defExports.swarm, {
-                CONTROLLERS: ['canRepel']
-            }],
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 5, 5, 205, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.half_reload]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [7, 7.5, .6, 5, -5, -205, .5],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.battle, g.carrier, g.half_reload]),
-            TYPE: defExports.autoSwarm,
-            STAT_CALCULATOR: gunCalcNames.swarm
-        }
-    }, {
-        POSITION: [14, 9, 1, 0, 0, 180, 0]
-    }, {
-        POSITION: [4, 9, 1.5, 14, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.half_range, g.slow, g.half_reload]),
-            TYPE: defExports.trap,
-            STAT_CALCULATOR: gunCalcNames.trap
-        }
-    }]
-};
-defExports.fallenPistonAI = {
-    PARENT: [defExports.fallenPiston],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A Fallen Piston has been defeated!'
-};
+defExports.fallenPiston = makeFallen(defExports.piston, { body: { fov: base.FOV * 1.35 }});
+defExports.fallenPistonAI = makeBossAI(defExports.fallenPiston, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.gigaHunter = {
     PARENT: [defExports.genericTank],
     LABEL: 'Giga Hunt',
@@ -70454,7 +70248,7 @@ defExports.gigaHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [28, 2, 1, 0, 0, 0, 0],
@@ -70701,7 +70495,7 @@ defExports.destroyerShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.3,
-        FOV: .9,
+        FOV: base.FOV * .9,
         HEALTH: 2500
     },
     STAT_NAMES: statNames.generic,
@@ -70897,7 +70691,7 @@ defExports.crow = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 0, 0, 0],
@@ -71128,7 +70922,7 @@ defExports.swarmNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -71160,7 +70954,7 @@ defExports.blunderbuss = {
     PARENT: [defExports.genericTank],
     LABEL: 'Blunderbuss',
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -71242,7 +71036,7 @@ defExports.megaRifleClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [17, 9, 1, 5, 0, 0, 0]
@@ -71262,7 +71056,7 @@ defExports.heavierRifle = {
     LABEL: 'Caricaturist',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -71280,7 +71074,7 @@ defExports.bentRifle = {
     LABEL: 'Bent Rifle',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .65
     },
@@ -71335,7 +71129,7 @@ defExports.bentMini = {
     LABEL: 'Emissary',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -71550,7 +71344,7 @@ defExports.frigateShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: 1.45,
-        FOV: .85,
+        FOV: base.FOV * .85,
         HEALTH: 1750
     },
     STAT_NAMES: statNames.generic,
@@ -71643,7 +71437,7 @@ defExports.colony = {
     SHAPE: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 6, 1.2, 8, 0, 0, 0],
@@ -71719,7 +71513,7 @@ defExports.citadel = makeAuto({
     SHAPE: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -71800,7 +71594,7 @@ defExports.rifle3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -71819,7 +71613,7 @@ defExports.borerSail = {
     LABEL: 'Canoe',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -71970,7 +71764,7 @@ defExports.swarmMortar = {
     LABEL: 'Pillager',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .7
     },
@@ -71978,25 +71772,29 @@ defExports.swarmMortar = {
         POSITION: [16, 6, -1.4, 0, 5.8, 10, .6],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.twin]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [16, 6, -1.4, 0, -5.8, -10, .8],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.twin]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [17, 6, -1.4, 0, -5.8, 0, .2],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.twin]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [17, 6, -1.4, 0, 5.8, 0, .4],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.arty, g.bit_slow, g.twin]),
-            TYPE: defExports.swarm
+            TYPE: defExports.swarm,
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [19, 12, 1, 0, 0, 0, 0],
@@ -72014,7 +71812,7 @@ defExports.sounderBattle = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -72267,7 +72065,7 @@ defExports.doubleBuilderOld = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -72335,7 +72133,7 @@ defExports.flashbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0]
@@ -72365,7 +72163,7 @@ defExports.bentBuilderOld = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -72399,7 +72197,7 @@ defExports.laserFlooder = {
     LABEL: 'Orion',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .9
     },
@@ -72564,7 +72362,7 @@ defExports.twinOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -72602,7 +72400,7 @@ defExports.shortRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [24, 1.8, 1.01, 0, 5, 0, 0]
@@ -72650,7 +72448,7 @@ defExports.bentSwarmTrapper = {
     LABEL: 'Carafe',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -72712,7 +72510,7 @@ defExports.swarmCarnivore = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [26, 7, 1, 4, 0, 0, 0],
@@ -72742,7 +72540,7 @@ defExports.trapperSniperRifle = {
     LABEL: 'Wildcat',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -72796,7 +72594,7 @@ defExports.longRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .825,
-        FOV: 1.425
+        FOV: base.FOV * 1.425
     },
     GUNS: [{
         POSITION: [39, 1.8, 1.01, 0, 5, 0, 0]
@@ -72866,7 +72664,7 @@ defExports.megaRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     DANGER: 7,
     GUNS: [{
@@ -72980,7 +72778,7 @@ defExports.twinGatling = {
     LABEL: 'Twin Gatling',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -73025,7 +72823,7 @@ defExports.bentGatling = {
     LABEL: 'Bent Gatling',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8
     },
@@ -73054,7 +72852,7 @@ defExports.twinArsenal = {
     LABEL: 'Twin Arsenal',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .8
     },
@@ -73092,7 +72890,7 @@ defExports.zoomRanger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .775,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     SCOPED: true,
     GUNS: [{
@@ -73110,7 +72908,7 @@ defExports.twinLaser = {
     LABEL: 'Twin Laser',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9
     },
@@ -73167,7 +72965,7 @@ defExports.twinFastGatling = {
     LABEL: 'Twin Chain',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .7
     },
@@ -73190,7 +72988,7 @@ defExports.hotshotArtillery = {
     LABEL: 'Battalion',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .85
     },
@@ -73236,7 +73034,7 @@ defExports.twinStream = {
     LABEL: 'Twinliner',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -73352,7 +73150,7 @@ defExports.megaPlow = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12, 12, 1.7, 13.4, 0, 0, 0],
@@ -73925,7 +73723,7 @@ defExports.newSpider = {
     LABEL: 'Spider',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -74004,7 +73802,7 @@ defExports.obliteratorInsect = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -74224,7 +74022,7 @@ defExports.hexagonBoss = {
     COLOR: 21,
     SIZE: 44,
     BODY: {
-        FOV: .65,
+        FOV: base.FOV * .65,
         SPEED: 1.2,
         ACCELERATION: base.ACCEL * .4,
         HEALTH: 1250,
@@ -74348,7 +74146,7 @@ defExports.stinger = {
     DANGER: 5,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     SHAPE: 6,
     STAT_NAMES: statNames.generic,
@@ -74652,7 +74450,7 @@ defExports.moderator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     INVISIBLE: [.08, .03, .02],
@@ -74726,7 +74524,7 @@ defExports.fatBumper = {
     LABEL: 'Pumper',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .8
     },
@@ -74750,9 +74548,7 @@ defExports.trapGrenade = {
     },
     FACING_TYPE: 'turnWithSpeed',
     INDEPENDENT: true,
-    AI: {
-        NO_LEAD: true
-    },
+    AI: { NO_LEAD: true },
     GUNS: [{
         POSITION: [7, 9.5, .6, 8, 0, 0, 0]
     }, {
@@ -75066,7 +74862,7 @@ defExports.heptagonBoss = {
     COLOR: 38,
     SIZE: 48,
     BODY: {
-        FOV: .7,
+        FOV: base.FOV * .7,
         SPEED: 1.18,
         ACCELERATION: base.ACCEL * .4,
         HEALTH: 1500,
@@ -75186,7 +74982,7 @@ defExports.laserTwister = {
     LABEL: 'Flask', //Sock
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .9
     },
@@ -75207,7 +75003,7 @@ defExports.growingRoadblock = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -75238,7 +75034,7 @@ defExports.accelRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: [{
@@ -75451,7 +75247,7 @@ defExports.spawnerOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -75497,7 +75293,7 @@ defExports.poundNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .725,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -75519,7 +75315,7 @@ defExports.miniMini = {
     LABEL: 'Uzi',
     DANGER: 5,
     BODY: {
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     GUNS: [{
         POSITION: [19, 8, 1, 0, 0, 0, 0],
@@ -75543,7 +75339,7 @@ defExports.boosterDiver = {
         HEALTH: base.HEALTH * .6,
         SHIELD: base.SHIELD * .5,
         DENSITY: base.DENSITY * .2,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [19, 5.5, 1, 0, 0, 0, .5],
@@ -75599,7 +75395,7 @@ defExports.buildDiver = {
         HEALTH: base.HEALTH * .8,
         SHIELD: base.SHIELD * .8,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -75642,7 +75438,7 @@ defExports.assult = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -75687,7 +75483,7 @@ defExports.bentLauncher = {
     LABEL: 'Bent Launcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -76056,7 +75852,7 @@ defExports.hexashipThing = {
     LABEL: 'Tetraplex',
     DANGER: 8,
     BODY: {
-        FOV: .65,
+        FOV: base.FOV * .65,
         SPEED: 1.08,
         ACCELERATION: base.ACCEL * .3,
         HEALTH: 2000,
@@ -76311,7 +76107,7 @@ defExports.trapper3 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.075
+        FOV: base.FOV * 1.075
     },
     STAT_NAMES: statNames.trap,
     FACING_TYPE: 'autospin',
@@ -76375,7 +76171,7 @@ defExports.varpDrone = {
             SHOOT_SETTINGS: combineStats([g.drone, g.over]),
             TYPE: [defExports.drone, {
                 HITS_OWN_TYPE: 'never',
-            },],
+            }],
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -76525,101 +76321,101 @@ defExports.colossusBoss = {
         TYPE: defExports.colossusStream,
     }, {
         POSITION: [1, 5.8, 3.8, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 2.7, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 1.6, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 0.5, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -0.6, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -1.7, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -2.8, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -3.9, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -5, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -6.1, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -7.2, -74, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -3.8, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -2.7, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -1.6, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, -0.5, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 0.6, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 1.7, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 2.8, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 3.9, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 5, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 6.1, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 5.8, 7.2, 72, 170, 0],
-        TYPE: [defExports.sniper3gun, { COLOR: 14, },],
+        TYPE: [defExports.sniper3gun, { COLOR: 14, }]
     }, {
         POSITION: [1, 6.8, 3.25, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
+        }]
     }, {
         POSITION: [1, 7.7, 2.25, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
+        }]
     }, {
         POSITION: [1, 8.6, 1.25, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
+        }]
     }, {
         POSITION: [1, 6.8, -3.55, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
+        }]
     }, {
         POSITION: [1, 7.7, -2.55, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
+        }]
     }, {
         POSITION: [1, 8.6, -1.55, 0, 190, 0],
         TYPE: [defExports.destroyerAutoGunL, {
             COLOR: 14,
-        },],
-    },],
+        }]
+    }]
 };
 /*case "mortar": { // Extremely old Mortar code
     if (UPDATE) {
@@ -76818,7 +76614,7 @@ defExports.accelMini = {
     LABEL: 'Rainmaker',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -76985,7 +76781,7 @@ defExports.doubleGatling = {
     LABEL: 'Double Gatling',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -77054,7 +76850,7 @@ defExports.accelStream = {
     LABEL: 'Showerer',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8
     },
@@ -77160,7 +76956,7 @@ defExports.accelAutoMaton = {
     LABEL: 'Automobile',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -77522,7 +77318,7 @@ defExports.megaColony = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -77622,7 +77418,7 @@ defExports.invisBasher = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .775,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     INVISIBLE: [.08, .02, .02],
     GUNS: [{
@@ -77655,7 +77451,7 @@ defExports.clickerMotolov = {
     LABEL: 'Cauldron',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 5, -0.5, 9, 0, 0, 0]
@@ -77678,7 +77474,7 @@ defExports.twinHotshot = {
     LABEL: 'Twin Hotshot', //Twin Lack of Cool Shot
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 10, 1, 6, 6.5, 0, 0],
@@ -77728,7 +77524,7 @@ defExports.invisiOsci = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .725,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     INVISIBLE: [.08, .02, .02],
     GUNS: [{
@@ -77759,7 +77555,7 @@ defExports.trapper5 = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.075
+        FOV: base.FOV * 1.075
     },
     STAT_NAMES: statNames.trap,
     FACING_TYPE: 'autospin',
@@ -77799,7 +77595,7 @@ defExports.triBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -77841,7 +77637,7 @@ defExports.flankBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -77869,7 +77665,7 @@ defExports.megaBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -77893,7 +77689,7 @@ defExports.grower = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [22, 9, 1, 0, 0, 0, 0],
@@ -77917,7 +77713,7 @@ defExports.megaGrower = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [22, 9, 1, 0, 0, 0, 0],
@@ -77943,7 +77739,7 @@ defExports.gigaGrower = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .85,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [22, 9, 1, 0, 0, 0, 0],
@@ -77971,7 +77767,7 @@ defExports.triEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -78025,7 +77821,7 @@ defExports.moreZoomHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     SCOPED: true,
     GUNS: [{
@@ -78086,7 +77882,7 @@ defExports.directdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -78112,7 +77908,7 @@ defExports.singleTrapper = {
     LABEL: 'Bombardmentor',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     SCOPED: true,
@@ -78136,7 +77932,7 @@ defExports.contagionAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -78191,7 +77987,7 @@ defExports.heavyTwinSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.5, 10, 1, 6, 6.5, 0, 0],
@@ -78216,7 +78012,7 @@ defExports.pentaCarrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -78263,7 +78059,7 @@ defExports.array = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [17.25, 8.5, 1, 0, 5, 35, 0]
@@ -78304,7 +78100,7 @@ defExports.railgun2 = {
     LABEL: 'Railgun MK-II',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .75
     },
@@ -78414,7 +78210,7 @@ defExports.megaTrapper3 = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.075
+        FOV: base.FOV * 1.075
     },
     STAT_NAMES: statNames.trap,
     FACING_TYPE: 'autospin',
@@ -78436,7 +78232,7 @@ defExports.trapperSwivel3 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.075
+        FOV: base.FOV * 1.075
     },
     STAT_NAMES: statNames.trap,
     FACING_TYPE: 'autospin',
@@ -78514,7 +78310,7 @@ defExports.heavyDoubleSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.5, 10, 1, 6, 6.5, 0, 0],
@@ -78553,7 +78349,7 @@ defExports.flankConstruct = {
     BODY: {
         SPEED: base.SPEED * .7,
         ACCELERATION: base.ACCEL * .5,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -78605,7 +78401,7 @@ defExports.hotshotAutoMaton = {
     LABEL: 'Megamaton',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -78722,7 +78518,7 @@ defExports.triMegaTrapper = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -78760,7 +78556,7 @@ defExports.navigator = {
     BODY: {
         SPEED: base.SPEED * 1.5,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -78796,7 +78592,7 @@ defExports.assessor = {
     BODY: {
         SPEED: base.SPEED * 1.5,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -79072,7 +78868,7 @@ defExports.doubleRifle = {
     LABEL: 'Anlace',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .65
     },
@@ -79400,7 +79196,7 @@ defExports.dagger = {
     BODY: {
         SPEED: base.SPEED * 1.65,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: base.HEALTH * .7
     },
     PROPS: [{
@@ -79441,7 +79237,7 @@ defExports.variblade = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * 1.3,
-        FOV: 1.265,
+        FOV: base.FOV * 1.265,
         HEALTH: base.HEALTH * .7
     },
     SIZE: 7,
@@ -79495,7 +79291,7 @@ defExports.goblin = {
     SIZE: 9,
     BODY: {
         SPEED: base.SPEED * 1.75,
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         ACCELERATION: base.ACCEL * .7,
         HEALTH: base.HEALTH * .66
     },
@@ -79539,7 +79335,7 @@ defExports.pinTank = {
     BODY: {
         SPEED: base.SPEED * 1.65,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         HEALTH: base.HEALTH * .4
     },
     PROPS: [{
@@ -79933,7 +79729,7 @@ defExports.dirigiblebutDrone = {
             TYPE: defExports.bullet,
             STAT_CALCULATOR: gunCalcNames.thruster
         }
-    },],
+    }]
 };
 defExports.jetDrone = {
     PARENT: [defExports.blimp],
@@ -79967,7 +79763,7 @@ defExports.jetDrone = {
             TYPE: defExports.bullet,
             STAT_CALCULATOR: gunCalcNames.thruster
         }
-    },],
+    }]
 };
 defExports.submarineDrone = {
     PARENT: [defExports.blimp],
@@ -79986,7 +79782,7 @@ defExports.aShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -80011,7 +79807,7 @@ defExports.ufo = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 6,
     STAT_NAMES: statNames.minion,
@@ -80036,7 +79832,7 @@ defExports.squadron = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     GUNS: [{
@@ -80065,7 +79861,7 @@ defExports.squadron = {
             TYPE: defExports.bullet,
             STAT_CALCULATOR: gunCalcNames.thruster
         }
-    },],
+    }]
 };
 defExports.aeroship = {
     PARENT: [defExports.genericTank],
@@ -80074,7 +79870,7 @@ defExports.aeroship = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 6,
@@ -80098,7 +79894,7 @@ defExports.spyship = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -80122,7 +79918,7 @@ defExports.hangar = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -80139,7 +79935,7 @@ defExports.hangar = {
             AUTOFIRE: true,
             SYNCS_SKILLS: true
         }
-    },],
+    }]
 };
 defExports.fightship = {
     PARENT: [defExports.genericTank],
@@ -80148,7 +79944,7 @@ defExports.fightship = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -80165,7 +79961,7 @@ defExports.fightship = {
         }
     }, {
         POSITION: [18, 7, 0.01, 0, 0, 0, 0]
-    },],
+    }]
 };
 defExports.presenter = {
     PARENT: [defExports.genericTank],
@@ -80174,7 +79970,7 @@ defExports.presenter = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 4,
@@ -80191,7 +79987,7 @@ defExports.presenter = {
         }
     }, {
         POSITION: [11, 17, 1, 0, 0, 0, 0],
-    },],
+    }]
 };
 defExports.avantgarde = {
     PARENT: [defExports.genericTank],
@@ -80333,7 +80129,7 @@ defExports.assegai = {
     BODY: {
         SPEED: base.SPEED * 1.5,
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -80529,7 +80325,7 @@ defExports.sinxinator = {
         POSITION: [1.2, 0, 0, 0, 0],
         SHAPE: -9,
         COLOR: 9,
-    },],
+    }],
     TURRETS: [{
         POSITION: [29, 0, 0, 0, 360, 1],
         TYPE: defExports.teleprop
@@ -80595,7 +80391,7 @@ defExports.half2 = {
     LABEL: "Half N' Half",
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -80668,7 +80464,7 @@ defExports.hexaBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .725,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -80730,7 +80526,7 @@ defExports.twinOsci = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 14, 1.25, 10, 0, 0, 0]
@@ -80948,7 +80744,7 @@ defExports.sniperInsect = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -81076,7 +80872,7 @@ defExports.flooderSilo = {
     LABEL: 'Swamper',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -81285,7 +81081,7 @@ defExports.schoolShooter = {
     LABEL: 'AK-47',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SHAPE: 202,
     COLOR: 16,
@@ -81314,7 +81110,7 @@ defExports.basicAkShooter = {
     LABEL: 'School Shooter', //Guy With an AK-47
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -81365,7 +81161,7 @@ defExports.schoolPistol = {
     LABEL: 'Pistol',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SHAPE: 212,
     COLOR: 16,
@@ -81394,7 +81190,7 @@ defExports.basicShooterPistol = {
     LABEL: 'Guy With a Pistol',
     DANGER: 7,
     BODY: {
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -81475,7 +81271,7 @@ defExports.trapInsect = {
     BODY: {
         ACCELERATION: base.ACCEL * .95,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -81550,7 +81346,7 @@ defExports.megaTrapInsect = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -81649,7 +81445,7 @@ defExports.trapbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 6.75, 1, 0, 0, 0, 0]
@@ -81690,7 +81486,7 @@ defExports.schoolSniper = {
     LABEL: 'CZ-557',
     DANGER: 7,
     BODY: {
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     CAMERA_TO_MOUSE: [true, 4.5],
     SHAPE: 221,
@@ -81724,7 +81520,7 @@ defExports.basicShooterSniper = {
     LABEL: 'Guy With a CZ-557',
     DANGER: 7,
     BODY: {
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     CAMERA_TO_MOUSE: [true, 4.5],
     GUNS: [{
@@ -82149,7 +81945,7 @@ defExports.ship23 = {
     SHAPE: 206,
     SIZE: 90,
     BODY: {
-        FOV: .6,
+        FOV: base.FOV * .6,
         SPEED: 1.05,
         ACCELERATION: base.ACCEL * .3,
         HEALTH: 2000,
@@ -82294,7 +82090,7 @@ defExports.schoolShotgun = {
     LABEL: 'Shotgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SHAPE: 225,
     COLOR: 16,
@@ -82407,7 +82203,7 @@ defExports.basicShooterShotgun = {
     LABEL: 'Guy With a Shotgun', //Willy the Crazy Farmer
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -82426,7 +82222,7 @@ defExports.hewnGuntrap = {
     LABEL: 'Banderilla',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -82472,7 +82268,7 @@ defExports.arsenalGuntrap = {
     LABEL: 'Gunner Arsenal',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -82511,7 +82307,7 @@ defExports.gunbuilder = {
     LABEL: 'Gunner Builder',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .7
     },
@@ -82580,7 +82376,7 @@ defExports.grenadeThrower = {
     LABEL: 'Guy With a Grenade',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -82614,7 +82410,7 @@ defExports.donjon = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [],
     TURRETS: [{
@@ -82721,7 +82517,7 @@ defExports.rocketLauncher = {
     LABEL: 'RPG', //Rocket Launcher
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SHAPE: 227,
     COLOR: 16,
@@ -82754,7 +82550,7 @@ defExports.basicRocketLauncher = {
     LABEL: 'Guy With an RPG',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -82773,7 +82569,7 @@ defExports.accelLaser = {
     LABEL: 'Beacon',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -82825,7 +82621,7 @@ defExports.twinRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [35, 1.8, 1.01, 0, 9, 0, 0]
@@ -83038,7 +82834,7 @@ defExports.nukeShooter = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [21, 4.5, 1, 0, 0, 0, 0],
@@ -83120,7 +82916,7 @@ defExports.autoTank = {
     LABEL: 'Auto Tank',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     TURRETS: [{
@@ -83157,7 +82953,7 @@ defExports.hopTank = {
         }
     }],
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05,
         SHIELD: base.SHIELD * 0.85
     },
@@ -83183,7 +82979,7 @@ defExports.maresLegRifle = {
     LABEL: "Mare's Leg",
     DANGER: 7,
     BODY: {
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     CAMERA_TO_MOUSE: [true, 4.75],
     SHAPE: 228,
@@ -83201,7 +82997,7 @@ defExports.magnumRifle = {
     LABEL: 'Magnum',
     DANGER: 7,
     BODY: {
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     CAMERA_TO_MOUSE: [true, 3.75],
     SHAPE: 229,
@@ -83219,7 +83015,7 @@ defExports.sawedShotgun = {
     LABEL: 'Sawed-Off Shotgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.185
+        FOV: base.FOV * 1.185
     },
     SHAPE: 233,
     COLOR: 16,
@@ -83279,54 +83075,12 @@ defExports.sawedShotgun = {
         }
     }]
 };
-defExports.fallenAutoTank = {
-    PARENT: [defExports.genericTank],
-    LABEL: 'Fallen Auto Tank',
-    DANGER: 8,
-    SIZE: 23,
-    COLOR: 18,
-    BODY: {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.325,
-        FOV: 1.1,
-        HEALTH: 1250
-    },
-    TURRETS: [{
-        POSITION: [10, 8, 0, 0, 190, 0],
-        TYPE: [defExports.auto3gun, {
-            INDEPENDENT: true
-        }]
-    }, {
-        POSITION: [10, 8, 0, 90, 190, 0],
-        TYPE: [defExports.auto3gun, {
-            INDEPENDENT: true
-        }]
-    }, {
-        POSITION: [10, 8, 0, 180, 190, 0],
-        TYPE: [defExports.auto3gun, {
-            INDEPENDENT: true
-        }]
-    }, {
-        POSITION: [10, 8, 0, 270, 190, 0],
-        TYPE: [defExports.auto3gun, {
-            INDEPENDENT: true
-        }]
-    }]
-};
-defExports.fallenAutoTankAI = {
-    PARENT: [defExports.fallenAutoTank],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 9, 9, 9, 9, 9, 2, 0, 0),
-    BROADCAST_MESSAGE: 'A Fallen Auto Tank has been defeated!'
-};
+defExports.fallenAutoTank = makeFallen(defExports.autoTank);
+defExports.fallenAutoTankAI = makeBossAI(defExports.fallenAutoTank, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.maresLegRifleAutoGun = {
     LABEL: "Mare's Leg",
     BODY: {
@@ -83348,7 +83102,7 @@ defExports.basicShooterMaresLegRifle = {
     LABEL: "Guy With a Mare's Leg",
     DANGER: 7,
     BODY: {
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     CAMERA_TO_MOUSE: [true, 4.75],
     GUNS: [{
@@ -83384,7 +83138,7 @@ defExports.basicShooterMagnumRifle = {
     LABEL: 'Guy With a Magnum',
     DANGER: 7,
     BODY: {
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     CAMERA_TO_MOUSE: [true, 3.75],
     GUNS: [{
@@ -83467,7 +83221,7 @@ defExports.basicShooterSawedShotgun = {
     LABEL: 'Guy With a Sawed-Off Shotgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83487,7 +83241,7 @@ defExports.marksmanPistol = {
     LABEL: 'Marksman Pistol',
     DANGER: 7,
     BODY: {
-        FOV: 1.21
+        FOV: base.FOV * 1.21
     },
     SHAPE: 234,
     COLOR: 16,
@@ -83516,7 +83270,7 @@ defExports.basicShooterMarksmanPistol = {
     LABEL: 'Guy With a Marksman Pistol',
     DANGER: 7,
     BODY: {
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83535,7 +83289,7 @@ defExports.sawedShotgun2 = {
     LABEL: 'Sawed-Off Shotgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.185
+        FOV: base.FOV * 1.185
     },
     SHAPE: 235,
     COLOR: 16,
@@ -83684,7 +83438,7 @@ defExports.basicShooterSawedShotgun2 = {
     LABEL: 'Guy With another Sawed-Off Shotgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.19
+        FOV: base.FOV * 1.19
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83703,7 +83457,7 @@ defExports.microSMG = {
     LABEL: 'Micro-SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     SHAPE: 236,
     COLOR: 16,
@@ -83732,7 +83486,7 @@ defExports.basicShooterMicroSMG = {
     LABEL: 'Guy With a Micro-SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83751,7 +83505,7 @@ defExports.SMG = {
     LABEL: 'SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.285
+        FOV: base.FOV * 1.285
     },
     SHAPE: 237,
     COLOR: 16,
@@ -83780,7 +83534,7 @@ defExports.basicShooterSMG = {
     LABEL: 'Guy With an SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.285
+        FOV: base.FOV * 1.285
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83833,7 +83587,7 @@ defExports.fatManNukeLauncher = {
     LABEL: 'Fatman',
     DANGER: 7,
     BODY: {
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     SHAPE: 238,
     GUNS: [{
@@ -83861,7 +83615,7 @@ defExports.basicShooterFatMan = {
     LABEL: 'Guy With a Fatman',
     DANGER: 7,
     BODY: {
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -83880,7 +83634,7 @@ defExports.TM9SMG = {
     LABEL: 'TM-9 SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SHAPE: 239,
     COLOR: 16,
@@ -83909,7 +83663,7 @@ defExports.basicShooterTM9SMG = {
     LABEL: 'Guy With a TM-9 SMG',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -84020,7 +83774,7 @@ defExports.saber = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [23, 4.5, 1, 0, 3.2, 0, 0],
@@ -84050,7 +83804,7 @@ defExports.tommyGun = {
     LABEL: 'Me In Gun Form', //Tommy Gun
     DANGER: 7,
     BODY: {
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     SHAPE: 243,
     COLOR: 16,
@@ -84079,7 +83833,7 @@ defExports.basicShooterTommyGun = {
     LABEL: 'Guy With Me In Gun Form', //Guy With a Tommy Gun
     DANGER: 7,
     BODY: {
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -84098,7 +83852,7 @@ defExports.grenadeLauncher = {
     LABEL: 'Grenade Launcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.375
+        FOV: base.FOV * 1.375
     },
     SHAPE: 244,
     COLOR: 16,
@@ -84131,7 +83885,7 @@ defExports.basicShooterGrenadeLauncher = {
     LABEL: 'Guy With a Grenade Launcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -84152,7 +83906,7 @@ defExports.assassinBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -84194,7 +83948,7 @@ defExports.octoSniper = { // makeFlank
     BODY: {
         ACCELERATION: base.ACCEL * .625,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -84286,7 +84040,7 @@ defExports.trapLittleSkimmer = {
     LABEL: 'Promenader',
     DANGER: 7,
     BODY: {
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [10, 12, -0.5, 9, 0, 0, 0]
@@ -84356,7 +84110,7 @@ defExports.tsarBombaLauncher = {
     LABEL: 'Soviet Nuke Launcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.7
+        FOV: base.FOV * 1.7
     },
     SHAPE: 247,
     COLOR: 16,
@@ -84385,7 +84139,7 @@ defExports.basicTsarBombaLauncher = {
     LABEL: 'BLYAT',
     DANGER: 7,
     BODY: {
-        FOV: 1.7,
+        FOV: base.FOV * 1.7,
         SPEED: base.SPEED * .75
     },
     GUNS: [{
@@ -84407,7 +84161,7 @@ defExports.droneEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .74,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -84632,7 +84386,7 @@ defExports.precisionSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .8,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [20, 11, 1, 0, 0, 0, 0],
@@ -84692,7 +84446,7 @@ defExports.fatSkimmer = {
     LABEL: 'Slipper',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -84712,7 +84466,7 @@ defExports.twinLittleHunter = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 5, 1, 0, -5.5, 0, 0],
@@ -84820,7 +84574,7 @@ defExports.baller = {
     BODY: {
         SPEED: base.SPEED * 1.1,
         ACCELERATION: base.ACCEL * 1.1,
-		FOV: base.FOV*1.05
+		FOV: base.FOV * 1.05
     },
 	STAT_NAMES: statNames.minion,
     GUNS: [{
@@ -85085,7 +84839,7 @@ defExports.pinataMinion = {
     }, {
         POSITION: [16, 0, 0, 90, 0, 1],
         TYPE: [defExports.pinataShellProp]
-    },],
+    }],
     GUNS: [{
         POSITION: [0, 30, 1, 0, 0, 0, Infinity],
         PROPERTIES: {
@@ -85211,7 +84965,7 @@ defExports.polygun = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -85300,7 +85054,7 @@ defExports.airtag = {
     MAX_CHILDREN: Infinity,
     BODY: {
         SPEED: base.SPEED * .6,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -85503,7 +85257,7 @@ defExports.paladin = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     GUNS: [{
@@ -85530,16 +85284,18 @@ defExports.paladin = {
 };
 defExports.underhunter = makeHybrid(defExports.hunter, 'under', {
     name: 'Witch-Hunter',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.25
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.25
+    }
 });
 defExports.megaSpike = {
     PARENT: [defExports.genericTank],
     LABEL: 'Acicula',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         DAMAGE: base.DAMAGE * 1.16,
         SPEED: base.SPEED * 1.125,
         DENSITY: base.DENSITY * 4,
@@ -85645,7 +85401,7 @@ defExports.snipeBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -85879,7 +85635,7 @@ defExports.rpgRocketLauncher = {
     LABEL: 'RPG',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .5
     },
@@ -85979,7 +85735,7 @@ defExports.overpowerArty = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -6, -7, .25],
@@ -86048,7 +85804,7 @@ defExports.hiveBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [6, 14, -1.2, 13, 0, 0, 0],
@@ -86258,7 +86014,7 @@ defExports.glassSmash = {
     SHAPE: 132,
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 64,
         HEALTH: base.HEALTH * .9,
@@ -86312,7 +86068,7 @@ defExports.windstorm = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -86398,7 +86154,7 @@ defExports.flankStream = {
     LABEL: 'Plasmid',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -86415,7 +86171,7 @@ defExports.miniDouble = {
     LABEL: 'Bandolier',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -87001,7 +86757,7 @@ defExports.twinBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -87042,7 +86798,7 @@ defExports.doubleBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -87090,7 +86846,7 @@ defExports.bentBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -87126,7 +86882,7 @@ defExports.hexaTwinBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .65,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: []
@@ -87313,7 +87069,7 @@ defExports.blastMultishot = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -87364,7 +87120,7 @@ defExports.shockRifle = {
     LABEL: 'Shock Rifle',
     DANGER: 6,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -87386,7 +87142,7 @@ defExports.antimatRifle = {
     LABEL: 'Anti-Material Rifle',
     DANGER: 7,
     BODY: {
-        FOV: 1.5,
+        FOV: base.FOV * 1.5,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -87905,7 +87661,7 @@ defExports.cager = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 6, 1, 0, 0, 0, 0],
@@ -87962,7 +87718,7 @@ defExports.turretTrap = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 6, 1, 0, 0, 0, 0],
@@ -88006,7 +87762,7 @@ defExports.cagin = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 6, 1, 0, 0, 0, 0],
@@ -88124,7 +87880,7 @@ defExports.oldQuint = {
     LABEL: 'Quintuplet',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -88333,7 +88089,7 @@ defExports.newRampart = {
     LABEL: 'Rampart',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -88688,7 +88444,7 @@ defExports.traprang = {
     DANGER: 6,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -88723,7 +88479,7 @@ defExports.steambump = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [3, 12.5, -0.92, 23.5, 0, 0, 0],
@@ -88767,7 +88523,7 @@ defExports.megaTwister = {
     LABEL: 'Vortex',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 13, -0.5, 9, 0, 0, 0]
@@ -88796,7 +88552,7 @@ defExports.turnWithBump = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [3, 12.5, -0.92, 23.5, 0, 0, 0],
@@ -89025,7 +88781,7 @@ defExports.dustbowl = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dustbowl',
     DANGER: 7,
-    BODY: { FOV: 1.1 },
+    BODY: { FOV: base.FOV * 1.1 },
     GUNS: [{
         POSITION: [3, 7, .005, 20, 0, 0, 0],
         PROPERTIES: {
@@ -89072,7 +88828,7 @@ defExports.dustdevil = {
     PARENT: [defExports.genericTank],
     LABEL: 'Dust Devil',
     DANGER: 7,
-    BODY: { FOV: 1.1 },
+    BODY: { FOV: base.FOV * 1.1 },
     GUNS: [{
         POSITION: [3, 9, .005, 20, 0, 0, 0],
         PROPERTIES: {
@@ -89128,7 +88884,7 @@ defExports.tombRaider = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 3,
@@ -89263,7 +89019,7 @@ defExports.sparkDuster = {
     PARENT: [defExports.genericTank],
     LABEL: 'Spark Duster',
     DANGER: 7,
-    BODY: { FOV: 1.2 },
+    BODY: { FOV: base.FOV * 1.2 },
     GUNS: [{
         POSITION: [10, 14, -0.9, 9, 0, 0, 0],
         PROPERTIES: {
@@ -89380,7 +89136,7 @@ defExports.recruitSniper = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [17, 2.5, 1, 0, 7.5, 0, .75],
@@ -89417,7 +89173,7 @@ defExports.snipeSpreadshot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 4, 1, 0, -0.8, -68, 5 / 6],
@@ -89663,7 +89419,7 @@ defExports.rocketTrebuchet = {
     DANGER: 7,
     LABEL: 'Quadratic',
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 6, -1.4, 9, 0, 0, 0]
@@ -89684,7 +89440,7 @@ defExports.invisiMini = {
     LABEL: 'Minihelix',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .95
     },
     INVISIBLE: [.08, .03, .02],
@@ -89724,7 +89480,7 @@ defExports.snipeStalker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .925,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -89769,7 +89525,7 @@ defExports.hymn = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 8,
@@ -89838,7 +89594,7 @@ defExports.minishotSniper = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .975,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -4.5, -7, .25],
@@ -90104,7 +89860,7 @@ defExports.megaBonk = {
     DANGER: 7,
     SIZE: 10.25,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.335,
         DENSITY: base.DENSITY * 4,
         HEALTH: base.HEALTH * .8,
@@ -90152,7 +89908,7 @@ defExports.twinBoomer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -90369,14 +90125,14 @@ defExports.omnivore = {
     }, {
         POSITION: [7, 7.5, .6, 7, 4, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.half_reload, g.less_power, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.swarm, g.antimeta]),
             TYPE: defExports.autoSwarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [7, 7.5, .6, 7, -4, 180, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.flank, g.half_reload, g.less_power, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.swarm, g.antimeta]),
             TYPE: defExports.autoSwarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
@@ -90429,7 +90185,7 @@ defExports.snipeGunner = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .975,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 3.5, 1, 0, 7.25, 0, .5],
@@ -90483,7 +90239,7 @@ defExports.singleBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     SCOPED: true,
@@ -90585,7 +90341,7 @@ defExports.herder = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 10,
     GUNS: [{
@@ -90875,7 +90631,7 @@ defExports.homicide = {
     LABEL: 'Homicide',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [6, 13, -0.6, 9, 0, 0, 0]
@@ -90915,6 +90671,11 @@ defExports.droplet = {
     MOTION_TYPE: 'limitShrink',
     SHAPE: 8
 };
+g.waterstick = convert({
+    damage: .8,
+    speed: 1.7,
+    maxSpeed: 1.7
+});
 defExports.duoelement = {
     PARENT: [defExports.genericTank],
     LABEL: 'Duelement',
@@ -90922,12 +90683,12 @@ defExports.duoelement = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [14, 11 + 2/3, -1.2, 5, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.more_speed, g.more_speed, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.waterstick]),
             TYPE: defExports.droplet
         }
     }, {
@@ -90943,9 +90704,7 @@ defExports.infernoception = makeCeption({
     PARENT: [defExports.genericTank],
     LABEL: 'Inferno',
     DANGER: 6,
-    BODY: {
-        SPEED: base.SPEED * 1.175
-    },
+    BODY: { SPEED: base.SPEED * 1.175 },
     GUNS: [{
         POSITION: [10, 6, 1.5, 3, 2, 0, 0]
     }, {
@@ -90965,9 +90724,7 @@ defExports.clockHive = {
         FOV: .5
     },
     INDEPENDENT: true,
-    AI: {
-        NO_LEAD: true
-    },
+    AI: { NO_LEAD: true },
     GUNS: [{
         POSITION: [7, 9.5, .6, 7, 0, 0, 0],
         PROPERTIES: {
@@ -91012,14 +90769,10 @@ defExports.clockwork = {
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 361, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 361, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.gearHive = {
@@ -91030,9 +90783,7 @@ defExports.gearHive = {
     },
     INDEPENDENT: true,
     CONTROLLERS: ['reverseSpin', 'alwaysFire', 'nearestDifferentMaster', 'targetSelf'],
-    AI: {
-        NO_LEAD: true
-    },
+    AI: { NO_LEAD: true },
     GUNS: [{
         POSITION: [7, 9.5, .6, 7, 0, 108, 0],
         PROPERTIES: {
@@ -91098,14 +90849,10 @@ defExports.geargrinder = {
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 360, 0],
-        TYPE: [defExports.gearHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.gearHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 360, 0],
-        TYPE: [defExports.gearHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.gearHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.swissToolset = {
@@ -91115,25 +90862,25 @@ defExports.swissToolset = {
     SHAPE: 7,
     FACING_TYPE: 'autospin',
     TURRETS: [{
-        POSITION: [10, 8, 0, 0, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * .5, 220, 0],
         TYPE: defExports.spread
     }, {
-        POSITION: [10, 8, 0, 360 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 1.5, 220, 0],
         TYPE: defExports.rifle
     }, {
-        POSITION: [10, 8, 0, 720 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 2.5, 220, 0],
         TYPE: defExports.ranger
     }, {
-        POSITION: [10, 8, 0, 1080 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 3.5, 220, 0],
         TYPE: defExports.engineer
     }, {
-        POSITION: [10, 8, 0, 1440 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 4.5, 220, 0],
         TYPE: defExports.skimmer
     }, {
-        POSITION: [10, 8, 0, 1800 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 5.5, 220, 0],
         TYPE: defExports.littleFactory
     }, {
-        POSITION: [10, 8, 0, 2160 / 7, 220, 0],
+        POSITION: [10, 8, 0, 360/7 * 6.5, 220, 0],
         TYPE: defExports.cruiser
     }]
 };
@@ -91308,14 +91055,10 @@ defExports.pit = {
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 360, 0],
-        TYPE: [defExports.pitHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.pitHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 360, 0],
-        TYPE: [defExports.pitHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.pitHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.pendulum = {
@@ -91326,31 +91069,23 @@ defExports.pendulum = {
         POSITION: [9, 12, .6, 5, -3, 155, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.pound]),
-            TYPE: [defExports.swarm, {
-                CONTROLLERS: ['canRepel']
-            }],
+            TYPE: [defExports.swarm, { CONTROLLERS: ['canRepel'] }],
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [9, 12, .6, 5, 3, 205, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.pound]),
-            TYPE: [defExports.swarm, {
-                CONTROLLERS: ['canRepel']
-            }],
+            TYPE: [defExports.swarm, { CONTROLLERS: ['canRepel'] }],
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 360, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 360, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.clickscrewHive = makeAuto(defExports.clockHive, 'Hive');
@@ -91375,14 +91110,10 @@ defExports.clickscrew = {
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 360, 0],
-        TYPE: [defExports.clickscrewHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.clickscrewHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 360, 0],
-        TYPE: [defExports.clickscrewHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.clickscrewHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.autoClockwork = makeAuto(defExports.clockwork, 'Detent');
@@ -91407,19 +91138,19 @@ defExports.lunaDial = {
     }, {
         POSITION: [15, 3.5, 1, 0, 0, 168.75, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.stronger]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [15, 3.5, 1, 0, 0, 191.25, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.stronger]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [15, 3.5, 1, 0, 0, 110, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.stronger]),
             TYPE: defExports.bullet
         }
     }, {
@@ -91431,14 +91162,10 @@ defExports.lunaDial = {
     }],
     TURRETS: [{
         POSITION: [11, 8, 0, 60, 360, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: -.075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: -.075 }] }]
     }, {
         POSITION: [11, 8, 0, -60, 360, 0],
-        TYPE: [defExports.clockHive, {
-            FACING_TYPE: ['autospin', { SPEED: .075 }]
-        }]
+        TYPE: [defExports.clockHive, { FACING_TYPE: ['autospin', { SPEED: .075 }] }]
     }]
 };
 defExports.cruiserAutoSmashTurret = {
@@ -91658,7 +91385,7 @@ defExports.mothershipStack = {
     }, {
         POSITION: [1, 0, 0, 0, 361, 1],
         TYPE: defExports.mothershipTurret223123
-    },],
+    }],
     ABILITY_IMMUNE: true,
     VALUE: 1000000,
     SKILL_CAP: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
@@ -91670,7 +91397,7 @@ defExports.miniLightning = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 5,
@@ -91752,63 +91479,25 @@ defExports.auto15 = makeAutoN({
 defExports.pellet3 = makeAutoN(defExports.pellet, 3, 'Pelleter-3', {
     stats: [g.more_damage]
 });
-defExports.fallenCavalcade = makeHybrid({
-    PARENT: [defExports.genericTank],
-    DANGER: 8,
-    SIZE: 22,
-    COLOR: 18,
-    BODY: {
-        ACCELERATION: base.ACCEL * .5,
-        SPEED: 1.32,
-        FOV: 1.1,
-        HEALTH: 1000
-    },
-    GUNS: [{
-        POSITION: [18, 8, 1, 0, 0, 0, 0]
-    }, {
-        POSITION: [10, 14, 1.01, 16, 0, 0, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.steam]),
-            TYPE: defExports.bullet
-        }
-    }]
-}, 'drone', { name: 'Fallen Cavalcade' });
-defExports.fallenCavalcadeAI = {
-    PARENT: [defExports.fallenCavalcade],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A Fallen Cavalcade has been defeated!'
-};
+defExports.fallenCavalcade = makeFallen(defExports.hybridSteamroll, { body: { fov: base.FOV * 1.2 } });
+defExports.fallenCavalcadeAI = makeBossAI(defExports.fallenCavalcade, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0)
+});
 defExports.reanimFarmer = makeReanimated(defExports.hybridSealer);
-defExports.reanimFarmerAI = {
-    PARENT: [defExports.reanimFarmer],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A Reanimated Farmer has been defeated!'
-};
+defExports.reanimFarmerAI = makeBossAI(defExports.reanimFarmer, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.builder2 = makeAutoN({
     PARENT: [defExports.genericTank],
     LABEL: 'Builder',
     DANGER: 6,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -91829,7 +91518,7 @@ defExports.constructor2 = makeAutoN({
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -91849,7 +91538,7 @@ defExports.producer2 = makeAutoN({
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -91869,7 +91558,7 @@ defExports.planter2 = makeAutoN({
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -91907,11 +91596,9 @@ defExports.bitskriegAI = {
     TYPE: 'miniboss',
     VARIES_IN_SIZE: true,
     LEVEL: 60,
-    VALUE: 4e5,
+    VALUE: 1e5,
     CONTROLLERS: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
+    AI: { NO_LEAD: true },
     HITS_OWN_TYPE: 'hard',
     SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
     BROADCAST_MESSAGE: 'A Bits Krieg has been defeated!'
@@ -91953,7 +91640,7 @@ defExports.basicContagion = { // My idea, this is accidentally Subduer
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }]
@@ -91980,7 +91667,7 @@ defExports.engineer2 = makeAutoN({
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -92102,7 +91789,7 @@ defExports.careenerAI = {
     SIZE: 18,
     COLOR: 6,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * 1.285,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * .5
@@ -92133,7 +91820,7 @@ defExports.blasterBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .875,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -92158,7 +91845,7 @@ defExports.megaStovepipe = {
         SPEED: base.SPEED * .8,
         HEALTH: base.HEALTH * (4 / 3),
         DAMAGE: base.DAMAGE * (4 / 3),
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.drone,
     GUNS: []
@@ -92669,7 +92356,7 @@ defExports.migrator = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92693,7 +92380,7 @@ defExports.transit = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92717,7 +92404,7 @@ defExports.roadtrip = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92741,7 +92428,7 @@ defExports.gps = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -92767,7 +92454,7 @@ defExports.recalculator = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92796,7 +92483,7 @@ defExports.reposition = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92824,7 +92511,7 @@ defExports.occupier = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92850,7 +92537,7 @@ defExports.deporter = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92874,7 +92561,7 @@ defExports.impeacher = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -92900,7 +92587,7 @@ defExports.evacuee = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     //MAX_CHILDREN: 4,
@@ -93495,7 +93182,7 @@ defExports.thunder = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     INVISIBLE: [.08, .03, .02],
     STAT_NAMES: statNames.drone,
@@ -93598,7 +93285,7 @@ defExports.crowbar = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -93636,7 +93323,7 @@ defExports.snipeVulcan = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [30, 1.5, 1, 0, -4.5, 0, 0],
@@ -93911,7 +93598,7 @@ defExports.xContagion = {
     LABEL: 'Antivaxxer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .875
     },
     STAT_NAMES: statNames.generic,
@@ -93984,7 +93671,7 @@ defExports.singleMini = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SCOPED: true,
     GUNS: [{
@@ -94014,7 +93701,7 @@ defExports.arsenalGunner = {
     LABEL: 'Outlaw',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -94079,7 +93766,7 @@ defExports.bentLittleHunter = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [22, 5, 1, 0, 2, 20, .5],
@@ -94126,7 +93813,7 @@ defExports.bigSubduer = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [26, 2, 1, 0, 0, 0, 0],
@@ -94150,16 +93837,18 @@ defExports.bigSubduer = {
 };
 defExports.arsenalOvertrap = makeHybrid(defExports.arsenal, 'over', {
     name: 'Galleon',
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.twinSniperContagion = {
     PARENT: [defExports.genericTank],
     LABEL: 'Contamination',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -94259,22 +93948,12 @@ defExports.heptaTrap = {
         }
     }]
 };
-defExports.reanimHeptaTrap = makeReanimated(defExports.heptaTrap);
-defExports.reanimHeptaTrap.FACING_TYPE = 'autospin';
-defExports.reanimHeptaTrapAI = {
-    PARENT: [defExports.reanimHeptaTrap],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A Reanimated Hepta Trapper has been defeated!'
-};
+defExports.reanimHeptaTrap = makeReanimated(defExports.heptaTrap, { facingType: 'autospin' });
+defExports.reanimHeptaTrapAI = makeBossAI(defExports.reanimHeptaTrap, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.nonationDomiTurret = {
     PARENT: [defExports.auto3gun],
     GUNS: [{
@@ -94330,7 +94009,7 @@ defExports.chk1 = makeAuto({
     SHAPE: 102,
     COLOR: 4,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -94400,7 +94079,7 @@ defExports.chk2 = makeAuto({
     SHAPE: 102,
     COLOR: 4,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -94477,7 +94156,7 @@ defExports.chk3 = {
     SHAPE: 102,
     COLOR: 4,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -94586,7 +94265,7 @@ defExports.flankHexaTrap = {
     LABEL: 'Hexa Trap Guard',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     //SHAPE: 7,
@@ -94659,7 +94338,7 @@ defExports.newMegafort = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     FACING_TYPE: 'autospin',
@@ -94707,7 +94386,7 @@ defExports.yottaSmash = {
     LABEL: 'Yotta Smasher',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05,
         HEALTH: base.HEALTH * 1.1,
         DENSITY: base.DENSITY * 5
@@ -94837,7 +94516,7 @@ defExports.littleSpreadskimmer = {
     LABEL: 'Bottler',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [17, 13, 1, 0, 0, 0, 0],
@@ -94861,7 +94540,7 @@ defExports.littleShifter = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 5, 1, 0, 0, 0, 0],
@@ -94884,7 +94563,7 @@ defExports.zoomLittleHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SCOPED: true,
     GUNS: [{
@@ -94910,7 +94589,7 @@ defExports.zoomLittleShifter = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SCOPED: true,
     GUNS: [{
@@ -94953,7 +94632,7 @@ defExports.xGatlingSpray = {
     LABEL: 'Sriracha',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .6
     },
@@ -94984,7 +94663,7 @@ defExports.invisiSnipeBuilder = {
     BODY: {
         SPEED: base.SPEED * .725,
         ACCELERATION: base.ACCEL * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     INVISIBLE: [.08, .01, .02],
@@ -95133,7 +94812,7 @@ defExports.tetrafras = makeAuto({
     DANGER: 8,
     FACING_TYPE: 'autospin',
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 2,
         SHIELD: base.SHIELD * 2,
@@ -95222,7 +94901,7 @@ defExports.pentafras = {
     DANGER: 8,
     FACING_TYPE: 'autospin',
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 2,
         SHIELD: base.SHIELD * 2,
@@ -95711,7 +95390,7 @@ defExports.subduerEagle = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [23, 5, 1, 0, 0, 0, 0],
@@ -95798,7 +95477,7 @@ defExports.biggerSubduer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [29, 2, 1, 0, 0, 0, 0],
@@ -95833,7 +95512,7 @@ defExports.biggererSubduer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [32, 1.6, 1, 0, 0, 0, 0],
@@ -95958,7 +95637,7 @@ defExports.bentContagion = {
     LABEL: 'Disease', //Bent Contagion, Bentagion
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .8
     },
@@ -96026,7 +95705,7 @@ defExports.overOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -96129,7 +95808,7 @@ defExports.precisionPounder = {
     LABEL: 'Precision Pounder',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 12, -0.5, 9, 0, 0, 0]
@@ -96213,7 +95892,7 @@ defExports.stuxnet = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -96243,7 +95922,7 @@ defExports.vibrancy = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -96298,7 +95977,7 @@ defExports.claymore = {
     LABEL: 'Claymore',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -96354,7 +96033,7 @@ defExports.quarry = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [25, 7, 1, 0, 0, 0, 0],
@@ -96413,7 +96092,7 @@ defExports.xThrower = {
     LABEL: 'Flat Earther', // X-Consumer
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.trap,
@@ -96477,7 +96156,7 @@ defExports.contagionLittleSkimmer = {
     LABEL: 'Sickness',
     DANGER: 7,
     BODY: {
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [20, 5.5, 1, 0, 0, 0, .5],
@@ -96522,7 +96201,7 @@ defExports.fastLittleSkimmer = {
     LABEL: 'Streaker',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [13, 12, -0.5, 12, 0, 0, 0]
@@ -96544,7 +96223,7 @@ defExports.watcher = {
     DANGER: 4,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 4,
@@ -96566,7 +96245,7 @@ defExports.beeTank = {
     DANGER: 5,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -96586,7 +96265,7 @@ defExports.caltrop = {
     DANGER: 4,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 6, 1, 0, 0, 0, 0]
@@ -96605,7 +96284,7 @@ defExports.microshot = {
     DANGER: 4,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.015
+        FOV: base.FOV * 1.015
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -96653,7 +96332,7 @@ defExports.unmuzzle = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.015
+        FOV: base.FOV * 1.015
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -96695,7 +96374,7 @@ defExports.butcherMinishot = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -4.5, -7, .25],
@@ -96732,7 +96411,7 @@ defExports.gunovertrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -96807,7 +96486,7 @@ defExports.battledrive = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 90, 0],
@@ -96868,7 +96547,7 @@ defExports.eliteInferno = makeAuto({
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 950,
@@ -96986,7 +96665,7 @@ defExports.migrator2 = makeAutoN({
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -97024,7 +96703,7 @@ defExports.ultMultitool = {
     DANGER: 10,
     COLOR: 11,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 950,
@@ -97063,7 +96742,7 @@ defExports.machMegaArsenal = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1.5, 0, 0, 0, 0]
@@ -97225,7 +96904,7 @@ defExports.turbine = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -97267,7 +96946,7 @@ defExports.puttputt = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -97444,7 +97123,7 @@ defExports.legendaryQuadralMachine = makeAuto({
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: 1.1,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 2500,
@@ -97492,7 +97171,7 @@ defExports.doubleLittleHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: []
 };
@@ -97506,7 +97185,7 @@ defExports.tripleLittleHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: []
 };
@@ -97674,7 +97353,7 @@ defExports.greenBossTier1 = {
     BOSS_TIER_TYPE: 12,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .125,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1000,
@@ -97805,7 +97484,7 @@ defExports.greenBossTier2 = {
     BOSS_TIER_TYPE: 12,
     FACING_TYPE: ['autospin', { SPEED: .0075 }],
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .12,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1250,
@@ -97961,7 +97640,7 @@ defExports.greenBossTier3 = {
     BOSS_TIER_TYPE: 12,
     FACING_TYPE: ['autospin', { SPEED: .004 }],
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .11,
         ACCELERATION: base.ACCEL * .4,
         HEALTH: 1500,
@@ -98140,7 +97819,7 @@ defExports.alphaskimmer = {
     LABEL: 'Alphaskimmer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 14, -0.5, 9, 0, 0, 0]
@@ -98255,7 +97934,7 @@ defExports.zoomSpreadHunter = {
     DANGER: 7,
     SCOPED: true,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -98333,7 +98012,7 @@ defExports.batteringRam = {
     LABEL: 'Battering Ram',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [9, 17, -0.5, 12, 0, 0, 0]
@@ -98409,7 +98088,7 @@ defExports.twinSearcher = {
     LABEL: 'Twin Searcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .8
     },
@@ -98495,7 +98174,7 @@ defExports.rocketeerScythe = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -0.5, 10.75, 0, 0, 0],
@@ -98607,7 +98286,7 @@ defExports.thrash = { // Drones should sync up with Body-Damage stats instead of
     FACING_TYPE: 'autospin',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -98666,7 +98345,7 @@ defExports.invisiFortress = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .02, .02],
     STAT_NAMES: statNames.generic,
@@ -98748,7 +98427,7 @@ defExports.admiral /*hi*/ = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 1.9, 1, 0, 3, 0, 0],
@@ -98794,7 +98473,7 @@ defExports.borerBallista = {
     LABEL: 'Ribbon',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 3, 1, 0, 3.75, 0, 0],
@@ -98822,7 +98501,7 @@ defExports.cactus = {
     LABEL: 'Cactus',
     DANGER: 8,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 3, 1, 0, 3.75, 0, 0],
@@ -100089,7 +99768,7 @@ defExports.destiny = makeAuto({
     PARENT: [defExports.genericTank],
     LABEL: 'Destiny',
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .7
     },
@@ -100190,7 +99869,7 @@ defExports.icbm = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19.5, 7, 1, 0, 0, 0, 0],
@@ -100455,7 +100134,7 @@ defExports.overdriveRedes = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -100637,7 +100316,7 @@ defExports.hexachoron = {
         HEALTH: 1500,
         DAMAGE: 5,
         REGEN: base.REGEN * .5,
-        FOV: .785
+        FOV: base.FOV * .785
     },
     FACING_TYPE: ['autospin', { SPEED: .004 }],
     TURRETS: [{
@@ -100659,7 +100338,7 @@ defExports.twinSnipeTri = {
     LABEL: 'Mountaineer', // Mountain Man
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         ACCELERATION: .7,
         HEALTH: base.HEALTH * .675,
         SHIELD: base.SHIELD * .675,
@@ -100725,7 +100404,7 @@ defExports.packer = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -100778,7 +100457,7 @@ defExports.briefcase = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -100830,7 +100509,7 @@ defExports.amogusPacker = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [23, 4, 1, 0, 0, 0, 0]
@@ -100915,7 +100594,7 @@ defExports.giftwrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -100949,7 +100628,7 @@ defExports.wardrobe = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [14.5, 19.5, 1, 0, 0, 0, 0]
@@ -101001,7 +100680,7 @@ defExports.reliquary = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101061,7 +100740,7 @@ defExports.glitterbomb = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101132,7 +100811,7 @@ defExports.netcaster = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101183,7 +100862,7 @@ defExports.takeout = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101246,7 +100925,7 @@ defExports.seaweed = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101315,7 +100994,7 @@ defExports.kitchenPatrol = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101437,7 +101116,7 @@ defExports.tacoStand = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101499,7 +101178,7 @@ defExports.cafeteria = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101580,7 +101259,7 @@ defExports.packageBomb = {
     DANGER: 6,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101685,7 +101364,7 @@ defExports.cherrybomb = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -101746,7 +101425,7 @@ defExports.payload = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13.5, 14, 1, 0, 0, 0, 0]
@@ -101776,7 +101455,7 @@ defExports.yankee = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -101916,7 +101595,7 @@ defExports.fracker = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 6.75, 1, 0, 0, 0, 0]
@@ -101959,7 +101638,7 @@ defExports.hullbreaker = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -102037,7 +101716,7 @@ defExports.splitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -102083,7 +101762,7 @@ defExports.splitBuilder2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .725,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -102108,7 +101787,7 @@ defExports.mountain = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -102228,7 +101907,7 @@ defExports.xDirectorContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -102262,7 +101941,7 @@ defExports.xContagionOverseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -102341,7 +102020,7 @@ defExports.ultima3 = makeAuto({
         HEALTH: 2000,
         DAMAGE: 6,
         REGEN: base.REGEN * .1,
-        FOV: 1.9
+        FOV: base.FOV * 1.9
     },
     TURRETS: [{
         POSITION: [20, 3.5, 17, 0, 0, 1],
@@ -102396,7 +102075,7 @@ defExports.swagger = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
@@ -102405,23 +102084,14 @@ defExports.swagger = {
     }, {
         POSITION: [9, 6.5, 0, 270, 361, 1],
         TYPE: defExports.directdriveturret
-    },],
+    }]
 };
 defExports.fallenUzi = makeFallen(defExports.miniMini);
-defExports.fallenUziAI = {
-    PARENT: [defExports.fallenUzi],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 5, 0),
-    BROADCAST_MESSAGE: 'A Fallen Uzi has been defeated!'
-};
+defExports.fallenUziAI = makeBossAI(defExports.fallenUzi, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.PDK_GunnerAutoGun = {
     LABEL: 'Gunner',
     BODY: {
@@ -103243,7 +102913,7 @@ defExports.rotoSmash = {
     LABEL: 'Pion',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -103315,7 +102985,7 @@ defExports.quark = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -103577,7 +103247,7 @@ defExports.vanguardBoss = {
         DAMAGE: 8,
         SPEED: base.SPEED * 1.25,
         ACCELERATION: base.ACCEL * .45,
-        FOV: .8
+        FOV: base.FOV * .8
     },
     GUNS: [{
         POSITION: [6.75, 4.5, 1, -2, 0, 180, 0]
@@ -103683,12 +103353,13 @@ defExports.triSeeker = makeAuto({
     SHAPE: 139,
     COLOR: 2,
     BODY: {
-        FOV: 1.15,
-        HEALTH: 3500,
-        DAMAGE: base.DAMAGE * 1.25,
-        REGEN: base.REGEN * .75,
-        SPEED: base.SPEED * .35,
-        ACCELERATION: base.ACCEL * .4
+        FOV: base.FOV * 1.15,
+        HEALTH: 720,
+		SHIELD: 200,
+        REGEN: base.REGEN * .625,
+        SPEED: base.SPEED * .375,
+        ACCELERATION: base.ACCEL * .425,
+        DAMAGE: 4
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -103964,7 +103635,7 @@ defExports.streamliner50 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .775,
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     FACING_TYPE: 'autospin',
     TURRETS: []
@@ -104120,7 +103791,7 @@ defExports.miniRedes = {
     LABEL: 'Minigun',
     DANGER: 6,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
@@ -104147,7 +103818,7 @@ defExports.streamRedes = {
     LABEL: 'Streamliner',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
     },
     GUNS: [{
         POSITION: [30, 8, 1, 0, 0, 0, 0],
@@ -104186,7 +103857,7 @@ defExports.smotherRedes = {
     LABEL: 'Smotherer',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .935
     },
     GUNS: [{
@@ -104378,7 +104049,7 @@ defExports.lmg = makeAuto({
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, -2, 0, 0, 180, 0],
@@ -104471,7 +104142,7 @@ defExports.protpentagon = {
     TURRETS: [{
         POSITION: [34, 0, 0, 0, 361, 0],
         TYPE: defExports.protpentaBase
-    },],
+    }],
     EVOLUTIONS: []
 };
 defExports.pentaquark = {
@@ -104479,7 +104150,7 @@ defExports.pentaquark = {
     LABEL: 'Pentaquark',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: base.DENSITY * 2
     },
@@ -104580,7 +104251,7 @@ defExports.xHash = {
     LABEL: 'X(#)',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.1,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -104690,7 +104361,7 @@ defExports.constructBoxer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -104736,7 +104407,7 @@ defExports.binaryAxolotl = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 5, 1, 0, -5.5, 0, 0],
@@ -104794,7 +104465,7 @@ defExports.doubleArsenal = {
     LABEL: 'Double Arsenal',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .8
     },
@@ -104857,7 +104528,7 @@ defExports.discoverer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [6, 11, 1.2, 8, 0, 125, 0],
@@ -105089,19 +104760,19 @@ defExports.invisStream = {
     LABEL: 'Megahelix',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
         POSITION: [23, 7, -1.5, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, _siz(8/7)]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [21, 7.5, -1.5, 0, 0, 0, .2],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, _siz(8/7.5)]),
             TYPE: defExports.bullet
         }
     }, {
@@ -105113,13 +104784,13 @@ defExports.invisStream = {
     }, {
         POSITION: [17, 8.5, -1.5, 0, 0, 0, .6],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, _siz(8/8.5)]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [15, 9, -1.5, 0, 0, 0, .8],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.stream, _siz(8/9)]),
             TYPE: defExports.bullet
         }
     }]
@@ -105132,7 +104803,7 @@ defExports.archaeaAuto4 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -105170,7 +104841,7 @@ defExports.claymoreContagion = {
     LABEL: 'Tick',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -105232,7 +104903,7 @@ defExports.hybridShot = makeHybrid({
     BODY: {
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .65,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [17, 2.5, 1, 0, 7.5, 0, .75],
@@ -105275,7 +104946,7 @@ defExports.megaFlamethrow = {
     LABEL: 'Kukri',
     DANGER: 7,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -105572,7 +105243,7 @@ defExports.miniSpark = {
     LABEL: 'Groundwire',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [30, 1.5, 1, 0, 2.5, 0, .334],
@@ -105660,9 +105331,7 @@ defExports.arrowhead = {
         POSITION: [7, 12, 1.2, 8, 0, 180, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
-            TYPE: [defExports.twinMinion, {
-                INDEPENDENT: true
-            }],
+            TYPE: [defExports.twinMinion, { INDEPENDENT: true }],
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -105674,19 +105343,19 @@ defExports.arrowhead = {
 defExports.flankMinion = {
     PARENT: [defExports.minion],
     GUNS: [{
-        POSITION: [18, 8, 1, 0, 0, 0, 0],
+        POSITION: [17, 9, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.minion]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [18, 8, 1, 0, 0, 120, 0],
+        POSITION: [17, 9, 1, 0, 0, 120, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.minion]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [18, 8, 1, 0, 0, 240, 0],
+        POSITION: [17, 9, 1, 0, 0, 240, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.flank, g.minion]),
             TYPE: defExports.bullet
@@ -105701,7 +105370,7 @@ defExports.flankSpawner = {
     MAX_CHILDREN: 4,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
@@ -105751,7 +105420,7 @@ defExports.watchtrap = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -105837,7 +105506,7 @@ defExports.ionTank = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -105859,7 +105528,7 @@ defExports.sprite = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.45
+        FOV: base.FOV * 1.45
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -105881,7 +105550,7 @@ defExports.plasma = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -105907,19 +105576,19 @@ defExports.contestantGun = {
     GUNS: [{
         POSITION: [16, 4, 1, 0, -4, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger, g.bit_less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [16, 4, 1, 0, 4, 0, 1 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger, g.bit_less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 4, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger, g.bit_less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow, g.stronger]),
             TYPE: defExports.bullet
         }
     }]
@@ -105970,7 +105639,7 @@ defExports.necrogunner = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -105982,7 +105651,7 @@ defExports.necrogunner = {
             TYPE: defExports.sunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
+            STAT_CALCULATOR: gunCalcNames.necro
         }
     }, {
         POSITION: [5, 12, 1.2, 8, 0, 180, 0],
@@ -105991,7 +105660,7 @@ defExports.necrogunner = {
             TYPE: defExports.sunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
+            STAT_CALCULATOR: gunCalcNames.necro
         }
     }, {
         POSITION: [5, 12, 1.2, 8, 0, 270, 0],
@@ -106000,7 +105669,7 @@ defExports.necrogunner = {
             TYPE: defExports.sunchip,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
-            STAT_CALCULATOR: gunCalcNames.necro,
+            STAT_CALCULATOR: gunCalcNames.necro
         }
     }, {
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -106027,7 +105696,7 @@ defExports.surgeon = {
     LABEL: 'Surgeon',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -106054,7 +105723,7 @@ defExports.ficitor = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -106170,7 +105839,7 @@ defExports.flankMachineFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -106221,7 +105890,7 @@ defExports.reaperOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     INVISIBLE: [.08, .01, .02],
     MAX_CHILDREN: 4,
@@ -106267,7 +105936,7 @@ defExports.clickerFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -106321,7 +105990,7 @@ defExports.probationerContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -106388,7 +106057,7 @@ defExports.ommision = makeAuto({
     SHAPE: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -106546,7 +106215,7 @@ defExports.tweakedThunder = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     INVISIBLE: [.08, .03, .02],
     STAT_NAMES: statNames.drone,
@@ -106671,7 +106340,7 @@ defExports.zoomSwarmingBuilder = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     SCOPED: true,
     STAT_NAMES: statNames.generic,
@@ -106759,7 +106428,7 @@ defExports.arsenalTrapling = {
     LABEL: 'Arsenaling',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [16, 4, 1, 0, -1, -45, .75],
@@ -106859,7 +106528,7 @@ defExports.contagionTrapling = {
     LABEL: 'Infirmity',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [16, 4, 1, 0, -1, -45, .75],
@@ -106905,7 +106574,7 @@ defExports.swarmingHammerer = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .76,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [19, 5.5 /*12*/, 1, 0, 0, 0, .5],
@@ -107125,7 +106794,7 @@ defExports.literalPlaner = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0]
@@ -107177,7 +106846,7 @@ defExports.chiller = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107211,7 +106880,7 @@ defExports.mortalChill = {
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107258,7 +106927,7 @@ defExports.freezer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -107335,7 +107004,7 @@ defExports.acid = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107401,7 +107070,7 @@ defExports.disintegrator = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -107453,7 +107122,7 @@ defExports.newSmoker = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.975, 8.5, 1, 0, -1.675, 0, 0],
@@ -107503,7 +107172,7 @@ defExports.comedyallergen = {
     DANGER: 12,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107537,7 +107206,7 @@ defExports.ultracomedyallergen = {
     DANGER: 10000,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         HEALTH: 100000
     },
     GUNS: [{
@@ -107577,7 +107246,7 @@ defExports.shrinker = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107605,7 +107274,7 @@ defExports.allergen = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107626,7 +107295,7 @@ defExports.pissRifle = {
     LABEL: 'Sydney Sleeper',
     DANGER: 6,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
@@ -107650,7 +107319,7 @@ defExports.jarate = {
     LABEL: 'Jarate',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.05,
         ACCELERATION: base.ACCEL * .7
     },
@@ -107675,7 +107344,7 @@ defExports.pissGun = {
     LABEL: 'Piss Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         SPEED: base.SPEED * .95,
         ACCELERATION: base.ACCEL * .75
     },
@@ -107719,7 +107388,7 @@ defExports.irritator = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -107811,7 +107480,7 @@ defExports.hayFever = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107839,7 +107508,7 @@ defExports.anaphylaxis = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107870,7 +107539,7 @@ defExports.rhinitis = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -107900,7 +107569,7 @@ defExports.nitro = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107928,7 +107597,7 @@ defExports.cyanide = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -107978,7 +107647,7 @@ defExports.frostbite = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -108026,7 +107695,7 @@ defExports.fentanyl = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -108073,7 +107742,7 @@ defExports.contaminant = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -108121,7 +107790,7 @@ defExports.inflamer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -108268,7 +107937,7 @@ defExports.poisonSpike = {
     LABEL: 'Toxin',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.1,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2
@@ -108389,7 +108058,7 @@ defExports.paralyzerRetro = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -108432,7 +108101,7 @@ defExports.crippler = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -108468,7 +108137,7 @@ defExports.paralyzer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -108643,7 +108312,7 @@ defExports.hf61 = {
     SHAPE: 7,
     COLOR: 219,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 12500,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -108683,7 +108352,7 @@ defExports.newInferno = {
     LABEL: 'Flamethrower',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -108768,7 +108437,7 @@ defExports.firetrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [13, 11, 1, 0, 0, 180, 0]
@@ -108793,7 +108462,7 @@ defExports.megaInferno = {
     LABEL: 'Melter',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -108808,15 +108477,17 @@ defExports.megaInferno = {
 };
 defExports.overflame = makeHybrid(defExports.newInferno, 'over', {
     name: 'Overflamer',
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.flankNewInferno = makeFlank({
     PARENT: [defExports.genericTank],
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -109003,7 +108674,7 @@ defExports.lettuce = {
     LABEL: 'Lettuce',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .935
     },
     GUNS: [{
@@ -109056,7 +108727,7 @@ defExports.hypertrap = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, -3, 0, 0]
@@ -109103,7 +108774,7 @@ defExports.scramjet = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * 1.1,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -109309,7 +108980,7 @@ defExports.tasteTheFlames = {
     LABEL: 'Taste The Rainbow 3.0',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -109489,7 +109160,7 @@ defExports.ninja = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -109516,7 +109187,7 @@ defExports.coilgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .01, .02],
     DANGER: 7,
@@ -109678,7 +109349,7 @@ defExports.interceptSnipe = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [28.5, 4.15, 1, 0, 0, 0, 0]
@@ -109769,7 +109440,7 @@ defExports.interceptTrap = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [23.5, 7.5, 1, 0, 0, 0, 0]
@@ -109927,7 +109598,7 @@ defExports.flankArsenal = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -109955,7 +109626,7 @@ defExports.twinFlooder = {
     LABEL: 'Twin Flooder',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .925
     },
     GUNS: [{
@@ -110003,7 +109674,7 @@ defExports.megaSplitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -110025,7 +109696,7 @@ defExports.invisSplitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     INVISIBLE: [.08, .01, .02],
     STAT_NAMES: statNames.generic,
@@ -110058,7 +109729,7 @@ defExports.splitEngineer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -110106,7 +109777,7 @@ defExports.flankSplitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -110389,7 +110060,7 @@ defExports.solidago = {
     FACING_TYPE: 'locksFacing',
     BODY: {
         ACCELERATION: base.ACCEL,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 100, 0],
@@ -110448,7 +110119,7 @@ defExports.ritoparn = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
     },
     GUNS: [{
         POSITION: [16, 10, 1, 0, -2, -35, 0]
@@ -110639,7 +110310,7 @@ defExports.nk1 = makeAuto({
     BOSS_TIER_TYPE: 13,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -110678,7 +110349,7 @@ defExports.nk2 = makeAuto({
     BOSS_TIER_TYPE: 13,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 1000,
@@ -110700,7 +110371,7 @@ defExports.nk3ShortTwinWarden = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.5
+        FOV: base.FOV * 1.5
     },
     GUNS: [{
         POSITION: [23.6, 7.5, 1, 0, 5.4, 0, 0],
@@ -110744,7 +110415,7 @@ defExports.nk3 = makeAuto({
     BOSS_TIER_TYPE: 13,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 1500,
@@ -110773,7 +110444,7 @@ defExports.nk4 = {
     BOSS_TIER_TYPE: 13,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 2000,
@@ -110820,7 +110491,7 @@ defExports.nk5 = {
     BOSS_TIER_TYPE: 13,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 2500,
@@ -111187,7 +110858,7 @@ defExports.ticktick = makeGunnerFlank({
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 3, 1, 0, -5, 0, 0],
@@ -111445,7 +111116,7 @@ defExports.betterLandmine = {
     LABEL: 'Surprize',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: 1,
         HEALTH: base.HEALTH * 1.4,
@@ -111482,7 +111153,7 @@ defExports.noobTube = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [24, 7, 1, 0, 0, 0, 0],
@@ -111517,7 +111188,7 @@ defExports.roulette = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [28, 7, 1, 0, 0, 0, 0],
@@ -111552,7 +111223,7 @@ defExports.joker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [30, 1, 1, 0, 0, 0, 0],
@@ -111623,7 +111294,7 @@ defExports.rummy = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 15, 1, 0, 0, 0, 0],
@@ -111737,7 +111408,7 @@ defExports.helicoptor = makeAuto({
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.no_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -111762,7 +111433,7 @@ defExports.protectedCanoe = {
     LABEL: 'Kevlar',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .9,
         DENSITY: base.DENSITY * 2,
         SHIELD: base.SHIELD * 4,
@@ -111910,7 +111581,7 @@ makeFlail('mace', 'Mace', {
 });
 makeFlail('gunFlail', 'Gunner Flail', {
     body: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9
     },
@@ -112020,7 +111691,7 @@ defExports.inoculist = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 12, .6, 5, 0, 0, 0],
@@ -112223,7 +111894,7 @@ defExports.pneuma = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [24, 7, 1, 0, 0, 0, 0],
@@ -112370,7 +112041,7 @@ defExports.overdriver = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -112464,7 +112135,7 @@ defExports.overload = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 3,
@@ -112486,7 +112157,7 @@ defExports.bomberDeluxe = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -112877,7 +112548,7 @@ defExports.quintMech = makeAuto({
     PARENT: [defExports.genericTank],
     DANGER: 10,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -113088,7 +112759,7 @@ defExports.overluxe = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -113146,104 +112817,102 @@ defExports.overluxe = {
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }]
 };
 defExports.shortBuilderAutoTurret = {
     LABEL: 'Auto Turret',
-    BODY: {
-        FOV: 1
-    },
-    COLOR: 16,
+    BODY: { FOV: 1 },
+    WEAPON_COLOR: 13,
     GUNS: [{
         POSITION: [14.75, 14.5, 1, 0, 0, 0, 0]
     }, {
         POSITION: [2, 14.5, 1.1, 14.75, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.block, g.auto_turret, g.bit_slow]),
-            TYPE: [defExports.block, {
-                LAYER: 6
-            }]
+            TYPE: [defExports.oldBlock, { LAYER: 6 }]
         }
     }]
 };
 defExports.eliteDefender = {
     PARENT: [defExports.genericTank],
     LABEL: 'Elite Defender',
-    SHAPE: 3,
-    SIZE: 24,
     DANGER: 10,
+    SHAPE: 3,
     COLOR: 2,
+    SIZE: 24,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
+        HEALTH: 1600,
+		SHIELD: 370,
+		REGEN: base.REGEN * .15,
         SPEED: base.SPEED * .25,
-        ACCELERATION: base.ACCEL * .75,
-        HEALTH: 9500,
-        DAMAGE: base.DAMAGE * 1.25
+        ACCELERATION: base.ACCEL * .325,
+        DAMAGE: 4
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
-        POSITION: [9, 5, .6, 7, -10, 60, 0],
+        POSITION: [9, 5, .6, 7, -10, 60, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [9, 5, .6, 7, 0, 60, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
-        POSITION: [9, 5, .6, 7, 10, 60, 0],
+        POSITION: [9, 5, .6, 7, 10, 60, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
-        POSITION: [9, 5, .6, 7, -10, -60, 0],
+        POSITION: [9, 5, .6, 7, -10, -60, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [9, 5, .6, 7, 0, -60, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
-        POSITION: [9, 5, .6, 7, 10, -60, 0],
+        POSITION: [9, 5, .6, 7, 10, -60, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
-        POSITION: [9, 5, .6, 7, -10, 180, 0],
+        POSITION: [9, 5, .6, 7, -10, 180, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [9, 5, .6, 7, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
-        POSITION: [9, 5, .6, 7, 10, 180, 0],
+        POSITION: [9, 5, .6, 7, 10, 180, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.swarm, g.faster]),
+            SHOOT_SETTINGS: combineStats([g.swarmlet, g.less_reload, g.bn3d, g.faster]),
             TYPE: defExports.swarm,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
@@ -113406,101 +113075,51 @@ defExports.tripleGuard = {
 defExports.arenaCPredatorMachine = makeAuto(makeAutoN(defExports.xPredator, 3), 'ArenaC Machine', {
     type: defExports.xPredator
 });
-defExports.eggBossTier1AI = {
-    PARENT: [defExports.eggBossTier1],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EK-1 has been defeated!',
-    ON_DEFINED: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'eggBossTier2AI', {
+defExports.eggBossTier1AI = makeBossAI(defExports.eggBossTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'eggBossTier2AI', {
         animation: {
             frameDef: 'ekAnim',
             frameCount: 20,
             animDuration: 500
         }
     })
-};
-defExports.eggQueenTier1AI = {
-    PARENT: [defExports.eggQueenTier1],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EQ-1 has been defeated!'
-};
-defExports.eggQueenTier2AI = {
-    PARENT: [defExports.eggQueenTier2],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EQ-2 has been defeated!'
-};
-defExports.eggQueenTier3AI = {
-    PARENT: [defExports.eggQueenTier3],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 8e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EQ-3 has been defeated!'
-};
-defExports.eggQueenTier4AI = {
-    PARENT: [defExports.eggQueenTier4],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    AI: {
-        NO_LEAD: true,
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EQ-4 has been defeated!',
-};
-defExports.eggBossTier4AI = {
-    PARENT: [defExports.eggBossTier4],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        NO_LEAD: true,
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EK-4 has been defeated!',
-};
+});
+defExports.eggBossTier2AI = makeBossAI(defExports.eggBossTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    skill: setSkill(0, 3, 3, 4, 4, 4, 4, 0, 0, 0)
+});
+defExports.eggBossTier3AI = makeBossAI(defExports.eggBossTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.eggBossTier4AI = makeBossAI(defExports.eggBossTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.eggBossTier5AI = makeBossAI(defExports.eggBossTier5, {
+    value: 5e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.eggQueenTier1AI = makeBossAI(defExports.eggQueenTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'eggQueenTier2AI')
+});
+defExports.eggQueenTier2AI = makeBossAI(defExports.eggQueenTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth']
+});
+defExports.eggQueenTier3AI = makeBossAI(defExports.eggQueenTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.eggQueenTier4AI = makeBossAI(defExports.eggQueenTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
 defExports.streamMiniSwarmer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Andromeda',
@@ -113508,7 +113127,7 @@ defExports.streamMiniSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [35, 14, -1.3, 0, 0, 0, 0],
@@ -113551,7 +113170,7 @@ defExports.sniperHurricane = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: []
 };
@@ -113599,7 +113218,7 @@ defExports.incognito = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     CAN_BE_ON_LEADERBOARD: false,
     GUNS: [{
@@ -113624,7 +113243,7 @@ defExports.vpn = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     ALPHA: .2,
     GUNS: [{
@@ -113714,7 +113333,7 @@ defExports.apiary = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 14, .6, 6, 0, 0, 0],
@@ -113780,7 +113399,7 @@ defExports.bootlegger = {
     LABEL: 'Bootlegger',
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [20, 2.5, 1, 0, 4, 0, 0],
@@ -113845,7 +113464,7 @@ defExports.overTitan = {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .1,
         HEALTH: 20000,
-        FOV: 2
+        FOV: base.FOV * 2
     },
     GUNS: [{
         POSITION: [6, 4, 1.2, 8, 0, 90, 0],
@@ -114028,7 +113647,7 @@ defExports.superLongRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     COLOR: 16,
@@ -114102,7 +113721,7 @@ defExports.triArsenalContagion = {
     LABEL: 'Plini',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .5
     },
@@ -114191,7 +113810,7 @@ defExports.machArsenalAuto3 = {
     LABEL: 'Cache',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -114220,7 +113839,7 @@ defExports.newWindstorm = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [32, 8.5, 1, 0, 0, 0, 0],
@@ -114240,7 +113859,7 @@ defExports.guardedSharpshooter = {
     LABEL: 'Rifle Guard',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -114279,7 +113898,7 @@ defExports.eliteSidewind = {
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -114416,7 +114035,7 @@ defExports.droneSplitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -114676,7 +114295,7 @@ defExports.invisFrostbite = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -114951,7 +114570,7 @@ defExports.aeromancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 10001,
     FACING_TYPE: 'autospin',
@@ -115003,7 +114622,7 @@ defExports.pistonArsenal = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -115123,7 +114742,7 @@ defExports.soulless1 = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -115387,7 +115006,7 @@ defExports.autoOverSHunterGuard = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -115583,7 +115202,7 @@ defExports.quester = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [13, 8.5, 1, 0, 0, -140, 0]
@@ -115623,7 +115242,7 @@ defExports.dualTrapper = {
     LABEL: 'Dual Trapper',
     DANGER: 7,
     BODY: {
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -115672,7 +115291,7 @@ defExports.sounderBeehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [14, 2.4, .7, 7, 2.5, 0, .5],
@@ -115709,7 +115328,7 @@ defExports.mini2 = {
     LABEL: 'Mini Gunner',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .7,
         ACCELERATION: base.ACCEL * .5
     },
@@ -115843,7 +115462,7 @@ defExports.attackMissiler = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [8, .1, -54, 21, 0, 0, 0],
@@ -115909,7 +115528,7 @@ defExports.awp24 = {
     SIZE: 13,
     FACING_TYPE: 'smoothWithMotion',
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .5,
         HEALTH: 200,
         SHIELD: base.SHIELD * 1.25,
@@ -116139,7 +115758,7 @@ defExports.ship36 = {
     SHAPE: 3,
     COLOR: 2,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 3500,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -116275,7 +115894,7 @@ defExports.king = {
     SHAPE: 288,
     COLOR: 224,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 3500,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -116502,7 +116121,7 @@ defExports.snowball = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -116687,7 +116306,7 @@ defExports.testingthing = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.325,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 1000
     },
     GUNS: [{
@@ -116713,7 +116332,7 @@ defExports.rod1Paralyzer = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -116737,7 +116356,7 @@ defExports.rod1 = {
     COLOR: 227,
     SHAPE: 289,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.25,
         ACCELERATION: .25,
         HEALTH: 1000,
@@ -117221,7 +116840,7 @@ defExports.eggplex = {
     LABEL: 'Polyparadox',
     DANGER: 7,
     BODY: {
-        FOV: 1.5,
+        FOV: base.FOV * 1.5,
         SPEED: base.SPEED * .9,
     },
     TURRETS: [],
@@ -117241,7 +116860,7 @@ defExports.nailplex = {
     LABEL: 'Nailplex',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9,
     },
     GUNS: [],
@@ -117352,7 +116971,7 @@ defExports.twinGigaTrapper = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [8.9, 19.5, 1, 5.6, 18.25, 0, 0]
@@ -117382,7 +117001,7 @@ defExports.hybridShift.BODY = {
     SPEED: base.SPEED * 1.285,
     ACCELERATION: base.ACCEL * .7,
     SPEED: base.SPEED * .8,
-    FOV: 1.25
+    FOV: base.FOV * 1.25
 };
 defExports.disappointment = makeAuto({
     PARENT: [defExports.genericTank],
@@ -117485,7 +117104,7 @@ defExports.hellbringer = {
     SIZE: 46,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .78,
+        FOV: base.FOV * .78,
         SPEED: 1.15,
         ACCELERATION: .2,
         HEALTH: 1500,
@@ -117509,7 +117128,7 @@ defExports.ktank = {
     LABEL: 'k',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [23, 4, 1, 13, -12, 40, .5],
@@ -117607,7 +117226,7 @@ defExports.megaSounder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [15, 12, .6, 6, 2.75, 25, 0],
@@ -117745,7 +117364,7 @@ defExports.hoinfodaman = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 8,
     GUNS: [{
@@ -117798,7 +117417,7 @@ defExports.hybridBorerNaturalist = makeHybrid({
     PARENT: [defExports.genericTank],
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -118009,7 +117628,7 @@ defExports.fatDevastator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 17, 1, 0, 0, 0, 0],
@@ -118033,7 +117652,7 @@ defExports.fatPredator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [23, 9, 1, 0, 0, 0, 0],
@@ -118100,7 +117719,7 @@ defExports.smashcoptor = makeAuto({
     MOTION_TYPE: 'glideBall',
     IS_HELICOPTER: true,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .5,
         DENSITY: base.DENSITY * 1.5,
         HEALTH: base.HEALTH * 1.1,
@@ -118147,7 +117766,7 @@ defExports.builderSidekick = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -118645,7 +118264,7 @@ defExports.autoCruisedrive = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -118745,7 +118364,7 @@ defExports.predatorStack = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -118782,7 +118401,7 @@ defExports.polyShotgun = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [21, 14, 1, 0, 0, 0, 0],
@@ -118892,7 +118511,7 @@ defExports.infrared = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0],
@@ -118926,7 +118545,7 @@ defExports.battletrapper = {
     LABEL: 'Battletrapper',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     GUNS: [{
@@ -118988,7 +118607,7 @@ defExports.inviSeek = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     SEE_INVISIBLE: true,
@@ -119073,7 +118692,7 @@ defExports.oldLib = {
     BODY: {
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .85,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [5, 11, 1, 10.5, 0, 0, 0]
@@ -119189,7 +118808,7 @@ defExports.oldPellet2 = {
     LABEL: 'Double Danger',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * .85
     },
     GUNS: [{
@@ -119224,7 +118843,7 @@ defExports.hewnNecromancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -119273,7 +118892,7 @@ defExports.lancerDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * 1.215,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -119318,7 +118937,7 @@ defExports.lancerOverseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * 1.2,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -119396,7 +119015,7 @@ defExports.ligma = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [64, .1, 1, 0, 0, 0, 0],
@@ -119657,7 +119276,7 @@ defExports.padoru = {
     LABEL: 'Padoru',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 361, 0],
@@ -119751,7 +119370,7 @@ defExports.macroTurret = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [14, 6, 1, 0, 0, 135, 0]
@@ -119793,7 +119412,7 @@ defExports.borerRevolutionist = {
     LABEL: 'Bohrer',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -119862,7 +119481,7 @@ defExports.longMinitrap = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     GUNS: []
@@ -119910,7 +119529,7 @@ defExports.kioskBoss = makeAuto({
         HEALTH: 1300,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     GUNS: [{
         POSITION: [7, 12, 1.2, 8, 0, 180, 0],
@@ -119967,7 +119586,7 @@ defExports.launch360 = {
     LABEL: '360-Launcher',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: []
 };
@@ -120035,7 +119654,7 @@ defExports.orangicusgun = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.half_reload]),
             TYPE: defExports.bullet
         }
     }]
@@ -120053,13 +119672,13 @@ defExports.orangicus = {
         HEALTH: 1750,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [5, 0, 0, 0, 361, 1],
         TYPE: [defExports.freezerTurret, { COLOR: 207 }],
-    },],
+    }]
 };
 for (let i = 0; i < 8; i++) defExports.orangicus.TURRETS.push({
     POSITION: [4, 9.5, 0, i * 45, 170, 0],
@@ -120142,7 +119761,7 @@ defExports.newGunborer = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 3, 1, 0, 7.25, 0, .5],
@@ -120206,7 +119825,7 @@ defExports.newCyanideCeption = makeAuto({
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TOOLTIP: 'Stepanek, the immortal.',
     GUNS: [{
@@ -120359,7 +119978,7 @@ defExports.groupmancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     MAX_CHILDREN: 14,
     CAN_NECROMIZE: ['Grouper'],
@@ -120392,7 +120011,7 @@ defExports.eggmancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     MAX_CHILDREN: 20,
     CAN_NECROMIZE: defaultEggNecros,
@@ -120473,7 +120092,7 @@ defExports.mountedTurret = {
     PARENT: [defExports.genericTank],
     LABEL: 'Mounted Turret',
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: 0,
         SPEED: base.SPEED * .5,
         DENSITY: base.DENSITY * 4,
@@ -120491,7 +120110,7 @@ defExports.redistributor360 = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: []
 };
@@ -120513,7 +120132,7 @@ defExports.opiate = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -120723,7 +120342,7 @@ defExports.invisNecro = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     FACING_TYPE: 'autospin',
@@ -120799,7 +120418,7 @@ defExports.molotovAuto = {
     LABEL: 'Oxidizer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95
     },
     GUNS: [{
@@ -120857,7 +120476,7 @@ defExports.hatsune = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .95,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -120981,7 +120600,7 @@ defExports.acidTriplet = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .725,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 10, 1, 0, 5, 0, .5],
@@ -121601,7 +121220,7 @@ defExports.kevlarSpike = {
     LABEL: 'Steelix', // Steel Spike
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.1,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2
@@ -121633,7 +121252,7 @@ defExports.trapperCruisedrive = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -121845,7 +121464,7 @@ defExports.es0 = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     FACING_TYPE: "autospin",
     STAT_NAMES: statNames.generic,
@@ -121885,7 +121504,7 @@ defExports.es0 = {
             }],
             STAT_CALCULATOR: gunCalcNames.swarm
         }
-    },],
+    }],
     TURRETS: [{
         POSITION: [8, 8, 0, 45, 170, 0],
         TYPE: defExports.autoTankGun
@@ -121901,7 +121520,7 @@ defExports.es0 = {
     }, {
         POSITION: [8, 0, 0, 0, 361, 1],
         TYPE: defExports.autoTankGun
-    },],
+    }]
 };
 defExports.arquebus2 = makeAutoN(defExports.gunHunter, 2);
 defExports.chillerTurret = {
@@ -121978,7 +121597,7 @@ defExports.bigBangGun = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 17, 1.1, 0, 0, 0, 0],
@@ -122000,7 +121619,7 @@ defExports.chillerJet = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -122065,7 +121684,7 @@ defExports.automatic = {
     LABEL: 'Automatic',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -122077,7 +121696,7 @@ defExports.siloLaser = {
     LABEL: 'Ion-Ray',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [26, 8, 1, 0, 0, 0, 0],
@@ -122112,7 +121731,7 @@ defExports.accelSilo = {
     DANGER: 7,
     TOOLTIP: `As written by Moses!`,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .9,
         ACCELERATION: base.ACCEL * .9
     },
@@ -122161,7 +121780,7 @@ defExports.miniSilo = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .9,
-        FOV: 1.32
+        FOV: base.FOV * 1.32
     },
     GUNS: [{
         POSITION: [38, 6, 1, 0, 0, 0, 0],
@@ -122208,7 +121827,7 @@ defExports.siloTwin = {
     LABEL: 'Sarasin',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .8
     },
     GUNS: [{
@@ -122256,7 +121875,7 @@ defExports.invisiSilo = {
     LABEL: 'Madhelix',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .95
     },
     INVISIBLE: [.08, .03, .02],
@@ -122318,7 +121937,7 @@ defExports.snipeMortar = {
     LABEL: 'UAV Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 3, 1, 0, -8, -7, .6],
@@ -122366,7 +121985,7 @@ defExports.artyBulldozer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -4.5, -7, .25],
@@ -122452,7 +122071,7 @@ defExports.laserAutomaton = {
     LABEL: 'Xyston',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -122479,7 +122098,7 @@ defExports.fogBoomer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     GUNS: [{
@@ -122506,7 +122125,7 @@ defExports.machContagiBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -122530,7 +122149,7 @@ defExports.flankAutoMaton = {
     LABEL: 'Vengeance',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     TURRETS: [{
         POSITION: [11, 8, 0, 0, 90, 0],
@@ -122656,7 +122275,7 @@ defExports.fogEngineer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -122681,7 +122300,7 @@ defExports.brokenScramjet = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * 1.1,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -122758,7 +122377,7 @@ defExports.opRedistributor = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0]
@@ -122781,7 +122400,7 @@ defExports.operRedistributor = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0]
@@ -122832,7 +122451,7 @@ defExports.dualBateauAutoMaton = {
     LABEL: 'Taipan', // Anaconda
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SIZE: 10,
     GUNS: [{
@@ -122860,7 +122479,7 @@ defExports.accelHotshot = {
     LABEL: 'Hotflood',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [8, .1, -54, 22, 0, 0, 0],
@@ -122905,7 +122524,7 @@ defExports.accelMiniHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [8, .1, -53, 22, 0, 0, 0],
@@ -122982,7 +122601,7 @@ defExports.accelInvisiMini = {
     LABEL: 'Madnesshelix',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .95
     },
     INVISIBLE: [.08, .03, .02],
@@ -123029,7 +122648,7 @@ defExports.accelMiniClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [8, .1, -30, 24, 0, 0, 0],
@@ -123080,7 +122699,7 @@ defExports.accelFlooder = {
     LABEL: 'Torrent',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -123124,7 +122743,7 @@ defExports.accelMiniRifle = {
     LABEL: 'Crossbow',
     DANGER: 7,
     BODY: {
-        FOV: 1.275,
+        FOV: base.FOV * 1.275,
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .975
     },
@@ -123253,7 +122872,7 @@ defExports.accelMiniMiniSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [8, .1, -70, 25, 0, 0, 0],
@@ -123349,7 +122968,7 @@ defExports.artyNoobTube = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [16, 2, 1, 0, 6.6, 0, .6],
@@ -123501,7 +123120,7 @@ defExports.dropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -123536,7 +123155,7 @@ defExports.pointDefense = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .975,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -123579,7 +123198,7 @@ defExports.siloFlankLance = {
     LABEL: 'Backsword',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -123641,7 +123260,7 @@ defExports.miniOscilloscope = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 7.25, 1.25, 7, 0, 0, 0]
@@ -123953,8 +123572,6 @@ defExports.ultimateMothership = makeAuto({
     SHAPE: 16,
     COLOR: 13,
     SIZE: 100,
-    LEVEL: 60,
-    VALUE: 59212,
     FACING_TYPE: ['autospin', { SPEED: .004 }],
     STAT_NAMES: statNames.generic,
     BODY: {
@@ -124028,7 +123645,7 @@ defExports.littleFactoryQuad = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, -45, 0]
@@ -124087,12 +123704,12 @@ defExports.portaFortess = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 13, 1, 10.5, 0, 0, 0]
     }, {
-        POSITION: [1, 15, 1.01, 15, 0, 0, 0],
+        POSITION: [1, 15, 1, 15, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
             TYPE: defExports.portaFortessMinion,
@@ -124102,7 +123719,7 @@ defExports.portaFortess = {
             MAX_CHILDREN: 4
         }
     }, {
-        POSITION: [3.5, 15, 1, 8, 0, 0, 0]
+        POSITION: [11.5, 15, 1, 0, 0, 0, 0]
     }, {
         POSITION: [13, 8, 1, 0, 0, 180, 0]
     }, {
@@ -124230,8 +123847,6 @@ defExports.ship22Boss = {
     SHAPE: 294,
     COLOR: 232,
     SIZE: 50,
-    LEVEL: 60,
-    VALUE: 59212,
     STAT_NAMES: statNames.generic,
     BODY: {
         FOV: .82,
@@ -124279,7 +123894,7 @@ defExports.subduerDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 6, 1, 3, 0, 0, .5],
@@ -124338,7 +123953,7 @@ defExports.dropshipBasic = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -124355,7 +123970,7 @@ defExports.dropshipBasic = {
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_power]),
             TYPE: defExports.bullet
         }
     }, {
@@ -124378,7 +123993,7 @@ defExports.megaDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 10.5, 1, 0, 0, 0, 0],
@@ -124412,7 +124027,7 @@ defExports.megaSubduerDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8.5, 1, 3, 0, 0, .5],
@@ -124471,7 +124086,7 @@ defExports.bigSubduerDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SCOPED: true,
     GUNS: [{
@@ -124556,7 +124171,7 @@ defExports.flankHelix = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -124573,7 +124188,7 @@ defExports.flankHelix = {
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_power]),
             TYPE: defExports.bullet
         }
     }, {
@@ -124603,7 +124218,7 @@ defExports.flankHelix = {
     }, {
         POSITION: [18, 8, 1, 0, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_power]),
             TYPE: defExports.bullet
         }
     }, {
@@ -124628,7 +124243,7 @@ defExports.mailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: [{
@@ -124761,7 +124376,7 @@ defExports.boomerArtillery = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -124796,7 +124411,7 @@ defExports.aBigTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -124925,7 +124540,7 @@ defExports.cruiserThingy = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 25, 0],
@@ -124968,7 +124583,7 @@ defExports.sniperGatlingTriplet = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.225
+        FOV: base.FOV * 1.225
     },
     GUNS: [{
         POSITION: [21, 10, 1, 0, 5, 0, .5],
@@ -125018,7 +124633,7 @@ defExports.twinClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 4, 0, 0],
@@ -125051,7 +124666,7 @@ defExports.clickerNailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 4, 1, 0, 0, 0, 0],
@@ -125090,7 +124705,7 @@ defExports.whirlyRanger = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .65,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     LAYER: 13,
     MOTION_TYPE: 'glideBall',
@@ -125206,7 +124821,7 @@ defExports.emp = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -125224,9 +124839,11 @@ defExports.emp = {
 };
 defExports.underClicker = makeHybrid(defExports.clicker, 'under', {
     //name: 'Dark Star',
-    accel: base.ACCEL * .65,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .65,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.dropferno = {
     PARENT: [defExports.genericTank],
@@ -125353,7 +124970,7 @@ defExports.dropshipTrapper = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -125526,7 +125143,7 @@ defExports.underchiller = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     SHAPE: 4,
@@ -125608,7 +125225,7 @@ defExports.noobTubeScramjet = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [24, 7, 1, 0, 0, 0, 0],
@@ -125665,7 +125282,7 @@ defExports.poisonMini = {
     LABEL: 'Formaldehyde',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, 0, 0, 0],
@@ -125823,7 +125440,7 @@ defExports.doxxoxy = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [19, .3, -55, 0, 0, 180, 0],
@@ -125927,7 +125544,7 @@ defExports.dropshipPounder = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -125973,7 +125590,7 @@ defExports.necroRectangle = {
     LABEL: 'Rectangmancer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 148,
     GUNS: [{
@@ -126016,7 +125633,7 @@ defExports.oscilloscopeHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 7.25, 1.25, 10, 0, 0, 0]
@@ -126049,7 +125666,7 @@ defExports.invariant = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.265
+        FOV: base.FOV * 1.265
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126076,7 +125693,7 @@ defExports.clickerInvariant = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126113,7 +125730,7 @@ defExports.invariable = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126170,7 +125787,7 @@ defExports.invariantdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.265
+        FOV: base.FOV * 1.265
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126202,7 +125819,7 @@ defExports.invariantBoost = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .9,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126327,7 +125944,7 @@ defExports.invariantStorm = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.265
+        FOV: base.FOV * 1.265
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126356,7 +125973,7 @@ defExports.invariantSeeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.075,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126388,7 +126005,7 @@ defExports.invariantNovi = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.05,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SIZE: 7,
     SHAPE: 134,
@@ -126457,14 +126074,14 @@ defExports.invariantMultitool = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.265
+        FOV: base.FOV * 1.265
     },
     SIZE: 7,
     SHAPE: 134,
     GUNS: [{
         POSITION: [21, 11, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_power]),
             TYPE: defExports.bullet
         }
     }]
@@ -126481,7 +126098,7 @@ defExports.battlepod = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: []
 };
@@ -126501,7 +126118,7 @@ defExports.warcry = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.5, 12, .75, 5, 0, 0, 0],
@@ -126542,7 +126159,7 @@ defExports.battlerock = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [],
     TURRETS: [{
@@ -126588,7 +126205,7 @@ defExports.biggerBattlepod = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: []
 };
@@ -126615,7 +126232,7 @@ defExports.detCruiser = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 0, 0],
@@ -126642,7 +126259,7 @@ defExports.detbattleship = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 90, 0],
@@ -126734,7 +126351,7 @@ defExports.battlepodShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -126823,18 +126440,16 @@ defExports.octoArenaCloser = {
     }]
 };
 defExports.carbonPupil = {
-    LABEL: '',
+    LABEL: 'Pupil',
     COLOR: 236
 };
 defExports.carbonPupil2 = {
-    LABEL: '',
+    LABEL: 'Pupil',
     COLOR: 235
 };
 defExports.carbonEye = {
-    LABEL: '',
-    BODY: {
-        FOV: 1
-    },
+    LABEL: 'Eye',
+    BODY: { FOV: 1 },
     CONTROLLERS: ['onlyAcceptInArc', 'nearestDifferentMaster'],
     COLOR: 237,
     TURRETS: [{
@@ -126851,16 +126466,14 @@ defExports.carbonEye2 = {
 };
 defExports.carbonRailgun = {
     LABEL: 'Railgun MK-II', // Carbonfras Turret
-    BODY: {
-        FOV: 1.35
-    },
+    BODY: { FOV: 1.35 },
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
     COLOR: 34,
     HAS_NO_RECOIL: true,
     GUNS: [{
         POSITION: [2, 11, 1, 15, 0, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.bit_slow, g.half_reload, g.half_reload, g.bit_less_reload]), //g.basic, g.sniper, g.assassin, g.railgun
+            SHOOT_SETTINGS: combineStats([g.basic, g.sniper, g.bit_slow, g.half_reload, g.half_reload, g.bit_less_reload]),
             TYPE: defExports.bullet,
             COLOR: 236
         }
@@ -126901,21 +126514,15 @@ defExports.carbonRailgun = {
         }
     }, {
         POSITION: [38, 2, 1, 0, 6.8, 0, 0],
-        PROPERTIES: {
-            COLOR: 236
-        }
+        PROPERTIES: { COLOR: 236 }
     }, {
         POSITION: [38, 2, 1, 0, -6.8, 0, 0],
-        PROPERTIES: {
-            COLOR: 236
-        }
+        PROPERTIES: { COLOR: 236 }
     }]
 };
 defExports.carbonAssassin = {
     LABEL: 'Assassin',
-    BODY: {
-        FOV: 1.35
-    },
+    BODY: { FOV: 1.35 },
     CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
     COLOR: 34,
     GUNS: [{
@@ -126927,20 +126534,18 @@ defExports.carbonAssassin = {
         }
     }, {
         POSITION: [5, 9, -1.5, 8, 0, 0, 0],
-        PROPERTIES: {
-            COLOR: 236
-        }
+        PROPERTIES: { COLOR: 236 }
     }]
 };
 defExports.carbonfras = {
     PARENT: [defExports.genericTank],
     LABEL: 'Carbonfras',
     DANGER: 8,
+    SHAPE: 6,
     COLOR: 34,
     SIZE: 64,
-    SHAPE: 6,
     BODY: {
-        FOV: .7,
+        FOV: base.FOV * .7,
         SPEED: 1.15,
         ACCELERATION: base.ACCEL * .4,
         HEALTH: 1250,
@@ -126948,22 +126553,24 @@ defExports.carbonfras = {
         REGEN: .015
     },
     FACING_TYPE: ['autospin', { SPEED: .004 }],
-    TURRETS: [{
+    TURRETS: function(out = [{
         POSITION: [8, 0, 0, 0, 360, 1],
         TYPE: defExports.carbonEye2
-    }]
+    }]) {
+        for (let i = 0; i < 6; i++) out.push({
+            POSITION: [4, -7, 0, i * 60, 360, 1],
+            TYPE: defExports.carbonEye
+        }, {
+            POSITION: [3, 9.75, 0, i * 60, 165, 0],
+            TYPE: defExports.carbonRailgun
+        });
+        for (let i = 0; i < 6; i++) out.push({
+            POSITION: [4.7, 10.5, 0, 30 + i * 60, 165, 0],
+            TYPE: defExports.carbonAssassin
+        });
+        return out;
+    }()
 };
-for (let i = 0; i < 6; i++) defExports.carbonfras.TURRETS.push({
-    POSITION: [4, -7, 0, i * 60, 360, 1],
-    TYPE: defExports.carbonEye
-}, {
-    POSITION: [3, 9.75, 0, i * 60, 165, 0],
-    TYPE: defExports.carbonRailgun
-});
-for (let i = 0; i < 6; i++) defExports.carbonfras.TURRETS.push({
-    POSITION: [4.7, 10.5, 0, 30 + i * 60, 165, 0],
-    TYPE: defExports.carbonAssassin
-});
 defExports.marbleBorder = {
     SHAPE: 136
 };
@@ -126976,7 +126583,7 @@ defExports.marbleSmash = {
     LABEL: 'Marble',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -127287,7 +126894,7 @@ defExports.tidepod = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [9, 12, .6, 5, 0, 0, .5],
@@ -127334,7 +126941,7 @@ defExports.fourfour = {
     SHAPE: 10011,
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -127795,14 +127402,12 @@ defExports.eggBossTier6 = {
     LABEL: 'EK-6',
     DANGER: 9,
     BOSS_TIER_TYPE: 0,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 8,
     SHAPE: 6,
     SIZE: 175,
     HAS_NO_RECOIL: true,
     BODY: {
-        FOV: .66,
+        FOV: base.FOV * .66,
         SPEED: 1,
         ACCELERATION: .15,
         HEALTH: 2250,
@@ -128163,7 +127768,7 @@ defExports.freezeFlame = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [12, 13.5, -1.2, 5, 0, 0, 0],
@@ -128293,7 +127898,7 @@ defExports.newOverluxe = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -128351,7 +127956,7 @@ defExports.newOverluxe = {
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }]
@@ -128539,7 +128144,7 @@ defExports.corruptUV = {
     LABEL: 'Corrupt UV',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -129058,21 +128663,6 @@ defExports.redRunner4 = {
     },
     EVOLUTIONS: []
 };
-defExports.eggBossTier2AI = {
-    PARENT: [defExports.eggBossTier2],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 4, 6, 3, 4, 5, 3, 0, 0, 0),
-    BROADCAST_MESSAGE: 'An EK-2 has been defeated!'
-};
 defExports.summonerSquare = {
     PARENT: [defExports.crasher],
     LABEL: 'Summoner Square',
@@ -129266,7 +128856,7 @@ defExports.splitterSplitterPentagon = {
     PROPS: [{
         POSITION: [0.6, 0, 0, 0, 1],
         SHAPE: 5,
-    },],
+    }],
     TURRETS: [],
 	ON_DEAD: function ({ sockets, ran, Entity }) {
 		let x = this.x,
@@ -129395,7 +128985,7 @@ defExports.ribbonPoly = {
         POSITION: [0.5, 0, 0, 0, 1],
         SHAPE: 0,
         COLOR: 16,
-    },],
+    }],
     TURRETS: [{
         POSITION: [26, 16.2, 0, 90, 0, 0],
         TYPE: defExports.bowpolysegment
@@ -129443,7 +129033,7 @@ defExports.knotPoly = {
         POSITION: [0.5, 0, 0, 0, 1],
         SHAPE: 0,
         COLOR: 16,
-    },],
+    }],
     EVOLUTIONS: [
         ["ribbonPoly", 100]
     ]
@@ -129733,7 +129323,7 @@ defExports.sliderBoss = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.75,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 4300,
         REGEN: .005
     },
@@ -129819,21 +129409,6 @@ for (let i = 0; i < 69; i++) defExports.auto69closer.TURRETS.push({
     POSITION: [11, 8, 0, i * 360 / 69, 190, 0],
     TYPE: defExports.auto69closerGun
 });
-defExports.eggBossTier5AI = { // why
-    PARENT: [defExports.eggBossTier5],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 5e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An EK-5 has been defeated!'
-};
 defExports.radiowave = {
     PARENT: [defExports.genericTank],
     LABEL: 'Radiowave',
@@ -129895,7 +129470,7 @@ defExports.arsenalBattleship = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, -4, 90, .5],
@@ -129959,7 +129534,7 @@ defExports.miniDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [5, 8, 1, 0, 0, 0, 0],
@@ -130175,6 +129750,26 @@ defExports.nkBoomerTurret = {
         }
     }]
 };
+defExports.nkAutoGun = {
+    LABEL: 'Turret',
+    COLOR: 14,
+    CONTROLLERS: ['canRepel', 'mapAltToFire', 'nearestDifferentMaster', 'onlyAcceptInArc'],
+    INDEPENDENT: true,
+    BODY: { FOV: 2 },
+    GUNS: [{
+        POSITION: [16, 4, 1, 0, -3.5, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [16, 4, 1, 0, 3.5, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto, g.gunner, g.twin, g.power, g.slow]),
+            TYPE: defExports.bullet
+        }
+    }]
+};
 defExports.nestKeeper = {
     PARENT: [defExports.genericTank],
     LABEL: 'Nest Keeper',
@@ -130209,10 +129804,7 @@ defExports.nestKeeper = {
     }]) {
         for (let i = 4; i > -1; i--) turrets.unshift({
             POSITION: [8, 9, 0, 72 * i, 120, 0],
-            TYPE: [defExports.auto4gun, {
-                INDEPENDENT: true,
-                COLOR: 14
-            }]
+            TYPE: defExports.nkAutoGun
         });
         return turrets;
     })()
@@ -130224,7 +129816,7 @@ defExports.eliteBattleship = {
     COLOR: 5,
     SIZE: 22,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .1,
         HEALTH: base.HEALTH * 7,
         DAMAGE: base.DAMAGE * 2.5
@@ -130895,7 +130487,7 @@ defExports.subduer360 = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: []
 };
@@ -130939,7 +130531,7 @@ defExports.guntrapHeavy = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
@@ -130977,7 +130569,7 @@ defExports.minishotAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -4.5, -7, .25],
@@ -131011,7 +130603,7 @@ defExports.recruitAssassin = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .775,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [17, 2.5, 1, 0, 7.5, 0, .75],
@@ -131073,7 +130665,7 @@ defExports.hotshotLaser = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 12, 1, 0, 0, 0, 0],
@@ -131157,7 +130749,7 @@ defExports.ramjet = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * 1.4,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 180, 0],
@@ -131399,7 +130991,7 @@ defExports.magnetar = {
     SHAPE: 102,
     COLOR: 14,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -131456,7 +131048,7 @@ defExports.quasar = {
     SHAPE: 102,
     COLOR: 0,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1200,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -131897,7 +131489,7 @@ defExports.morningstarnuclearBomb2 = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.smaller, g.one_fifth_reload, g.one_fifth_reload]),
             TYPE: [defExports.morningstarnukeProjectile, {
-                ON_DAMAGED: (me, them) => { torch(me, them, 1, 1, me.team); },
+                ON_DAMAGED: (me, them) => torch(me, them, 1, 1, me.team),
                 DOES_TORCH: true
             }]
         }
@@ -132258,12 +131850,12 @@ defExports.basijet = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * 1.1,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -132297,7 +131889,7 @@ defExports.elitePelleter = {
     DANGER: 10,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -132349,7 +131941,7 @@ defExports.singleSnipeBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     SCOPED: true,
@@ -132371,7 +131963,7 @@ defExports.singleBoomer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.boomer,
     SCOPED: true,
@@ -132456,7 +132048,7 @@ defExports.singleEngineer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     SCOPED: true,
@@ -132485,7 +132077,7 @@ defExports.singleSplitBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     SCOPED: true,
@@ -132514,7 +132106,7 @@ defExports.singleMachBuilder = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     SCOPED: true,
@@ -132593,7 +132185,7 @@ defExports.planterDiver = {
         HEALTH: base.HEALTH * .8,
         SHIELD: base.SHIELD * .8,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -132633,7 +132225,7 @@ defExports.coronavirus = {
     LABEL: 'Coronavirus',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -132785,7 +132377,7 @@ defExports.autoTankTwin = {
     LABEL: 'Fleet',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     FACING_TYPE: 'autospin',
@@ -132864,7 +132456,7 @@ defExports.autoTankSniper = {
     LABEL: 'Division',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     FACING_TYPE: 'autospin',
@@ -132992,7 +132584,7 @@ defExports.shieldweaver = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     GUNS: [{
@@ -133484,7 +133076,7 @@ defExports.mei = {
     LABEL: 'Meijijingu',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.05,
         ACCELERATION: base.ACCEL * .7
     },
@@ -133523,7 +133115,7 @@ defExports.meiFire = {
     LABEL: 'Meijijingu',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.05,
         ACCELERATION: base.ACCEL * .7
     },
@@ -133620,7 +133212,7 @@ neoMakeAnimTank('exteng', 'Exteng', [{
         BODY: {
             ACCELERATION: base.ACCEL * .5,
             SPEED: base.SPEED * .8,
-            FOV: 1.4
+            FOV: base.FOV * 1.4
         },
         GUNS: [{
             POSITION: [15, 8.5, 1, 0, 0, 0, 0],
@@ -133639,7 +133231,7 @@ neoMakeAnimTank('exteng', 'Exteng', [{
         BODY: {
             ACCELERATION: base.ACCEL * .5,
             SPEED: base.SPEED * .8,
-            FOV: 1.4
+            FOV: base.FOV * 1.4
         },
         GUNS: [{
             POSITION: [215, 8.5, 1, 0, 0, 0, 0],
@@ -133769,7 +133361,7 @@ defExports.homingdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -133811,7 +133403,7 @@ defExports.atrium = makeAuto({
     SIZE: 20,
     DANGER: 10,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: base.HEALTH * 10,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75
@@ -133873,9 +133465,11 @@ defExports.atriumAI = {
     BROADCAST_MESSAGE: 'An Atrium has been defeated!'
 };
 defExports.overdestroyer = makeHybrid(defExports.destroyer, 'over', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.borerFalcon = {
     PARENT: [defExports.genericTank],
@@ -133883,7 +133477,7 @@ defExports.borerFalcon = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -133933,7 +133527,7 @@ defExports.shieldAssassinator = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -134006,7 +133600,7 @@ defExports.ekAnim0 = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -134050,7 +133644,7 @@ for (let i = 1; i < 21; i++) defExports[`ekAnim${i}`] = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -134106,15 +133700,13 @@ defExports.ekAnim21 = {
     PARENT: [defExports.genericTank],
     LABEL: 'EK-2',
     DANGER: 8,
-    LEVEL: 60,
-    VALUE: 59212,
     COLOR: 34,
     SHAPE: 6,
     SIZE: 32,
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.25,
         ACCELERATION: .25,
         HEALTH: 1000,
@@ -134519,7 +134111,7 @@ defExports.handBasic0 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.bit_less_reload]),
             TYPE: defExports.bullet
         }
     }, {
@@ -134586,7 +134178,7 @@ defExports.handBasic40 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -135196,7 +134788,7 @@ for (let i = 1; i < 10; i++) {
         DANGER: 7,
         BODY: {
             ACCELERATION: base.ACCEL * .7,
-            FOV: 1 + .02 * i
+            FOV: base.FOV * 1 + .02 * i
         },
         SHAPE: 257,
         STAT_NAMES: statNames.generic,
@@ -135230,7 +134822,7 @@ for (let i = 1; i < 10; i++) {
         DANGER: 7,
         BODY: {
             ACCELERATION: base.ACCEL * .75,
-            FOV: 1 + .01 * i
+            FOV: base.FOV * 1 + .01 * i
         },
         STAT_NAMES: statNames.generic,
         SHAPE: 257,
@@ -135257,7 +134849,7 @@ for (let i = 1; i < 10; i++) {
         LABEL: 'Switcheroo (...)',
         DANGER: 7,
         BODY: {
-            FOV: 1 + .01 * i
+            FOV: base.FOV * 1 + .01 * i
         },
         STAT_NAMES: statNames.generic,
         SHAPE: 257,
@@ -135369,7 +134961,7 @@ for (let i = 1; i < 10; i++) {
         DANGER: 7,
         BODY: {
             ACCELERATION: base.ACCEL * .9,
-            FOV: 1 + .01 * i
+            FOV: base.FOV * 1 + .01 * i
         },
         STAT_NAMES: statNames.generic,
         SHAPE: 257,
@@ -135518,20 +135110,11 @@ defExports.stationer = {
 };
 makeAkafuji('bite', `Bite of '87`, defExports.pounder);
 defExports.reanimBiohazard = makeReanimated(defExports.biohazard);
-defExports.reanimBiohazardAI = {
-    PARENT: [defExports.reanimBiohazard],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 5, 0),
-    BROADCAST_MESSAGE: 'A Reanimated Biohazard has been defeated!'
-};
+defExports.reanimBiohazardAI = makeBossAI(defExports.reanimBiohazard, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.supercarrier = { // https://cdn.discordapp.com/attachments/450038287978201118/569596781856423936/Cruiser_HD.png
     PARENT: [defExports.genericTank],
     LABEL: 'Supercarrier',
@@ -136012,7 +135595,7 @@ defExports.zke0 = {
     LABEL: 'Arrival',
     DANGER: 7,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95
     },
@@ -136051,7 +135634,7 @@ for (let i = 1; i < 31; i++) defExports[`zke${i}`] = {
     LABEL: 'Arrival',
     DANGER: 7,
     BODY: {
-        FOV: 1.25 + i * .1 / 31,
+        FOV: base.FOV * 1.25 + i * .1 / 31,
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95
     },
@@ -136095,7 +135678,7 @@ defExports.zke31 = {
     LABEL: 'Arrival',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95
     },
@@ -136305,7 +135888,7 @@ defExports.musketMultishot = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 3, 1, 8, -3, 0, 0],
@@ -136401,7 +135984,7 @@ defExports.newOverride = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 10,
     GUNS: [{
@@ -136435,7 +136018,7 @@ defExports.val0 = {
     LABEL: 'Valtion',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -136461,7 +136044,7 @@ for (let i = 1; i < 31; i++) defExports[`val${i}`] = {
     LABEL: 'Valtion',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -136487,7 +136070,7 @@ defExports.val31 = {
     LABEL: 'Valtion',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .7
     },
     GUNS: [{
@@ -136846,7 +136429,7 @@ defExports.steyr0 = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -136876,7 +136459,7 @@ for (let i = 1; i < 31; i++) defExports[`steyr${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -136903,7 +136486,7 @@ defExports.steyr31 = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -137271,7 +136854,7 @@ defExports.contagionUnderseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .675,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -137324,7 +136907,7 @@ defExports.lancerUnderseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * 1.195,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -137511,7 +137094,7 @@ defExports.builderSwitchblade = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * 1.215,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -137569,7 +137152,7 @@ defExports.dualBuilder = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     CAMERA_TO_MOUSE: [true, 3.85],
     STAT_NAMES: statNames.block,
@@ -137597,7 +137180,7 @@ defExports.dualEngineer = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     CAMERA_TO_MOUSE: [true, 3.85],
     STAT_NAMES: statNames.block,
@@ -137640,7 +137223,7 @@ defExports.zoomConstruct = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     SCOPED: true,
     STAT_NAMES: statNames.block,
@@ -137663,7 +137246,7 @@ defExports.castano0 = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -137689,7 +137272,7 @@ for (let i = 1; i < 13; i++) defExports[`castano${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * (.5 + .1 * i / 48),
         SPEED: base.SPEED * (.7 + .15 * i / 48),
-        FOV: 1.15 + .2 * i / 48
+        FOV: base.FOV * 1.15 + .2 * i / 48
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -137710,7 +137293,7 @@ for (let i = 13; i < 24; i++) defExports[`castano${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * (.5 + .1 * i / 48),
         SPEED: base.SPEED * (.7 + .15 * i / 48),
-        FOV: 1.15 + .2 * i / 48
+        FOV: base.FOV * 1.15 + .2 * i / 48
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -137731,7 +137314,7 @@ for (let i = 24; i < 48; i++) defExports[`castano${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * (.5 + .1 * i / 48),
         SPEED: base.SPEED * (.7 + .15 * i / 48),
-        FOV: 1.15 + .2 * i / 48
+        FOV: base.FOV * 1.15 + .2 * i / 48
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -137752,7 +137335,7 @@ defExports.castano48 = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -137777,7 +137360,7 @@ defExports.trired0 = {
     BODY: {
         ACCELERATION: base.ACCEL,
         SPEED: base.SPEED,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [18, 10, 1, 0, 5, 0, .5],
@@ -137807,7 +137390,7 @@ for (let i = 1; i < 31; i++) defExports[`trired${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * (1 - .6 * i / 31),
         SPEED: base.SPEED * (1 - .295 * i / 31),
-        FOV: 1.05 + .15 * i / 31
+        FOV: base.FOV * 1.05 + .15 * i / 31
     },
     GUNS: [{
         POSITION: [18 - 10.75 * i / 31, 10 + 2.25 * i / 31, 1 + .25 * i / 31, 10 * i / 31, 5 - 5 * i / 30, 0, 0]
@@ -137824,7 +137407,7 @@ defExports.trired31 = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0]
@@ -137882,20 +137465,19 @@ defExports.homingFighter = {
         }
     }]
 };
-defExports.fallenFighter = makeFallen(defExports.fighter);
-defExports.fallenFighterAI = {
-    PARENT: [defExports.fallenFighter],
-    TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        SKYNET: true
+defExports.fallenFighter = makeFallen(defExports.fighter, {
+    body: {
+        acceleration: base.ACCEL,
+        speed: base.SPEED
     },
-    BROADCAST_MESSAGE: 'A Fallen Fighter has been defeated!',
-    SKILL: setSkill(2, 2, 6, 3, 3, 3, 9, 9, 0, 0)
-};
+    facingType: 'smoothToTarget'
+});
+defExports.fallenFighterAI = makeBossAI(defExports.fallenFighter, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.unevenFlank = {
     PARENT: [defExports.genericTank],
     LABEL: 'Uneven Double',
@@ -138115,7 +137697,7 @@ defExports.overlordTrapper = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 60, 0],
@@ -138333,7 +137915,7 @@ defExports.miniAsteroidSegments = {
     TURRETS: [{
         POSITION: [10, 0, 0, 0, 190, 1],
         TYPE: [defExports.auto3gun, { SYNC_TURRET_SKILLS: true }, { BODY: { FOV: 1.5 } }],
-    },],
+    }],
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, -45, 0],
         PROPERTIES: {
@@ -138407,7 +137989,7 @@ neoMakeAnimTank('whatever', 'Whatever', [{
         PARENT: [defExports.genericTank],
         DANGER: 7,
         BODY: {
-            FOV: 1.3,
+            FOV: base.FOV * 1.3,
             ACCELERATION: base.ACCEL * .9
         },
         GUNS: [{
@@ -138439,7 +138021,7 @@ neoMakeAnimTank('whatever', 'Whatever', [{
         PARENT: [defExports.genericTank],
         DANGER: 7,
         BODY: {
-            FOV: 1.3,
+            FOV: base.FOV * 1.3,
             ACCELERATION: base.ACCEL * .9
         },
         GUNS: [{
@@ -138471,7 +138053,7 @@ neoMakeAnimTank('whatever', 'Whatever', [{
         PARENT: [defExports.genericTank],
         DANGER: 7,
         BODY: {
-            FOV: 1.3,
+            FOV: base.FOV * 1.3,
             ACCELERATION: base.ACCEL * .9
         },
         GUNS: [{
@@ -138509,7 +138091,7 @@ defExports.shapeChange0 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     HAS_ANIMATION: "rmb",
     GUNS: [{
@@ -138571,7 +138153,7 @@ for (let i = 1; i < 31; i++) defExports[`shapeChange${i}`] = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * (.7 + .3 * i / 31),
         SPEED: base.SPEED * (.8 + .2 * i / 31),
-        FOV: 1.1 - .1 * i / 31
+        FOV: base.FOV * 1.1 - .1 * i / 31
     },
     GUNS: [{
         POSITION: [5 + 6 * i / 31, 12 - 8.5 * i / 31, 1.2 - .2 * i / 31, 8 - 8 * i / 31, 7.25 * i / 31, 90 - 90 * i / 31, 0]
@@ -138660,7 +138242,7 @@ defExports.cruiserShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -138805,7 +138387,7 @@ defExports.misitor0 = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
@@ -138840,7 +138422,7 @@ for (let i = 1; i < 31; i++) defExports[`misitor${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * (.9 - .2 * i / 31),
         SPEED: base.SPEED * (1 - .15 * i / 31),
-        FOV: 1.2 + .1 * i / 31
+        FOV: base.FOV * 1.2 + .1 * i / 31
     },
     GUNS: [{
         POSITION: [22 + i / 31, 8 - i / 31, 1, 0, 0, 0, 0]
@@ -138862,7 +138444,7 @@ defExports.misitor31 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     HAS_ANIMATION: "rmb",
     GUNS: [{
@@ -138998,7 +138580,7 @@ defExports.twinRailgun1 = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     BOSS_TIER_TYPE: 17,
     GUNS: [{
@@ -139121,7 +138703,7 @@ defExports.twinRailgun2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     BOSS_TIER_TYPE: 17,
     GUNS: [{
@@ -139262,7 +138844,7 @@ defExports.buildTrapperHunter = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.275
+        FOV: base.FOV * 1.275
     },
     GUNS: [{
         POSITION: [23, 7, 1, 0, 0, 0, 0]
@@ -139326,7 +138908,7 @@ defExports.traprangFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 3,
     SHAPE: -5,
@@ -139498,7 +139080,7 @@ defExports.megaRocketeer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 15.5, -.5, 9.5, 0, 0, 0],
@@ -139536,7 +139118,7 @@ defExports.homingRocketeer = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -.5, 9.5, 0, 0, 0],
@@ -139594,7 +139176,7 @@ defExports.swarmRocketeer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -.5, 9.5, 0, 0, 0],
@@ -139615,7 +139197,7 @@ defExports.skimketster0 = {
     LABEL: 'Vympel',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .925
     },
     GUNS: [{
@@ -139646,7 +139228,7 @@ defExports.skimketster30 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .775,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -.5, 9.5, 0, 0, .1],
@@ -139674,7 +139256,7 @@ defExports.skimketster60 = {
     LABEL: 'Vympel',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 13, -.5, 9, 0, 0, 0]
@@ -139713,7 +139295,7 @@ defExports.twinMiniGrower = {
     LABEL: 'Twini Grower',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [22, 9, 1, 0, 5.5, 0, 0],
@@ -139982,7 +139564,7 @@ defExports.underseerOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 4,
@@ -140075,7 +139657,7 @@ defExports.turretAssistedSummoner = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.8,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 1250,
         REGEN: .006
     },
@@ -140193,7 +139775,7 @@ defExports.sidewindBoom = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [10, 11, -0.5, 14, 0, 0, 0]
@@ -140356,7 +139938,7 @@ defExports.basicRanger0 = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .9,
-        FOV: 1
+        FOV: base.FOV * 1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -140379,7 +139961,7 @@ for (let i = 1; i < 30; i++) defExports[`basicRanger${i}`] = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1 + i * (.4 / 30)
+        FOV: base.FOV * 1 + i * (.4 / 30)
     },
     GUNS: [{
         POSITION: [18 + i * (14 / 30), 8.5, 1, 0, 0, 0, 0]
@@ -140399,7 +139981,7 @@ defExports.basicRanger30 = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [32, 8.5, 1, 0, 0, 0, 0],
@@ -140481,7 +140063,7 @@ defExports.skimThrower = {
     LABEL: 'Mladic',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.trap,
@@ -140513,7 +140095,7 @@ defExports.acgun = {
     LABEL: 'AC Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -6, -7, .25],
@@ -140605,7 +140187,7 @@ defExports.donutSkimmer = {
     LABEL: 'Munchkin',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 14, -0.5, 9, 0, 0, 0]
@@ -140688,7 +140270,7 @@ defExports.swarmDual = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 5.75, 1, 0, 6.5, 0, 0],
@@ -140993,7 +140575,7 @@ defExports.revitalist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -141046,7 +140628,7 @@ defExports.mladicBoss = {
     DANGER: 14,
     COLOR: 5,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -141215,7 +140797,7 @@ defExports.zoomNightseeker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     INVISIBLE: [.08, .01, .02],
     SCOPED: true,
@@ -141251,7 +140833,7 @@ defExports.kami = {
     LABEL: 'Kamikaze',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -141292,7 +140874,7 @@ defExports.bigBang = {
     LABEL: 'The Big Bang',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -141335,7 +140917,7 @@ defExports.bigCrunch = {
     LABEL: 'The Big Crunch',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -141374,7 +140956,7 @@ defExports.tripletSingle = {
     LABEL: 'Triple',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     SCOPED: true,
     GUNS: [{
@@ -141489,7 +141071,7 @@ defExports.miniOrangicus = makeAuto({
     PARENT: [defExports.genericTank],
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .95
     },
     FACING_TYPE: 'autospin',
@@ -141554,7 +141136,7 @@ defExports.rngTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -141616,7 +141198,7 @@ defExports.rainbowTrapper = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0],
@@ -141710,7 +141292,7 @@ defExports.workshop = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -141773,7 +141355,7 @@ defExports.newGravityWell = {
     PARENT: [defExports.genericTank],
     LABEL: 'Gravity Well',
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .95
     },
     GUNS: [{
@@ -141812,7 +141394,7 @@ defExports.gunPredator = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [16, 2, 1, 0, 8.6, 0, .6],
@@ -142113,7 +141695,7 @@ defExports.longerContagion = {
     LABEL: 'Ebola',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.generic,
@@ -142263,7 +141845,7 @@ defExports.swarmDropship = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [1, 8, 1, 0, 0, 0, 0],
@@ -142680,7 +142262,7 @@ defExports.AWP_1 = {
     SHAPE: 4,
     FACING_TYPE: 'autospin',
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .5,
         HEALTH: 200,
         SHIELD: base.SHIELD * 1.25,
@@ -142799,7 +142381,7 @@ defExports.AWP_14 = {
     COLOR: 12,
     SIZE: 20,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * 1.5,
         HEALTH: 225,
         SHIELD: base.SHIELD * 1.25,
@@ -143921,7 +143503,7 @@ defExports.AWP_cos5 = {
     SIZE: 18,
     SHAPE: 3,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED,
         HEALTH: 200,
         SHIELD: base.SHIELD * 1.25,
@@ -144014,7 +143596,7 @@ defExports.AWP_ps = {
     SHAPE: 5,
     SIZE: 20,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .85,
         HEALTH: 200,
         SHIELD: base.SHIELD * 1.25,
@@ -144116,18 +143698,6 @@ defExports.awp30AI = {
     VARIES_IN_SIZE: true,
     VALUE: 10e6,
     BROADCAST_MESSAGE: 'An AWP-30 has been defeated!'
-};
-defExports.EK_3AI = {
-    PARENT: [defExports.eggBossTier3],
-    TYPE: 'miniboss',
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
-    AI: {
-        BLIND: true
-    },
-    SKILL: setSkill(5, 12, 4, 8, 8, 9, 9, 1, 2, 2),
-    VARIES_IN_SIZE: true,
-    VALUE: 400000,
-    BROADCAST_MESSAGE: 'An EK-3 has been defeated!'
 };
 defExports.RK_1AI = {
     PARENT: [defExports.rocketBossTier1],
@@ -144241,7 +143811,7 @@ defExports.assin = makeAuto({
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         DAMAGE: base.DAMAGE * 1.15
     },
     GUNS: [{
@@ -144261,7 +143831,7 @@ defExports.assinin = makeAuto({
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         DAMAGE: base.DAMAGE * 1.15
     },
     GUNS: [{
@@ -144283,7 +143853,7 @@ defExports.utoAssin = makeAuto({
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         DAMAGE: base.DAMAGE * 1.15
     },
     GUNS: [{
@@ -144574,9 +144144,7 @@ defExports.ruse = {
     PARENT: [defExports.genericTank],
     LABEL: "Ruse",
     DANGER: 7,
-    BODY: {
-        FOV: 1.05
-    },
+    BODY: { FOV: 1.05 },
     TOOLTIP: "Right click to shoot a large bullet.",
     GUNS: [{
         POSITION: [17.5, 19, 1, 0, 0, 0, 0],
@@ -144650,7 +144218,7 @@ defExports.megaLightning = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{ // Janky fix, let's see if it works
         POSITION: [6, 10, 1.2, 5, 3, 45, .5],
@@ -144844,7 +144412,7 @@ defExports.miniDemolisher = {
     DANGER: 7,
     SIZE: defExports.genericTank.SIZE * 1.125, // huh. okay.
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         HEALTH: base.HEALTH * 1.2,
         SPEED: base.SPEED * .8
     },
@@ -144910,7 +144478,7 @@ defExports.miniVanguard = makeAuto({
     SHAPE: 3,
     DANGER: 8,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         HEALTH: base.HEALTH * 1.05,
         SPEED: base.SPEED * 1.1
     },
@@ -144941,7 +144509,7 @@ defExports.miniDefender = {
     DANGER: 8,
     SHAPE: 3,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         HEALTH: base.HEALTH * 1.2,
         SPEED: base.SPEED * .8
     },
@@ -145183,7 +144751,7 @@ defExports.angle = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -145376,7 +144944,7 @@ defExports.numerator = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -145459,7 +145027,7 @@ defExports.tensorProduct = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 90, 0],
@@ -145510,7 +145078,7 @@ defExports.antiderivative = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -145957,7 +145525,7 @@ defExports.worldDestroyer = (function () {
         SIZE: 100,
         SHAPE: 14,
         BODY: {
-            FOV: .66,
+            FOV: base.FOV * .66,
             SPEED: 1,
             ACCELERATION: .15,
             HEALTH: 3500,
@@ -146054,7 +145622,7 @@ defExports.worldDestroyer = (function () {
 defExports.worldDestroyerAIWeaker = {
     PARENT: [defExports.worldDestroyer],
     BODY: {
-        FOV: .66,
+        FOV: base.FOV * .66,
         SPEED: 1.5,
         ACCELERATION: .15,
         HEALTH: 2000,
@@ -146290,7 +145858,7 @@ defExports.mecha = {
     HAS_NO_RECOIL: true,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     TURRETS: [{
         POSITION: [15, 0, 12, 0, 90, 0],
@@ -146330,7 +145898,7 @@ defExports.defendermecha = {
     HAS_NO_RECOIL: true,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     TURRETS: [{
         POSITION: [15, 0, 12, 0, 90, 0],
@@ -146354,7 +145922,7 @@ defExports.gunnermecha = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * 0.9,
-        FOV: 1.075,
+        FOV: base.FOV * 1.075,
     },
     TURRETS: [{
         POSITION: [20, 0, 12, 0, 90, 0],
@@ -146377,7 +145945,7 @@ defExports.heavymecha = {
     HAS_NO_RECOIL: true,
     BODY: {
         ACCELERATION: base.ACCEL * .6,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     TURRETS: [{
         POSITION: [22, 0, 12, 0, 90, 0],
@@ -146394,7 +145962,7 @@ defExports.warmecha = {
     HAS_NO_RECOIL: true,
     BODY: {
         ACCELERATION: base.ACCEL * .585,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [10, 4, .6, 0, 15, 0, 0],
@@ -146620,7 +146188,7 @@ defExports.minimod = makeAuto({
     LABEL: 'Minimod',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -146732,7 +146300,7 @@ defExports.snipehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [17.4, 13.5, -1.2, 5, 0, 0, 0],
@@ -146787,7 +146355,7 @@ defExports.mp9 = {
     GUNS: [{
         POSITION: [19, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -146914,7 +146482,7 @@ defExports.torch = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -146985,7 +146553,7 @@ defExports.butane = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .85,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [1, 6, 1, 3, 7, 0, 0],
@@ -147025,7 +146593,7 @@ defExports.acolyte = {
     SHAPE: 255,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [20, 4.5, 1, 0, 0, 0, 0],
@@ -147087,7 +146655,7 @@ defExports.icyBattlepod = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [],
     PROPS: [makeAura(217)]
@@ -147142,7 +146710,7 @@ defExports.eliteEngie = makeAuto({
     SHAPE: -6,
     SIZE: 28,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: .53,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 400,
@@ -147164,7 +146732,7 @@ defExports.boomerHurricane0 = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147213,7 +146781,7 @@ for (let i = 1; i < 31; i++) defExports[`boomerHurricane${i}`] = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147249,7 +146817,7 @@ defExports.boomerHurricane31 = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147360,7 +146928,7 @@ defExports.apache = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .65,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     LAYER: 13,
     MOTION_TYPE: 'glideBall',
@@ -147395,7 +146963,7 @@ defExports.sixShot = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     TOOLTIP: "Every six shots you will need to reload. 25% to land critical hits.",
@@ -147432,7 +147000,7 @@ defExports.fullerauto = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     HAS_NO_RECOIL: true,
@@ -147457,7 +147025,7 @@ defExports.fullerauto = {
                 }
             },
         }
-    },],
+    }]
 };
 defExports.inverter = { // should be able to invert movement of enemies
     PARENT: [defExports.genericTank],
@@ -147469,7 +147037,7 @@ defExports.inverter = { // should be able to invert movement of enemies
         DENSITY: base.DENSITY * .75,
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [20, 8.5, 1, 0, 0, 0, 0],
@@ -147574,7 +147142,7 @@ defExports.gunderseer = makeHybrid({
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12, 3.5, 1, 0, 7, 0, .5],
@@ -147608,7 +147176,7 @@ defExports.buildwark = {
     LABEL: 'Earthwork',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147646,7 +147214,7 @@ defExports.bulwarkFlankTrap = {
     LABEL: 'Berm',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147701,7 +147269,7 @@ defExports.bulwarkTrapperang = {
     LABEL: 'Vallum',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147743,7 +147311,7 @@ defExports.bulwarkArsenal = {
     LABEL: 'Embankment',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -147791,7 +147359,7 @@ defExports.flamethrowerBlizzard = makeAuto({
     PARENT: [defExports.genericTank],
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -147832,7 +147400,7 @@ defExports.circhester = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -147922,12 +147490,12 @@ defExports.hewnBattler = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -148006,7 +147574,7 @@ defExports.warpod = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -148074,7 +147642,7 @@ defExports.sniperClockwork = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [14, 7, .6, 7, 0, 135, 0],
@@ -148512,7 +148080,7 @@ defExports.hoinfodaSpawner = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6.5, 10, 1, 10.5, 0, 0, 0]
@@ -148572,7 +148140,7 @@ defExports.detonatorSpawner = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [6.5, 10, 1, 10.5, 0, 0, 0]
@@ -148965,7 +148533,7 @@ defExports.wrench = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -148993,7 +148561,7 @@ makeAnimTank('crowbird', 'Crowbird', defExports.crowbar, {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -149061,7 +148629,7 @@ defExports.launcherShield = {
     LABEL: 'IDK',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [2, 9, -1.2, 17, 0, 0, 0],
@@ -149357,7 +148925,7 @@ defExports.blackout = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     CAN_BE_ON_LEADERBOARD: false,
     GUNS: [{
@@ -149388,7 +148956,7 @@ defExports.poltergeist = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     TURRETS: (() => {
@@ -149640,7 +149208,7 @@ defExports.launcherCeptionist = {
     LABEL: 'Launcher Ceptionist',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [10, 12, -0.5, 9, 0, 0, 0]
@@ -149721,7 +149289,7 @@ defExports.counterClockwise = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 0, 0],
@@ -149758,7 +149326,7 @@ defExports.beeship = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [6.6, 2.4, .7, 7, 2.5, 90, 0],
@@ -149867,26 +149435,25 @@ makeAnimTank('vindimace', 'Vindimace', defExports.vindicator, defExports.mace, {
         }]
     }]
 });
-defExports.fallenDrifter = makeFallen(defExports.surferBooster);
-defExports.fallenDrifterAI = {
-    PARENT: [defExports.fallenDrifter],
-    TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        SKYNET: true
+defExports.fallenDrifter = makeFallen(defExports.surferBooster, {
+    body: {
+        acceleration: base.ACCEL,
+        speed: base.SPEED
     },
-    BROADCAST_MESSAGE: 'A Fallen Drifter has been defeated!',
-    SKILL: setSkill(2, 2, 6, 3, 3, 3, 9, 9, 0, 0)
-};
+    facingType: 'smoothToTarget'
+});
+defExports.fallenDrifterAI = makeBossAI(defExports.fallenDrifter, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.singleRifle = {
     PARENT: [defExports.genericTank],
     LABEL: 'Scoper',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .75
     },
     SCOPED: true,
@@ -149941,7 +149508,7 @@ defExports.potensic = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .65,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     LAYER: 13,
     MOTION_TYPE: 'glideBall',
@@ -150124,7 +149691,7 @@ defExports.bigBenRev = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -150150,7 +149717,7 @@ defExports.bigBen = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -150258,7 +149825,7 @@ defExports.lumberjackMinishot = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SCOPED: true,
     GUNS: [{
@@ -150352,7 +149919,7 @@ defExports.bombardmentorMinishot = {
     LABEL: 'Artilleryman',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     SCOPED: true,
@@ -150431,7 +149998,7 @@ defExports.polychromatism = {
     LABEL: 'Polychromatism',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .75
     },
     TOOLTIP: `Right clicking shoots a bullet that deals the damage of the last shot you've survived from.`,
@@ -150677,8 +150244,8 @@ defExports.productionist = {
     DANGER: 7,
     STAT_NAMES: statNames.swarm,
     BODY: {
-        ACCELERATION: base.ACCEL * 0.8,
-        FOV: base.FOV * 1.2,
+        ACCELERATION: base.ACCEL * .8,
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [15, 8.64, 1, 0, 0, 0, 0]
@@ -150714,8 +150281,8 @@ defExports.battleFactory = {
     DANGER: 7,
     STAT_NAMES: statNames.swarm,
     BODY: {
-        ACCELERATION: base.ACCEL * 0.8,
-        FOV: base.FOV * 1.2,
+        ACCELERATION: base.ACCEL * .8,
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [15, 8.64, 1, 0, 0, 0, 0]
@@ -150760,8 +150327,8 @@ defExports.exMachina = {
     DANGER: 7,
     STAT_NAMES: statNames.swarm,
     BODY: {
-        ACCELERATION: base.ACCEL * 0.8,
-        FOV: base.FOV * 1.2,
+        ACCELERATION: base.ACCEL * .8,
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [15, 8.64, 1, 0, 0, 0, 0]
@@ -150783,7 +150350,7 @@ defExports.multiplication = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -150939,7 +150506,7 @@ defExports.gravtrap = {
     STAT_NAMES: statNames.trap,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [13, 8, 1, 0, 0, 0, 0]
@@ -151045,7 +150612,7 @@ defExports.moreZoomSmasher = {
     DANGER: 7,
     CAMERA_TO_MOUSE: [true, 2.75],
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -151069,7 +150636,7 @@ defExports.invisAcidFuck = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -151093,7 +150660,7 @@ defExports.invisAcid = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -151160,7 +150727,7 @@ defExports.autominer = {
     DANGER: 7,
     SHAPE: 132,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -151185,7 +150752,7 @@ defExports.ragner = makeAuto({
     DANGER: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         DAMAGE: base.DAMAGE * 1.15,
     },
     GUNS: [{
@@ -151209,7 +150776,7 @@ defExports.acute = {
     STAT_NAMES: statNames.swarm,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 4, 90, 0],
@@ -151251,7 +150818,7 @@ defExports.zoomSmasher = {
     DANGER: 7,
     SCOPED: true,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -151273,7 +150840,7 @@ defExports.megaZoomSmasher = {
     DANGER: 7,
     SCOPED: true,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -151300,7 +150867,7 @@ defExports.acolyteSpedDemon = {
     SHAPE: 255,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [20, 4.5, 1, 0, 0, 0, 0],
@@ -151474,7 +151041,7 @@ defExports.overmatcher = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     SHAPE: [
         [-1, 0],
@@ -151521,7 +151088,7 @@ defExports.minimach = {
     LABEL: 'Minimach',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -4.5, -7, .25],
@@ -151562,7 +151129,7 @@ defExports.macromach = {
     LABEL: 'Macromach',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [17, 3, 1, 0, -5.5, 0, .25],
@@ -151656,7 +151223,7 @@ defExports.ballpoint = {
     LABEL: 'Ballpoint',
     DANGER: 7,
     BODY: {
-        FOV: 1.175
+        FOV: base.FOV * 1.175
     },
     GUNS: [{
         POSITION: [19, 8, 1, 0, 0, 0, 0]
@@ -151669,7 +151236,7 @@ defExports.autoMulti = {
     LABEL: 'Deltanon', // Auto Multi
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     TURRETS: [{
@@ -151721,7 +151288,7 @@ defExports.hummel = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -151753,7 +151320,7 @@ defExports.lieutenauto = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -151781,7 +151348,7 @@ defExports.airmail = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -151817,7 +151384,7 @@ defExports.petrary = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -151851,7 +151418,7 @@ defExports.shepard = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -151885,7 +151452,7 @@ defExports.trenchWhistle = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -151924,7 +151491,7 @@ defExports.major = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -151958,7 +151525,7 @@ defExports.shiftLeader = {
     BODY: {
         SPEED: base.SPEED * .75,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     INVISIBLE: [.08, .01, .02],
@@ -151992,7 +151559,7 @@ defExports.smokingSnake = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -152030,7 +151597,7 @@ defExports.armorer = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -152070,7 +151637,7 @@ defExports.vander = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     SCOPED: true,
@@ -152116,7 +151683,7 @@ defExports.locator = makeMinesweep({
     DANGER: 7,
     SHAPE: 132,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -152176,7 +151743,7 @@ defExports.rocketCopter = makeAuto({
     }, {
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.no_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.no_recoil]),
             TYPE: defExports.bullet
         }
     }, {
@@ -152199,7 +151766,7 @@ defExports.overdrive2 = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 6,
@@ -152295,7 +151862,7 @@ defExports.mosquito = {
     GUNS: [{
         POSITION: [19, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }],
@@ -152433,7 +152000,7 @@ defExports.assassinBlaster = {
         HEALTH: base.HEALTH * .9,
         SHIELD: base.SHIELD * .9,
         DENSITY: base.DENSITY * .75,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -152614,7 +152181,7 @@ defExports.kamiMine = {
     LABEL: 'Mine',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -152697,7 +152264,7 @@ defExports.propper = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -152735,7 +152302,7 @@ defExports.substructure = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -152805,7 +152372,7 @@ defExports.station = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -152906,7 +152473,7 @@ defExports.plinth = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -152945,7 +152512,7 @@ defExports.awp39_2 = {
     SHAPE: 4,
     COLOR: 13,
     SIZE: 30,
-    FOV: 3,
+    BODY: { FOV: base.FOV * 3 },
     TURRETS: [{
         POSITION: [15, 0, 0, 0, 360, 1],
         TYPE: [defExports.awp39Stalker, {
@@ -152974,7 +152541,7 @@ defExports.awpPound = {
     SHAPE: 4,
     COLOR: 14,
     SIZE: 28,
-    FOV: 3,
+    BODY: { FOV: 3 },
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [8, 16, 0, 90, 300, 1],
@@ -153021,7 +152588,7 @@ defExports.awpBent = {
     SHAPE: 277,
     COLOR: 14,
     SIZE: 28,
-    FOV: 3,
+    BODY: { FOV: 3 },
     FACING_TYPE: 'autospin',
     PROPS: [{
         POSITION: [1, 0, 0, 0, 0],
@@ -153085,7 +152652,7 @@ defExports.border = {
     LABEL: 'Border',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -153136,7 +152703,7 @@ defExports.autoDuoClone = {
     LABEL: 'Duo',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05,
         HEALTH: base.HEALTH * 0.75
     },
@@ -153166,7 +152733,7 @@ defExports.autoDuo = {
     LABEL: 'Auto Duo',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     GUNS: [{
@@ -153618,7 +153185,7 @@ defExports.bonkCeption = makeAuto({
         SPEED: base.SPEED * 1.3,
         DAMAGE: base.DAMAGE * 1.1,
         REGEN: base.REGEN * 1.1,
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 2.575,
         SHIELD: base.SHIELD * 2.2,
@@ -153691,7 +153258,7 @@ defExports.lionsMane = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -153815,7 +153382,7 @@ defExports.covert = {
     LABEL: 'Covert',
     DANGER: 7,
     BODY: {
-        FOV: 1.225,
+        FOV: base.FOV * 1.225,
         ACCELERATION: base.ACCEL * .7
     },
     ALPHA: 1,
@@ -153944,7 +153511,7 @@ defExports.miniGuardian = {
     MAX_CHILDREN: 24,
     STAT_NAMES: statNames.drone,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * 0.9
     },
     GUNS: [{
@@ -153996,7 +153563,7 @@ defExports.valent = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.15,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     SIZE: 5,
     SHAPE: 134,
@@ -154060,7 +153627,7 @@ defExports.heaver = {
     LABEL: 'Heaver',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [9, 15, -0.5, 11, 0, 0, 0]
@@ -154135,7 +153702,7 @@ defExports.meganomiinae = {
     LABEL: 'Meganomiinae',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [14, 14, -1.2, 5, 0, 0, 0],
@@ -154198,7 +153765,7 @@ defExports.shellshock = {
     LABEL: 'Shellshock',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [19, 15, 1.01, 0, 0, 0, 0],
@@ -154468,7 +154035,7 @@ defExports.eliteMinesweeper = {
     PARENT: [defExports.genericTank],
     LABEL: 'Elite Minesweeper',
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 2000,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -154758,7 +154325,7 @@ defExports.skilsaw = {
     LABEL: 'Skilsaw', // Skill Saw?
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.2,
         DENSITY: base.DENSITY * 2,
         DAMAGE: base.DAMAGE * 2,
@@ -154822,7 +154389,7 @@ defExports.bloodbath = {
     DISPLAY_TEXT_COLOR: "#ff2222",
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.2,
         DENSITY: base.DENSITY * 4,
         HEALTH: base.HEALTH * 1.4,
@@ -155008,13 +154575,13 @@ defExports.applicusgun = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 5.5, 0, 0.5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.half_reload]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [18, 8, 1, 0, -5.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.half_reload]),
             TYPE: defExports.bullet
         }
     }]
@@ -155032,13 +154599,13 @@ defExports.applicus = {
         HEALTH: 1750,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [5, 0, 0, 0, 361, 1],
         TYPE: [defExports.applicusTurret, { COLOR: 12 }],
-    },],
+    }]
 };
 for (let i = 0; i < 8; i++) defExports.applicus.TURRETS.push({
     POSITION: [4, 9.5, 0, i * 45, 170, 0],
@@ -155098,7 +154665,7 @@ defExports.lemonicusgun = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0.5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.half_reload]),
             TYPE: defExports.bullet
         }
     }]
@@ -155116,13 +154683,13 @@ defExports.lemonicus = {
         HEALTH: 1750,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [6.25, 0, 0, 0, 361, 1],
         TYPE: [defExports.lemonicusTurret, { COLOR: 3 }],
-    },],
+    }]
 };
 for (let i = 0; i < 7; i++) defExports.lemonicus.TURRETS.push({
     POSITION: [4, 9.5, 0, i * 360/7, 180, 0],
@@ -155153,7 +154720,7 @@ defExports.lavendicusgun = {
     GUNS: [{
         POSITION: [18, 8, 1.4, 0, 0, 0, 0.5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.half_reload, g.mach]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.half_reload, g.mach]),
             TYPE: defExports.bullet
         }
     }]
@@ -155171,13 +154738,13 @@ defExports.lavendicus = {
         HEALTH: 1750,
         DAMAGE: 6,
         REGEN: base.REGEN * .5,
-        FOV: .85
+        FOV: base.FOV * .85
     },
     FACING_TYPE: 'autospin',
     TURRETS: [{
         POSITION: [5, 0, 0, 0, 361, 1],
         TYPE: [defExports.lavendicusTurret, { COLOR: 337 }],
-    },],
+    }]
 };
 for (let i = 0; i < 8; i++) defExports.lavendicus.TURRETS.push({
     POSITION: [4, 9.5, 0, i * 45, 170, 0],
@@ -155241,7 +154808,7 @@ defExports.fragment = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -155285,7 +154852,7 @@ defExports.stratofortress = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .65,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     LAYER: 13,
     MOTION_TYPE: 'glideBall',
@@ -155364,7 +154931,7 @@ defExports.virality = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -155391,7 +154958,7 @@ defExports.propTestTankAll = {
     LABEL: 'Tank that uses everything',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.2,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 0.02,
@@ -155463,7 +155030,7 @@ defExports.megavirus = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [19, 5.5, 1, 0, 0, 45, .5],
@@ -155692,7 +155259,7 @@ defExports.petawatt = {
     LABEL: 'Petawatt',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
@@ -156026,7 +155593,7 @@ defExports.solarSystem = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
@@ -156058,7 +155625,7 @@ defExports.ek1WithAShotgun = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.82,
         ACCELERATION: .54,
         HEALTH: 500,
@@ -156208,7 +155775,7 @@ defExports.solarEclipse = makeAuto({
     PARENT: [defExports.genericTank],
     DANGER: 7,
     BODY: {
-        FOV: 2,
+        FOV: base.FOV * 2,
         HEALTH: 1e5,
         DAMAGE: base.DAMAGE * 2,
         REGEN: base.REGEN * .75,
@@ -156272,12 +155839,7 @@ defExports.eliteCarpenter = {
     SHAPE: 10,
     COLOR: 305,
     SIZE: 30,
-    BODY: {
-        FOV: 1.25,
-        SPEED: base.SPEED * .1,
-        HEALTH: base.HEALTH * 7,
-        DAMAGE: base.DAMAGE * 2.5
-    },
+    BODY: defExports.ultimateDestroyer.BODY,
     FACING_TYPE: 'autospin',
     GUNS: (() => {
         let out = [];
@@ -156344,7 +155906,7 @@ defExports.computer = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -156394,7 +155956,7 @@ defExports.miniSolarEclipse = makeAuto({
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [30, 3, 1, 11, 0, 0, 0],
@@ -156933,7 +156495,7 @@ defExports.radicand = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * 1.1,
-        FOV: 1.265
+        FOV: base.FOV * 1.265
     },
     SIZE: 7,
     SHAPE: 134,
@@ -156994,7 +156556,7 @@ defExports.redistributorButWorse = {
     BODY: {
         ACCELERATION: base.ACCEL * .4,
         SPEED: base.SPEED * .705,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0]
@@ -157075,7 +156637,7 @@ defExports.machFieldGun = {
     LABEL: 'Bofors', // Field Gun II
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [15, 10, -0.5, 7, 0, 0, 0],
@@ -157318,7 +156880,7 @@ defExports.curvedAggressor = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [4.5, 4, 1, 19, 0, 15, 0],
@@ -158126,7 +157688,7 @@ defExports.contagiory = {
     STAT_NAMES: statNames.drone,
     BODY: {
         ACCELERATION: base.ACCEL * 0.8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [16, 5, 1, 0, 0, 180, .5],
@@ -158155,7 +157717,7 @@ defExports.squad = {
     LABEL: 'Squad',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * 1.05
     },
     FACING_TYPE: 'autospin',
@@ -158303,7 +157865,7 @@ defExports.gunpowder = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -158334,7 +157896,7 @@ defExports.fisherman = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 1.5, 1, 11, -3, 0, 0],
@@ -158376,7 +157938,7 @@ makeAnimTank('transfortress', 'Transfortress', {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 60, 0],
@@ -158436,7 +157998,7 @@ makeAnimTank('transfortress', 'Transfortress', {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 60, 0],
@@ -158715,7 +158277,7 @@ defExports.pestilence = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: ((out = []) => {
         for (let i = 0; i < 3; i++) out.push({
@@ -158764,7 +158326,7 @@ defExports.UYdirector = {
     DANGER: 5,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 6,
@@ -158862,7 +158424,7 @@ defExports.gear = {
     LABEL: 'Gear',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DAMAGE: base.DAMAGE * 1.15,
         SPEED: base.SPEED * 1.05,
         DENSITY: base.DENSITY * 2,
@@ -158950,7 +158512,7 @@ defExports.pergola = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     SHAPE: 4,
@@ -159058,7 +158620,7 @@ defExports.cement = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -159102,7 +158664,7 @@ defExports.pollen = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -159236,7 +158798,7 @@ defExports.esquire = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 5,
@@ -159676,7 +159238,7 @@ defExports.pyromancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     SHAPE: 191,
@@ -159768,7 +159330,7 @@ defExports.chillblain = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -159910,7 +159472,7 @@ defExports.toxicOwl = makeProp({
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -160017,7 +159579,7 @@ defExports.lSys = {
     LABEL: 'L-Sys',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .875,
         ACCELERATION: base.ACCEL * .8
     },
@@ -160092,7 +159654,7 @@ defExports.multiplier = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -160128,7 +159690,7 @@ defExports.dividend = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -160187,7 +159749,7 @@ defExports.tachyon = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 277,
     TOOLTIP: 'Everything but the bullet works; be patient! <3',
@@ -160271,7 +159833,7 @@ defExports.emplacement = {
     LABEL: 'Emplacement',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -160304,7 +159866,7 @@ defExports.chlorine = {
     LABEL: 'Chlorine',
     DANGER: 7,
     BODY: {
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     TOOLTIP: `You do know this is a war crime, right?`,
     GUNS: [{
@@ -160501,7 +160063,7 @@ defExports.scalpel = {
     LABEL: 'Scalpel',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -160533,7 +160095,7 @@ defExports.trepanner = {
     LABEL: 'Trepanner',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 18, 0, 0, 0],
@@ -160630,7 +160192,7 @@ defExports.nanite = {
     LABEL: 'Nanite',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -160658,7 +160220,7 @@ defExports.ouch = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -160690,7 +160252,7 @@ defExports.ow = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -160864,7 +160426,7 @@ defExports.flatline = {
     LABEL: 'Flatline',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -160963,7 +160525,7 @@ defExports.implant = {
     LABEL: 'Implant',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -161062,7 +160624,7 @@ defExports.fungalmancer = {
     LABEL: 'Fungalmancer',
     DANGER: 7,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [8, 8, 1, 13, 0, 0, 0],
@@ -161107,7 +160669,7 @@ defExports.nomad = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -161500,7 +161062,7 @@ defExports.sabliere = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 8,
@@ -161558,7 +161120,7 @@ defExports.thunderstorm = makeAuto({
     SHAPE: 24,
     COLOR: 34,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 3500,
         DAMAGE: base.DAMAGE * 1.25,
         REGEN: base.REGEN * .75,
@@ -161588,7 +161150,7 @@ defExports.diepioFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * 1,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     MAX_CHILDREN: 6,
     SHAPE: 4,
@@ -161608,7 +161170,7 @@ defExports.digger = {
     LABEL: "Digger",
     DANGER: 6,
     BODY: {
-        FOV: 1,
+        FOV: base.FOV * 1,
         SPEED: base.SPEED * 0.8,
         DENSITY: base.DENSITY * 3,
         HEALTH: base.HEALTH * 1.4,
@@ -161639,7 +161201,7 @@ defExports.diepioFactoryFace = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * 1,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     MAX_CHILDREN: 6,
     SHAPE: 4,
@@ -161664,7 +161226,7 @@ defExports.kirkier = {
     LABEL: "Kirk",
     DANGER: 6,
     BODY: {
-        FOV: 1,
+        FOV: base.FOV * 1,
         SPEED: base.SPEED * 1,
         DENSITY: base.DENSITY * 3,
         HEALTH: base.HEALTH * 1.5,
@@ -161720,7 +161282,7 @@ defExports.flower = {
     PARENT: [defExports.genericTank],
     LABEL: "Flower",
     BODY: {
-        FOV: 1.08,
+        FOV: base.FOV * 1.08,
         SPEED: base.SPEED * 1.22,
         DENSITY: base.DENSITY * 0.8,
         HEALTH: base.HEALTH * 0.6,
@@ -161732,7 +161294,7 @@ defExports.flower = {
         for (let i = 0; i < pedals; i++) guns.push({
             POSITION: [8, 6, 1, 0, 0, angle * i, 0],
             PROPERTIES: {
-                SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+                SHOOT_SETTINGS: combineStats([g.basic]),
                 TYPE: defExports.petal,
                 WAIT_TO_CYCLE: true,
                 AUTOFIRE: true,
@@ -161759,7 +161321,7 @@ defExports.basicFace = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet,
             LABEL: '',
             STAT_CALCULATOR: 0,
@@ -161795,7 +161357,7 @@ defExports.overlordFace = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 8,
     GUNS: [{
@@ -161864,7 +161426,7 @@ defExports.eggBossTier1Face = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.3,
         ACCELERATION: .3,
         HEALTH: 500,
@@ -161916,7 +161478,7 @@ defExports.starshipMegastructure = {
     VARIES_IN_SIZE: false,
     VALUE: 2.5e6,
     BODY: {
-        FOV: 1.25,
+        FOV: base.FOV * 1.25,
         SPEED: base.SPEED * .4,
         HEALTH: base.HEALTH * 20,
         DAMAGE: base.DAMAGE * 3.8
@@ -162010,7 +161572,7 @@ defExports.spawnblade = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [8, 4, 1.4, 6, 0, 0, 0],
@@ -162079,7 +161641,7 @@ defExports.pepperspray = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162108,7 +161670,7 @@ defExports.bearspray = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -162138,7 +161700,7 @@ defExports.teargas = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162180,7 +161742,7 @@ defExports.insecticide = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162220,7 +161782,7 @@ defExports.ammonia = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162250,7 +161812,7 @@ defExports.lsd = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162364,7 +161926,7 @@ defExports.surge = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -162977,7 +162539,7 @@ defExports.accuator = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -163008,7 +162570,7 @@ defExports.adventurer = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * 0.875,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -163089,7 +162651,7 @@ defExports.airport = makeProp({
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
@@ -163112,7 +162674,7 @@ defExports.akimbo = {
     LABEL: 'Akimbo',
     DANGER: 7,
     BODY: {
-        FOV: .925,
+        FOV: base.FOV * .925,
         SPEED: base.SPEED * 1.05,
         ACCELERATION: base.ACCEL * .7
     },
@@ -163196,7 +162758,7 @@ defExports.anarchist = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 6,
@@ -163356,7 +162918,7 @@ defExports.arbitrator = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 3.5, 1, 0, 7.25, 0, 0]
@@ -163431,7 +162993,7 @@ defExports.armsman = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [32, 8.5, 1, 0, 0, 0, 0],
@@ -163458,7 +163020,7 @@ defExports.arthropod = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -163623,7 +163185,7 @@ defExports.asymmetricQuintuplet = {
     LABEL: 'Asymmetric Quintuplet',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -163730,7 +163292,7 @@ defExports.avalanche = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .9
     },
     GUNS: [{
@@ -163769,7 +163331,7 @@ defExports.axgun = {
     LABEL: 'AX Gun',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [21, 5.5, 1, 0, 0, 0, .5],
@@ -163812,7 +163374,7 @@ defExports.flankColony = {
     SHAPE: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -163880,6 +163442,7 @@ defExports.flankColony = {
 };
 defExports.longboySwarm = {
     PARENT: [defExports.autoSwarm],
+    LABEL: 'Long Boy',
     SHAPE: 147,
     MOTION_TYPE: 'swarm',
     FACING_TYPE: 'smoothWithMotion',
@@ -164177,7 +163740,7 @@ defExports.bacterialColony = {
     SHAPE: 6,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [...((out = []) => {
         for (let i = 0; i < 6; i++) out.push({
@@ -164280,7 +163843,7 @@ defExports.barbarossa = {
     LABEL: 'Barbarossa',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [4, 11, 1.7, 13, 0, 0, 0]
@@ -164305,7 +163868,7 @@ defExports.battlecarrier = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7, 0, 90, 0],
@@ -164591,7 +164154,7 @@ defExports.bicondro = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [26, 2, 1, 0, 5.5, 0, 0],
@@ -164642,7 +164205,7 @@ defExports.bigIron = makeAuto({
     DANGER: 6,
     SIZE: 16,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 2.575,
         SHIELD: base.SHIELD * 2.2,
@@ -164669,7 +164232,7 @@ defExports.bigPharma = {
     STAT_NAMES: statNames.generic,
     BODY: {
         SPEED: base.SPEED * .76,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [22, 2.5, 1, 0, 0, 0, 1 / 3],
@@ -164778,91 +164341,6 @@ defExports.blackWidow = {
 
         return out;
     })()]
-};
-defExports.friedEgg = {
-    PARENT: [defExports.food],
-    LABEL: 'Fried Egg',
-    LAYER: -1,
-    VALUE: 300,
-    SHAPE: 0, // 292
-    SIZE: 24,
-    COLOR: 8, // 243
-    INTANGIBLE: true,
-    HITS_OWN_TYPE: 'never',
-    TURRETS: [{
-        POSITION: [5, 0, 0, 45, 215, 1],
-        TYPE: [defExports.eggBossCircleProp, { COLOR: 13 }]
-    }],
-    BODY: {
-        DAMAGE: 0,
-        DENSITY: 0,
-        HEALTH: 10,
-        ACCELERATION: 0.01,
-        PUSHABILITY: 0
-    },
-    DRAW_HEALTH: true,
-    EVOLUTIONS: [
-        ["betaFriedEgg", 100]
-    ]
-};
-defExports.betaFriedEgg = {
-    PARENT: [defExports.food],
-    LABEL: 'Fried Egg',
-    LAYER: -1,
-    VALUE: 800,
-    SHAPE: 0, // 292
-    SIZE: 4,
-    COLOR: 13, // 243
-    INTANGIBLE: true,
-    HITS_OWN_TYPE: 'never',
-    TURRETS: [{
-        POSITION: [150, 0, 0, 45, 215, 0],
-        TYPE: defExports.eggBossCircleProp
-    }],
-    BODY: {
-        DAMAGE: 0,
-        DENSITY: 0,
-        HEALTH: 40,
-        ACCELERATION: 0.01,
-        PUSHABILITY: 0
-    },
-    DRAW_HEALTH: false,
-    EVOLUTIONS: [
-        ["friedHardshellEgg", 100]
-    ]
-};
-defExports.friedHardshellEgg = {
-    PARENT: [defExports.food],
-    LABEL: 'Fried Hardshell Egg',
-    LAYER: -1,
-    VALUE: 1e6,
-    DANGER: 7,
-    SHAPE: 0, // 292
-    SIZE: 12,
-    COLOR: 13, // 243
-    INTANGIBLE: true,
-    HITS_OWN_TYPE: 'never',
-    GIVE_KILL_MESSAGE: true,
-    TURRETS: [{
-        POSITION: [90, 0, 0, 45, 215, 0],
-        TYPE: defExports.eggBossCircleProp
-    }],
-    BODY: {
-        DAMAGE: 4,
-        DENSITY: 0,
-        HEALTH: 60,
-        ACCELERATION: 0.01,
-        PUSHABILITY: 0
-    },
-    PROPS: [{
-        POSITION: [1.3, 0, 0, 0, 0],
-        SHAPE: 6,
-        COLOR: 13
-    },],
-    DRAW_HEALTH: false,
-    EVOLUTIONS: [
-        ["omegaEggSummon", 100]
-    ]
 };
 defExports.friedSummon = {
     PARENT: [defExports.bullet],
@@ -165195,7 +164673,7 @@ defExports.bracer = {
     LABEL: 'Bracer',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: 2,
         HEALTH: base.HEALTH * 1.4,
@@ -165269,7 +164747,7 @@ defExports.captor = {
     DANGER: 7,
     STAT_NAMES: statNames.trap,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [15, 10, 1, 0, 0, 0, 0]
@@ -165352,7 +164830,7 @@ defExports.chelicera = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .875,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [...((out = []) => {
         for (let i = 0; i < 3; i++) out.push({
@@ -165410,7 +164888,7 @@ defExports.chelyabinsk = {
     LABEL: 'Chelyabinsk',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [15, 10, -1.6, 0, 0, 180, 0]
@@ -165433,7 +164911,7 @@ defExports.cocktail = {
     LABEL: 'Cocktail',
     DANGER: 7,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -165477,7 +164955,7 @@ defExports.icegun = {
     LABEL: 'Icegun',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 8, 1, 0, 0, 0, 0],
@@ -165587,7 +165065,7 @@ defExports.compiler = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [29, 7, 1, 0, 0, 0, 0],
@@ -165650,7 +165128,7 @@ defExports.compound = {
     LABEL: 'Compound',
     DANGER: 7,
     BODY: {
-        FOV: 1.275,
+        FOV: base.FOV * 1.275,
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .975
     },
@@ -165681,7 +165159,7 @@ defExports.concealer = {
     LABEL: 'Concealer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.trap,
     SCOPED: true,
@@ -165707,7 +165185,7 @@ defExports.contriver = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [30, 7, 1, 0, 0, 0, 0]
@@ -165740,7 +165218,7 @@ defExports.corkscrew = {
     DANGER: 7,
     SCOPED: true,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 2, 1, 0, 3, 0, 0],
@@ -165842,7 +165320,7 @@ defExports.cryogenic = {
     LABEL: 'Cryogenic',
     DANGER: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -165880,7 +165358,7 @@ defExports.thief = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }],
@@ -165972,7 +165450,7 @@ defExports.deadeye = {
     LABEL: 'Deadeye',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -166056,7 +165534,7 @@ defExports.deposer = {
     BODY: {
         SPEED: base.SPEED * .7, // .7 from Griefer, rest from Nightworker
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.block,
     INVISIBLE: [.08, .01, .02],
@@ -166152,7 +165630,7 @@ defExports.devourer = {
     LABEL: 'Devourer',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     STAT_NAMES: statNames.trap,
@@ -166204,7 +165682,7 @@ defExports.divebomber = {
         HEALTH: base.HEALTH * .8,
         SHIELD: base.SHIELD * .8,
         DENSITY: base.DENSITY * .6,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -166278,7 +165756,7 @@ defExports.diverDown = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [7, 7.5, .6, 7.1, 4, 10, 0],
@@ -166312,7 +165790,7 @@ defExports.dmr = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 1.6
+        FOV: base.FOV * 1.6
     },
     GUNS: [{
         POSITION: [7, 11.25, 1.25, 5, 0, 0, 0]
@@ -166378,7 +165856,7 @@ defExports.doubleSpawner = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -166446,7 +165924,7 @@ defExports.doxdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -166522,7 +166000,7 @@ defExports.drillgun = {
     LABEL: 'Drillgun',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .95
     },
     GUNS: [{
@@ -166553,7 +166031,7 @@ defExports.driveshaft = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -166602,7 +166080,7 @@ defExports.dualGatling = {
     LABEL: 'Dual Gatling',
     DANGER: 7,
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -166794,7 +166272,7 @@ defExports.maurice = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [27, 8.5, 1, 0, 0, 0, 0],
@@ -166863,7 +166341,7 @@ defExports.newAssult = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     INVISIBLE: [.08, .03, .02],
     GUNS: [{
@@ -167023,12 +166501,12 @@ defExports.astroShip = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet,
             COLOR: 16
         }
@@ -167116,7 +166594,7 @@ defExports.protractor = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     TOOLTIP: 'Boy why you so nose...',
@@ -167149,20 +166627,16 @@ defExports.uziItself = {
     PARENT: [defExports.genericTank],
     LABEL: 'Uzi',
     DANGER: 7,
-    BODY: {
-        FOV: 1.175
-    },
     GUNS: [{
         POSITION: [19, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            //            SHOOT_SETTINGS: combineStats([g.basic, g.mini, g.bit_more_damage, g.bit_more_reload]),
-            SHOOT_SETTINGS: combineStats([g.basic]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.one_fourth_reload]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [16, 8, 1, 0, 0, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.fast, g.one_fourth_reload]),
             TYPE: defExports.bullet
         }
     }]
@@ -167222,7 +166696,7 @@ defExports.shapeshifter = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }],
@@ -167267,7 +166741,7 @@ defExports.copycat = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }],
@@ -167377,7 +166851,7 @@ defExports.voidwalker = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet,
             LABEL: '',
             STAT_CALCULATOR: 0,
@@ -167611,7 +167085,7 @@ defExports.newRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167653,7 +167127,7 @@ defExports.newConscript = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167696,7 +167170,7 @@ defExports.newImpactor = {
     BODY: {
         ACCELERATION: base.ACCEL * .575,
         SPEED: base.SPEED * .825,
-        FOV: 1.425
+        FOV: base.FOV * 1.425
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167738,7 +167212,7 @@ defExports.newInsanityCannon = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167787,7 +167261,7 @@ defExports.newCoilgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     INVISIBLE: [.08, .01, .02],
@@ -167830,7 +167304,7 @@ defExports.newAdonis = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167888,7 +167362,7 @@ defExports.newColossus = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .8,
-        FOV: 1.325
+        FOV: base.FOV * 1.325
     },
     DANGER: 7,
     GUNS: ((out = []) => {
@@ -167932,7 +167406,7 @@ defExports.stealth = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 0,
     CAN_BE_ON_LEADERBOARD: false,
@@ -167987,7 +167461,7 @@ defExports.bipodMoving = {
     PARENT: [defExports.genericTank],
     LABEL: 'Bipod',
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: 0,
         ACCELERATION: 0
     },
@@ -168039,7 +167513,7 @@ defExports.bipodGrounded = {
     PARENT: [defExports.genericTank],
     LABEL: 'Bipod',
     BODY: {
-        FOV: 1.2,
+        FOV: base.FOV * 1.2,
         SPEED: 0,
         ACCELERATION: 0
     },
@@ -168084,7 +167558,13 @@ defExports.bipodGrounded = {
 };
 neoMakeAnimTank("bipod", "Bipod", [{ tank: defExports.bipodMoving }, { tank: defExports.bipodGrounded }], {
     hasProp: false,
-    tankInfo: { BODY: { SPEED: 0, ACCELERATION: 0, FOV: 1.2 } }
+    tankInfo: {
+        BODY: {
+            SPEED: 0,
+            ACCELERATION: 0,
+            FOV: base.FOV * 1.2
+        }
+    }
 })
 defExports.trafficLightBase = {
     PARENT: [defExports.genericTank],
@@ -168093,7 +167573,7 @@ defExports.trafficLightBase = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0]
@@ -168378,7 +167858,7 @@ defExports.ejectionSeat0 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -168418,7 +167898,7 @@ defExports.ejectionSeat1 = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -168458,7 +167938,7 @@ defExports.caliver = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [16, 2, 1, 0, 6.6, 0, .6],
@@ -168641,7 +168121,7 @@ defExports.hollowCenter = {
         HEALTH: 2500,
         DAMAGE: 6,
         REGEN: base.REGEN * .75,
-        FOV: .65
+        FOV: base.FOV * .65
     },
     TURRETS: ((out = []) => {
         for (let i = 0; i < 6; i++) out.push({
@@ -169323,7 +168803,7 @@ defExports.steamloller = {
     BODY: {
         ACCELERATION: base.ACCEL * .55,
         SPEED: base.SPEED * .775,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: ((out = []) => {
         for (let i = 0; i < 12; i++) out.push({
@@ -169347,7 +168827,7 @@ defExports.rehsams = {
     DANGER: 7,
     SHAPE: 277,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: base.SPEED * 1.15,
         DENSITY: base.DENSITY * 2,
         HEALTH: base.HEALTH * 1.4,
@@ -169371,7 +168851,7 @@ defExports.bumbler = {
     LABEL: 'Bumbler',
     DANGER: 7,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         ACCELERATION: base.ACCEL * .75
     },
     GUNS: [{
@@ -169432,7 +168912,7 @@ defExports.dumptruckMecha = {
         HEALTH: base.HEALTH * .9,
         SHIELD: base.SHIELD * .9,
         DENSITY: base.DENSITY * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [17, 12, 1.5, 0, 0, 180, .5],
@@ -169616,7 +169096,7 @@ defExports.quickMath = makeProp({
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -169711,7 +169191,7 @@ defExports.sporulator = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169745,7 +169225,7 @@ defExports.sheeppolypore = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169784,7 +169264,7 @@ defExports.porcini = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169818,7 +169298,7 @@ defExports.flyamanita = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169857,7 +169337,7 @@ defExports.omnimancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [5, 12, 1.2, 8, 0, 45, 0],
@@ -169891,11 +169371,7 @@ defExports.twinSporulator = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
-        ACCELERATION: base.ACCEL * .9
-    },
-    BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169946,7 +169422,7 @@ defExports.offenseShroom = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -169990,7 +169466,7 @@ defExports.puffball = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -170035,7 +169511,7 @@ defExports.chaga = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -170084,7 +169560,7 @@ defExports.woolymilkcap = {
     DANGER: 7,
     TOOLTIP: "Whenever you kill food, minions, or tanks: release a cloud of projectiles at that location.",
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         ACCELERATION: base.ACCEL * .9
     },
     GUNS: [{
@@ -170121,7 +169597,7 @@ defExports.bisector = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -170155,7 +169631,7 @@ defExports.coefficient = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -170187,7 +169663,7 @@ defExports.parabolic = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -170229,7 +169705,7 @@ defExports.arcsine = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -170391,19 +169867,11 @@ defExports.m16 = {
     }]
 };
 defExports.fallenDirigible = makeFallen(defExports.helicoptor);
-defExports.fallenDirigibleAI = {
-    PARENT: [defExports.fallenDirigible],
-    TYPE: 'miniboss',
-    FACING_TYPE: 'smoothToTarget',
-    LEVEL: 60,
-    VALUE: 1e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: {
-        SKYNET: true
-    },
-    BROADCAST_MESSAGE: 'A Fallen Dirigible has been defeated!',
-    SKILL: setSkill(2, 2, 6, 3, 3, 3, 9, 9, 0, 0)
-};
+defExports.fallenDirigibleAI = makeBossAI(defExports.fallenDirigible, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.fireWhirlBullet = {
     PARENT: [defExports.missile],
     FACING_TYPE: ['autospin', {
@@ -170473,7 +169941,7 @@ defExports.fireWhirl = {
     LABEL: 'Fire Whirl',
     DANGER: 7,
     BODY: {
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [12, 10, -0.5, 9, 0, 0, 0],
@@ -170875,7 +170343,7 @@ defExports.dualware = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -170980,7 +170448,7 @@ defExports.navalist = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .875,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 4,
@@ -171023,8 +170491,10 @@ defExports.megaTrapbrid = makeHybrid(defExports.megaTrapper, 'drone', { name: 'M
 defExports.gigaTrapbrid = makeHybrid(defExports.gigaTrapper, 'drone', { name: 'Giga Trapbrid' });
 defExports.undermega = makeHybrid(defExports.megaTrapper, 'under', {
     name: 'Undermega',
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 })
 defExports.entrencherMinion = makeAuto(defExports.trapion, 'Auto-Trapper', {
     type: defExports.swarmDroneTurret,
@@ -171037,7 +170507,7 @@ defExports.entrencher = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 4,
     SHAPE: -3,
@@ -171451,7 +170921,7 @@ defExports.excavator = {
     LABEL: 'Excavator',
     DANGER: 7,
     BODY: {
-        FOV: 1.35,
+        FOV: base.FOV * 1.35,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .9
     },
@@ -171480,7 +170950,7 @@ defExports.exocytose = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .95,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [29, 2, 1, 0, -5.5, 0, .5],
@@ -171556,7 +171026,7 @@ defExports.exposer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .95,
-        FOV: 1.125
+        FOV: base.FOV * 1.125
     },
     GUNS: [{
         POSITION: [4, 3, 1, 11, -3, 0, 0],
@@ -171704,7 +171174,7 @@ defExports.factorial = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
@@ -171739,7 +171209,7 @@ defExports.fart = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -171774,7 +171244,7 @@ defExports.firestarter = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     MAX_CHILDREN: 5,
@@ -171804,7 +171274,7 @@ defExports.flamemaker = {
     LABEL: 'Flamemaker',
     DANGER: 7,
     BODY: {
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         SPEED: base.SPEED * .85,
         ACCELERATION: base.ACCEL * .7
     },
@@ -171834,7 +171304,7 @@ defExports.flankEngineer = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -171864,7 +171334,7 @@ defExports.flankMailman = {
     BODY: {
         SPEED: base.SPEED * .8,
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -171892,7 +171362,7 @@ defExports.flankPlanter = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -171920,7 +171390,7 @@ defExports.flankStovepipe = {
     SHAPE: 8,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -172051,7 +171521,7 @@ defExports.flanksman = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .775,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -172088,7 +171558,7 @@ defExports.flycatcher = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -172112,7 +171582,7 @@ defExports.fortifier = {
     BODY: {
         ACCELERATION: base.ACCEL * .9,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     STAT_NAMES: statNames.block,
     GUNS: [{
@@ -172145,7 +171615,7 @@ defExports.freezeray = {
     LABEL: 'Freezeray',
     DANGER: 7,
     BODY: {
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
@@ -172192,7 +171662,7 @@ defExports.fume = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.975, 8.5, 1, 0, -1.675, 0, 0],
@@ -172226,7 +171696,7 @@ defExports.fumigator = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.975, 8.5, 1, 0, -1.675, 0, 0],
@@ -172299,7 +171769,7 @@ defExports.zamboni = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.975, 8.5, 1, 0, -1.675, 0, 0],
@@ -172362,7 +171832,7 @@ defExports.flyswatter = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [18.975, 8.5, 1, 0, -1.675, 0, 0],
@@ -172457,7 +171927,7 @@ defExports.gravedigger = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     INVISIBLE: [.08, .01, .02],
     STAT_NAMES: statNames.block,
@@ -172486,7 +171956,7 @@ defExports.gunnerClinker = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [21, 4, 1, 0, 6, 0, 0],
@@ -172532,7 +172002,7 @@ defExports.gunsmith = {
     DANGER: 7,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [20, 8, 1, 0, 0, 0, 0],
@@ -172625,7 +172095,7 @@ defExports.radial = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -172681,7 +172151,7 @@ defExports.newTwinRailgun = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .85,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     DANGER: 7,
     GUNS: [...((out = []) => {
@@ -172805,7 +172275,7 @@ defExports.trashCompactor = {
     GUNS: [{
         POSITION: [17, 7.5, 1, 2, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -172905,7 +172375,7 @@ defExports.trueNecromancer = {
     GUNS: [{
         POSITION: [5, 7.5, 1, 2, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -173005,7 +172475,7 @@ defExports.trueTrueNecromancer = {
     GUNS: [{
         POSITION: [5, 7.5, 1, 2, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen]),
+            SHOOT_SETTINGS: combineStats([g.basic]),
             TYPE: defExports.bullet
         }
     }, {
@@ -173428,7 +172898,7 @@ defExports.halligan = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [24, 8.5, 1, 0, 0, 0, 0],
@@ -173476,7 +172946,7 @@ defExports.torchure = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .9,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 12, 1.01, 13.4, 0, 0, 0],
@@ -173507,7 +172977,7 @@ defExports.glove = {
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_pen, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.bit_less_reload]),
             TYPE: defExports.bullet
         }
     }, {
@@ -173605,7 +173075,7 @@ defExports.militia = { // :3
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     FACING_TYPE: 'autospin',
     GUNS: [{
@@ -174045,7 +173515,7 @@ defExports.orbitalstrike = {
     SKILL_CAP: [9, 9, 9, 9, 0, 9, 9, 9, 9, 9],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [18, 12, 1, 0, 0, 0, 0],
@@ -174248,7 +173718,7 @@ defExports.cloneStrike = {
     SKILL_CAP: [9, 9, 9, 9, 0, 9, 9, 9, 9, 9],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [18, 12, 1, 0, 0, 0, 0],
@@ -174400,7 +173870,7 @@ defExports.thunderstrike = {
     PROPS: [makeAura(3)],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [18, 12, 1, 0, 0, 0, 0],
@@ -174441,7 +173911,7 @@ defExports.flankorbitalstrike = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * 0.85,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     FACING_TYPE: ['autospin', { SPEED: .0075 }],
     GUNS: [],
@@ -174609,7 +174079,7 @@ defExports.patriot = {
     SKILL_CAP: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [20, 14, 1, 0, 0, 0, 0],
@@ -174758,7 +174228,7 @@ defExports.nuclearfallout = {
     DANGER: 7,
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [22, 12, 1, 0, 0, 0, 0],
@@ -174886,7 +174356,7 @@ defExports.armaggedon = {
     SKILL_CAP: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [18, 12, 1.4, 0, 0, 0, 0],
@@ -175004,7 +174474,7 @@ defExports.pyrotechnician = {
     SKILL_CAP: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
     BODY: {
         SPEED: base.SPEED * 0.9,
-        FOV: 1.8,
+        FOV: base.FOV * 1.8,
     },
     GUNS: [{
         POSITION: [23, 14, 1, 0, 0, 0, 0],
@@ -175186,7 +174656,7 @@ defExports.voidPentagon = {
     SHAPE: 5,
     SIZE: 64,
     BODY: {
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         SPEED: 2.1,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 3000,
@@ -175353,7 +174823,7 @@ defExports.bigVoidPenta = {
     SHAPE: -5,
     SIZE: 215,
     BODY: {
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         SPEED: 3.1,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 9000,
@@ -177286,7 +176756,7 @@ defExports.eggSpiritTier2 = {
         HEALTH: 675,
         DAMAGE: 6,
         DENSITY: base.DENSITY * 2,
-        FOV: .82
+        FOV: base.FOV * .82
     },
     GUNS: [{
         POSITION: [2, 6.5, 1.1, 10, 0, (360 / 8) * 1, 0.5],
@@ -177488,7 +176958,7 @@ defExports.eggSpiritTier3 = {
     SIZE: 42,
     BOSS_TIER_TYPE: 19,
     BODY: {
-        FOV: .68,
+        FOV: base.FOV * .68,
         HEALTH: 892,
         DAMAGE: 6,
         REGEN: .082,
@@ -177910,7 +177380,7 @@ defExports.eggSpiritTier4 = {
     SIZE: 56,
     BOSS_TIER_TYPE: 19,
     BODY: {
-        FOV: .75,
+        FOV: base.FOV * .75,
         HEALTH: 2000,
         DAMAGE: 4,
         REGEN: .015,
@@ -179189,7 +178659,7 @@ defExports.confidential = {
     COLOR: 34,
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         RESIST: 50,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .5,
@@ -179837,7 +179307,7 @@ defExports.moonwarden = {
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: base.SPEED * .75,
-        FOV: 5
+        FOV: base.FOV * 5
     },
     GUNS: [{
         POSITION: [36, 8.5, 1, 0, 0, 0, 0],
@@ -180369,7 +179839,7 @@ defExports.legacyAC = {
         DAMAGE: 5.5,
         SPEED: base.SPEED * 2,
         REGEN: 0.005,
-        FOV: 2,
+        FOV: base.FOV * 2,
     },
     HAS_NO_RECOIL: true,
     SEE_INVISIBLE: true,
@@ -180468,7 +179938,7 @@ defExports.neutronStarBoss = {
     SHAPE: 150,
     COLOR: 238,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         HEALTH: 1400,
         DAMAGE: 6,
         REGEN: .25,
@@ -180723,7 +180193,7 @@ defExports.crackerPoly = {
             CONTROLLERS: ['canRepel', 'onlyAcceptInArc', 'mapAltToFire', 'nearestDifferentMaster'],
             INDEPENDENT: false,
             BODY: {
-                FOV: 2,
+                FOV: base.FOV * 2,
             }
         },],
     },],
@@ -180759,7 +180229,7 @@ defExports.keeperBoss = {
     DANGER: 8,
     COLOR: 318,
     BODY: {
-        FOV: 2,
+        FOV: base.FOV * 2,
         HEALTH: 100,
         DAMAGE: 4,
         SPEED: base.SPEED * 0.85,
@@ -181021,7 +180491,7 @@ defExports.subjector = {
     FACING_TYPE: 'autospin',
     STAT_NAMES: statNames.generic,
     BODY: {
-        FOV: .85,
+        FOV: base.FOV * .85,
         SPEED: 1.4,
         ACCELERATION: .3,
         HEALTH: 1200,
@@ -181206,7 +180676,7 @@ defExports.desecratorBoss = {
     SIZE: 32,
     HITS_OWN_TYPE: 'hard',
     BODY: {
-        FOV: 1.00001,
+        FOV: 1,
         SPEED: 3.8,
         ACCELERATION: 2,
         HEALTH: 1400,
@@ -182766,9 +182236,7 @@ defExports.littleHeatMissileL = {
         PROPERTIES: {
             AUTOFIRE: true,
             SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.skim_missile]),
-            TYPE: [defExports.bullet, {
-                PERSISTS_AFTER_DEATH: true
-            }],
+            TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }],
             COLOR_OVERRIDE: 324,
             STAT_CALCULATOR: gunCalcNames.thruster
         }
@@ -182785,7 +182253,7 @@ defExports.redsection = {
         SPEED: 4,
         HEALTH: 800,
         DAMAGE: 5,
-        REGEN: 0.45,
+        REGEN: 0.45
     },
     GUNS: [{
         POSITION: [10.5, 11.5, -1.4, 0, 0, 0, 0]
@@ -182796,11 +182264,11 @@ defExports.redsection = {
             TYPE: defExports.littleHeatMissileL,
             COLOR_OVERRIDE: 324,
         }
-    },],
+    }],
     TURRETS: [{
         POSITION: [18, -5.25, 0, 0, 0, 0],
         TYPE: defExports.vivisectionbackpartred
-    },],
+    }]
 };
 defExports.bluesection = {
     PARENT: [defExports.genericTank],
@@ -182813,7 +182281,7 @@ defExports.bluesection = {
         SPEED: 4,
         HEALTH: 800,
         DAMAGE: 5,
-        REGEN: 0.45,
+        REGEN: 0.45
     },
     GUNS: [{
         POSITION: [17, 7, .6, 2, 4.25, 0, 0],
@@ -182831,11 +182299,11 @@ defExports.bluesection = {
             COLOR_OVERRIDE: 325,
             STAT_CALCULATOR: gunCalcNames.swarm
         }
-    },],
+    }],
     TURRETS: [{
         POSITION: [18, -7, 0, 0, 0, 0],
-        TYPE: [defExports.bullet, { COLOR: 16 }],
-    },],
+        TYPE: [defExports.bullet, { COLOR: 16 }]
+    }]
 };
 defExports.fastererDroneL = {
     PARENT: [defExports.drone],
@@ -182845,12 +182313,8 @@ defExports.fastererDroneL = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.half_power, g.lots_more_recoil, g.half_range]),
             TYPE: defExports.bullet,
-            COLOR_OVERRIDE: 323,
-        },
-        HITS_OWN_TYPE: 'hard',
-        DRAW_HEALTH: false,
-        CLEAR_ON_MASTER_UPGRADE: false,
-        BUFF_VS_FOOD: true
+            COLOR_OVERRIDE: 323
+        }
     }]
 };
 defExports.yellowsection = {
@@ -182864,7 +182328,7 @@ defExports.yellowsection = {
         SPEED: 4,
         HEALTH: 800,
         DAMAGE: 5,
-        REGEN: 0.45,
+        REGEN: 0.45
     },
     GUNS: [{
         POSITION: [10, 12, 1.2, 3, 0, 0, 0],
@@ -182879,11 +182343,11 @@ defExports.yellowsection = {
         }
     }, {
         POSITION: [7, 15, -1.2, 0, 0, 0, 0]
-    },],
+    }],
     TURRETS: [{
         POSITION: [18, -8, 0, 0, 0, 0],
         TYPE: defExports.vivisectionbackpartyellow
-    },],
+    }]
 };
 defExports.clickerMinionL = {
     PARENT: [defExports.sniperMinion],
@@ -182910,7 +182374,7 @@ defExports.greensection = {
         SPEED: 4,
         HEALTH: 800,
         DAMAGE: 5,
-        REGEN: 0.45,
+        REGEN: 0.45
     },
     MAX_CHILDREN: 4,
     GUNS: [{
@@ -182959,11 +182423,11 @@ defExports.greensection = {
         POSITION: [3.5, 12, -1.15, 5, 0, 0, 0]
     }, {
         POSITION: [5.25, 14, -1.15, 2, 0, 0, 0]
-    },],
+    }],
     TURRETS: [{
         POSITION: [18, -3, 0, 0, 0, 0],
         TYPE: defExports.vivisectionbackpartgreen
-    },],
+    }]
 };
 defExports.vivisectiongreen = {
     PARENT: [defExports.greensection],
@@ -183031,41 +182495,7 @@ defExports.vivisection = {
     }, {
         POSITION: [3, 0, 0, 0, 0, 1],
         TYPE: [defExports.bullet, { COLOR: 17 }]
-    }],
-    ON_DEAD: function({ sockets, ran, Entity }) {
-        setTimeout(() => {
-            let x = this.x,
-                y = this.y;
-            let positions = [
-                [-30, 30],
-                [-30, -30],
-                [30, -30],
-                [30, 30]
-            ],
-                name = (this.name == '') ? ran.chooseBossName("castle", 1)[0] : this.name,
-                sections = [defExports.redsectionAI, defExports.bluesectionAI, defExports.yellowsectionAI, defExports.greensectionAI];
-            
-            sockets.broadcast("The Vivisection has split apart!");
-            // Core
-            let core = new Entity({
-                x: x,
-                y: y
-            });
-            core.team = -100;
-            core.define(Class.vivisectionemptyAI);
-            core.name = name;
-            // Sections
-            for (let i = 0; i < 4; i++) {
-                let section = new Entity({
-                    x: this.x + positions[i][0],
-                    y: this.y + positions[i][1]
-                });
-                section.team = -100;
-                section.define(sections[i]);
-                section.name = (name + "'s Section");
-            }
-        }, 5000);
-    }
+    }]
 };
 defExports.vivisectionempty = {
     PARENT: [defExports.genericTank],
@@ -184158,7 +183588,7 @@ defExports.streakBoss = {
     SHAPE: 106,
     SIZE: 36,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: 3,
         HEALTH: 1250,
         DAMAGE: 5,
@@ -184220,7 +183650,7 @@ defExports.goldenstreakBoss = {
     SHAPE: 106,
     SIZE: 36,
     BODY: {
-        FOV: 1.05,
+        FOV: base.FOV * 1.05,
         SPEED: 4,
         HEALTH: 1750,
         DAMAGE: 6,
@@ -184609,7 +184039,7 @@ defExports.eliteShrapnel = {
     DANGER: 10,
     COLOR: 238,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -184998,7 +184428,7 @@ defExports.eliteDustbowl = {
     COLOR: 13,
     SIZE: 25,
     BODY: {
-        FOV: 1.15,
+        FOV: base.FOV * 1.15,
         SPEED: base.SPEED * .25,
         ACCELERATION: base.ACCEL * .75,
         HEALTH: 1000,
@@ -185155,11 +184585,11 @@ defExports.awp26 = {
     COLOR: 13,
     SIZE: 300,
     BODY: {
+        FOV: base.FOV * 6,
         SPEED: 0.1,
         HEALTH: 8000,
         DAMAGE: 6,
     },
-    FOV: 6,
     FACING_TYPE: 'smoothWithMotion',
     TURRETS: [{
         POSITION: [13, 31.5, 0, 0, 0, 1],
@@ -187072,202 +186502,76 @@ defExports.leshyAIred = {
     SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
     BROADCAST_MESSAGE: 'A Forestizer has been defeated!'
 };
-defExports.tk1AI = {
-    PARENT: [defExports.triangleBossTier1],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A TK-1 has been defeated!'
-};
-defExports.tk2AI = {
-    PARENT: [defExports.triangleBossTier2],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A TK-2 has been defeated!'
-};
-defExports.tk3AI = {
-    PARENT: [defExports.triangleBossTier3],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 8e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A TK-3 has been defeated!'
-};
-defExports.tk4AI = {
-    PARENT: [defExports.triangleBossTier4],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A TK-4 has been defeated!'
-};
-defExports.tk5AI = {
-    PARENT: [defExports.triangleBossTier5],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 5e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A TK-5 has been defeated!'
-};
-defExports.mk1AI = {
-    PARENT: [defExports.squareBossTier1],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A MK-1 has been defeated!'
-};
-defExports.mk2AI = {
-    PARENT: [defExports.squareBossTier2],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A MK-2 has been defeated!'
-};
-defExports.mk3AI = {
-    PARENT: [defExports.squareBossTier3],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 8e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A MK-3 has been defeated!'
-};
-defExports.mk4AI = {
-    PARENT: [defExports.squareBossTier4],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A MK-4 has been defeated!'
-};
-defExports.mk5AI = {
-    PARENT: [defExports.squareBossTier5],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 5e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'A MK-5 has been defeated!'
-};
-defExports.eggSpiritTier1AI = {
-    PARENT: [defExports.eggSpiritTier1],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An ES-1 has been defeated!'
-};
-defExports.eggSpiritTier2AI = {
-    PARENT: [defExports.eggSpiritTier2],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An ES-2 has been defeated!'
-};
-defExports.eggSpiritTier3AI = {
-    PARENT: [defExports.eggSpiritTier3],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 8e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An ES-3 has been defeated!'
-};
-defExports.eggSpiritTier4AI = {
-    PARENT: [defExports.eggSpiritTier4],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 1e6,
-    CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
-    AI: {
-        NO_LEAD: true,
-    },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 5, 5, 6, 6, 6, 6, 1, 0, 0),
-    BROADCAST_MESSAGE: 'An ES-4 has been defeated!',
-};
+defExports.triangleBossTier1AI = makeBossAI(defExports.triangleBossTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'triangleBossTier2AI')
+});
+defExports.triangleBossTier2AI = makeBossAI(defExports.triangleBossTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
+});
+defExports.triangleBossTier3AI = makeBossAI(defExports.triangleBossTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel'],
+});
+defExports.triangleBossTier4AI = makeBossAI(defExports.triangleBossTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel'],
+});
+defExports.triangleBossTier5AI = makeBossAI(defExports.triangleBossTier5, {
+    value: 5e6,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel'],
+});
+defExports.squareBossTier1AI = makeBossAI(defExports.squareBossTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'squareBossTier2AI')
+});
+defExports.squareBossTier2AI = makeBossAI(defExports.squareBossTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel']
+});
+defExports.squareBossTier3AI = makeBossAI(defExports.squareBossTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel']
+});
+defExports.squareBossTier4AI = makeBossAI(defExports.squareBossTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel']
+});
+defExports.squareBossTier5AI = makeBossAI(defExports.squareBossTier5, {
+    value: 5e6,
+    controllers: ['nearestDifferentMaster', 'minion', 'canRepel']
+});
+defExports.eggSpiritTier1AI = makeBossAI(defExports.eggSpiritTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'eggSpiritTier2AI')
+});
+defExports.eggSpiritTier1AIWeak = makeBossAI(defExports.eggSpiritTier1, {
+    value: 2e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel'],
+    skill: setSkill(0, 3, 3, 4, 4, 4, 4, 0, 0, 0),
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'eggSpiritTier2AIWeak')
+});
+defExports.eggSpiritTier2AI = makeBossAI(defExports.eggSpiritTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel']
+});
+defExports.eggSpiritTier2AIWeak = makeBossAI(defExports.eggSpiritTier2, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel'],
+    skill: setSkill(0, 3, 3, 4, 4, 4, 4, 0, 0, 0)
+});
+defExports.eggSpiritTier3AI = makeBossAI(defExports.eggSpiritTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'canRepel']
+});
+defExports.eggSpiritTier4AI = makeBossAI(defExports.eggSpiritTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'canRepel']
+});
 defExports.eggBossTier6AI = {
     PARENT: [defExports.eggBossTier6],
     TYPE: 'miniboss',
@@ -187336,7 +186640,7 @@ defExports.voidPentagonAIWeaker = {
     VALUE: 1500000,
     SIZE: 48,
     BODY: {
-        FOV: 1.4,
+        FOV: base.FOV * 1.4,
         SPEED: 2.5,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1750,
@@ -187677,7 +186981,7 @@ defExports.mythicalCrasherAIWeaker = {
         HEALTH: 2500,
         DAMAGE: 6.75,
         REGEN: base.REGEN * .45,
-        FOV: .775
+        FOV: base.FOV * .775
     },
     CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
     //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
@@ -187726,7 +187030,7 @@ defExports.tetraplexAIWeaker = {
     VALUE: 2500000,
     SIZE: 66,
     BODY: {
-        FOV: .65,
+        FOV: base.FOV * .65,
         SPEED: 1.25,
         ACCELERATION: base.ACCEL * .3,
         HEALTH: 1750,
@@ -188043,7 +187347,7 @@ defExports.clockAIWeaker = {
         HEALTH: 1350,
         DAMAGE: 5,
         REGEN: base.REGEN * .75,
-        FOV: .65
+        FOV: base.FOV * .65
     },
     CONTROLLERS: ['nearestDifferentMaster', 'minion', 'canRepel'],
     //CONTROLLERS: ['nearestDifferentMaster', 'minion'/*, 'fleeAtLowHealth'*/, 'canRepel'],
@@ -188576,7 +187880,7 @@ defExports.laserTest2 = {
     HAS_NO_RECOIL: true,
     BODY: {
         ACCELERATION: base.ACCEL * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     TURRETS: [{
         POSITION: [15, 0, 12, 0, 90, 0],
@@ -188678,7 +187982,7 @@ defExports.laserTest4 = { // Crypto Miner
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0],
@@ -188776,7 +188080,7 @@ defExports.laserTest5 = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [10, 12.5, -0.5, 9.5, 0, 0, 0],
@@ -189013,33 +188317,58 @@ defExports.rSassSupremeAIWeaker = makeBossAI(defExports.rSassSupreme, {
     broadcastMessage: "!nials neeb sah emerpuS sarfassaS A"
 })
 defExports.soulless1AI = makeBossAI(defExports.soulless1, { value: 8e5 });
-defExports.pentagonBossTier1AI = makeBossAI(defExports.pentagonBossTier1, { value: 4e5 });
-defExports.pentagonBossTier2AI = makeBossAI(defExports.pentagonBossTier2);
-defExports.pentagonBossTier3AI = makeBossAI(defExports.pentagonBossTier3, { value: 8e5 });
-defExports.pentagonBossTier4AI = makeBossAI(defExports.pentagonBossTier4, { value: 12e5 });
-defExports.hexagonBossTier1AI = makeBossAI(defExports.hexagonBossTier1, { broadcastMessage: "An HK-1 has been defeated!" });
+defExports.pentagonBossTier1AI = makeBossAI(defExports.pentagonBossTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'pentagonBossTier2AI')
+});
+defExports.pentagonBossTier2AI = makeBossAI(defExports.pentagonBossTier2, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth']
+});
+defExports.pentagonBossTier3AI = makeBossAI(defExports.pentagonBossTier3, {
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.pentagonBossTier4AI = makeBossAI(defExports.pentagonBossTier4, {
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
+defExports.hexagonBossTier1AI = makeBossAI(defExports.hexagonBossTier1, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    broadcastMessage: "An HK-1 has been defeated!",
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'hexagonBossTier2AI')
+});
 defExports.hexagonBossTier2AI = makeBossAI(defExports.hexagonBossTier2, {
-    value: 7e5,
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
     broadcastMessage: "An HK-2 has been defeated!"
 });
 defExports.hexagonBossTier3AI = makeBossAI(defExports.hexagonBossTier3, {
-    value: 9e5,
+    value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     broadcastMessage: "An HK-3 has been defeated!"
 });
 defExports.hexagonBossTier4AI = makeBossAI(defExports.hexagonBossTier4, {
-    value: 11e5,
+    value: 1e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     broadcastMessage: "An HK-4 has been defeated!"
 });
 defExports.heptagonBossTier1AI = makeBossAI(defExports.heptagonBossTier1, {
     value: 4e5,
-    broadcastMessage: "An HPK-1 has been defeated!"
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
+    broadcastMessage: "An HPK-1 has been defeated!",
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'heptagonBossTier2AI')
 });
 defExports.heptagonBossTier2AI = makeBossAI(defExports.heptagonBossTier2, {
     value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
     broadcastMessage: "An HPK-2 has been defeated!"
 });
 defExports.heptagonBossTier3AI = makeBossAI(defExports.heptagonBossTier3, {
     value: 8e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     broadcastMessage: "An HPK-3 has been defeated!"
 });
 defExports.obp1AI = makeBossAI(defExports.obp1, { value: 2e5 });
@@ -189072,15 +188401,25 @@ defExports.nk5AI = makeBossAI(defExports.nk5, {
 defExports.nestKeeperAI = makeBossAI(defExports.nestKeeper, { value: 4e5 });
 defExports.triSeekerAI = makeBossAI(defExports.triSeeker, { value: 2e5 });
 defExports.jetBossAI = makeBossAI(defExports.jetBoss, {
-    value: 3e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    ai: { SKYNET: true },
     skill: setSkill(2, 2, 5, 3, 2, 3, 7, 2, 0, 0),
     broadcastMessage: "The Jet has been defeated!"
 });
+defExports.jetBossAIWeak = makeBossAI(defExports.jetBoss, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    body: {
+        health: 600,
+        regeneration: base.REGEN * .25,
+        speed: base.SPEED * .6,
+        acceleration: base.ACCEL * .3,
+        pushability: .8
+    },
+    skill: setSkill(2, 2, 4, 2, 1, 2, 6, 0, 0, 0),
+    broadcastMessage: "The Jet has been defeated!"
+});
 defExports.superbirdAI = makeBossAI(defExports.superbird, {
-    value: 3e5,
-    ai: { SKYNET: true },
+    value: 2e5,
     skill: setSkill(2, 2, 5, 3, 2, 3, 7, 2, 0, 0)
 });
 defExports.XZ_4_MainAI = makeBossAI(defExports.XZ_4_Main, { value: 8e5 });
@@ -189095,8 +188434,17 @@ defExports.hypervesselAI = makeBossAI(defExports.hypervessel, { value: 8e5 });
 defExports.missilusAI = makeBossAI(defExports.missilus, { value: 12e5 });
 defExports.article13AI = makeBossAI(defExports.article13, { value: 3e5 });
 defExports.ship23AI = makeBossAI(defExports.ship23, { value: 1e6 });
-defExports.fallenHybridAI = makeBossAI(defExports.fallenHybrid, { value: 1e5 });
-defExports.fallenOctoAI = makeBossAI(defExports.fallenOcto, { value: 1e5 });
+defExports.fallenHybridAI = makeBossAI(defExports.fallenHybrid, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0),
+    onDefined: (me, entities, sockets) => setGreaterEvolution(me, sockets, 'fallenCavalcadeAI')
+});
+defExports.fallenOctoAI = makeBossAI(defExports.fallenOcto, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
 defExports.industrianAI = makeBossAI(defExports.industrian, { value: 1e6 });
 defExports.hyperionAI = makeBossAI(defExports.hyperion, { value: 8e4 });
 defExports.puzzlePieceBossAI = makeBossAI(defExports.puzzlePieceBoss, {
@@ -189114,7 +188462,11 @@ defExports.overTitanAI = makeBossAI(defExports.overTitan, {
 });
 defExports.hexachoronAI = makeBossAI(defExports.hexachoron, { value: 7e5 });
 defExports.terrorhedronAI = makeBossAI(defExports.terrorhedron, { value: 4e5 });
-defExports.eliteDefenderAI = makeBossAI(defExports.eliteDefender, { value: 7e5 });
+defExports.eliteDefenderAI = makeBossAI(defExports.eliteDefender, { value: 8e5 });
+defExports.eliteDefenderAIWeak = makeBossAI(defExports.eliteDefender, {
+	value: 4e5,
+	skill: setSkill(0, 6, 3, 4, 4, 3, 5, 0, 0, 0)
+});
 defExports.orthoAI = makeBossAI(defExports.ortho);
 defExports.testingthingAI = makeBossAI(defExports.testingthing, { value: 8e5 });
 defExports.rod1AI = makeBossAI(defExports.rod1, { value: 8e5 });
@@ -189126,7 +188478,15 @@ defExports.kingAI = makeBossAI(defExports.king, {
 defExports.eliteDirectorAI = makeBossAI(defExports.eliteDirector, { value: 15e4 });
 defExports.carbonfrasAI = makeBossAI(defExports.carbonfras, {
     name: 'Carbonfras',
-    value: 15e5
+    value: 2e6,
+    ai: {}
+});
+defExports.carbonfrasAIWeak = makeBossAI(defExports.carbonfras, {
+    name: 'Carbonfras',
+    value: 6e5,
+    size: 36,
+    ai: {},
+    skill: setWeaponSkill(6, 2, 2, 1, 7)
 });
 defExports.eliteXyvAI = makeBossAI(defExports.eliteXyv, { value: 15e4 });
 defExports.eliteBattleshipAI = makeBossAI(defExports.eliteBattleship, { value: 15e4 });
@@ -189155,7 +188515,55 @@ defExports.vivisectionemptyAI = makeBossAI(defExports.vivisectionempty, {
     value: 1e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
 });
-defExports.vivisectionAI = makeBossAI(defExports.vivisection, { broadcastMessage: "A Vivisection may have been defeated, but the battle is not over yet..." });
+defExports.vivisectionAI = makeBossAI(defExports.vivisection, {
+    value: 7e5,
+    broadcastMessage: "A Vivisection may have been defeated, but the battle is not over yet…",
+    onDead: function({ sockets, ran, Entity }) {
+        setTimeout(() => {
+            let x = this.x,
+                y = this.y;
+            let positions = [
+                [-30, 30],
+                [-30, -30],
+                [30, -30],
+                [30, 30]
+            ],
+                name = (this.name == '') ? ran.chooseBossName("castle", 1)[0] : this.name,
+                sections = [defExports.redsectionAI, defExports.bluesectionAI, defExports.yellowsectionAI, defExports.greensectionAI];
+            
+            sockets.broadcast("The Vivisection has split apart!");
+            // Core
+            let core = new Entity({
+                x: x,
+                y: y
+            });
+            core.team = -100;
+            core.define(Class.vivisectionemptyAI);
+            core.name = name;
+            // Sections
+            for (let i = 0; i < 4; i++) {
+                let section = new Entity({
+                    x: this.x + positions[i][0],
+                    y: this.y + positions[i][1]
+                });
+                section.team = -100;
+                section.define(sections[i]);
+                section.name = (name + "'s Section");
+            }
+        }, 5000);
+    }
+});
+defExports.vivisectionAIWeak = makeBossAI(defExports.vivisection, {
+    value: 4e5,
+    body: {
+        health: 750,
+        damage: 5,
+        regeneration: .0075
+    },
+    skill: setSkill(0, 4, 4, 5, 5, 5, 5, 0, 0, 0),
+    broadcastMessage: "A Vivisection may have been defeated, but the battle is not over yet…",
+    onDead: defExports.vivisectionAI.ON_DEAD
+});
 defExports.PCUAI = makeBossAI(defExports.PCU, { value: 9e5 });
 defExports.purifierBossAI = makeBossAI(defExports.purifierBoss, { value: 15e4 });
 defExports.purifierBossAIWeak = makeBossAI(defExports.purifierBoss, {
@@ -189198,7 +188606,7 @@ defExports.icePalisadeMinion = {
         PROPERTIES: {
             COLOR: getAsset('icePalisadeLightTeal'),
             SHOOT_SETTINGS: combineStats([g.basic, g.minion, g.spam, g.no_recoil]),
-            TYPE: [defExports.iceBullet, { ON_DEALT_DAMAGE: (me, them) => { ice(them, 1, 0.75); } }]
+            TYPE: [defExports.iceBullet, { ON_DEALT_DAMAGE: (me, them) => ice(them, 1, 0.75) }]
         }
     }, {
         POSITION: [14, 6, 1, 0, 0, 0, 0],
@@ -189271,7 +188679,7 @@ defExports.icePalisade = {
     SIZE: 36,
     FACING_TYPE: ['autospin', { SPEED: .0125 }],
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .0375,
         HEALTH: base.HEALTH * 20,
         SHIELD: base.SHIELD * 5,
@@ -189453,7 +188861,8 @@ defExports.custodianAI = makeBossAI(defExports.defender2, {
 defExports.vulcTrapGuard = {
     PARENT: [defExports.genericTank],
     LABEL: 'Forgery',
-    DANGER: 7,
+    CREDIT: 'This tank was named by Misfit.',
+    DANGER: 8,
     GUNS: [{
         POSITION: [30, 1.5, 1, 0, -4.5, 0, 0],
         PROPERTIES: {
@@ -189717,7 +189126,7 @@ defExports.hivemindCrasherProbe = {
         PUSHABILITY: .5,
         DENSITY: 10,
         RESIST: 2,
-		FOV: 1,
+		FOV: 1
     },
     AI: { SKYNET: true },
     ALWAYS_ACTIVE: true,
@@ -189775,7 +189184,7 @@ defExports.minesweepCrush = makeMinesweep({
         DENSITY: 12,
         RESIST: 4
     },
-	EVOLUTIONS: [],
+	EVOLUTIONS: []
 }, 'Trucker', {
     width: .15,
     length: 2.75,
@@ -189929,7 +189338,7 @@ defExports.fatSniperFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     GUNS: [{
@@ -189954,7 +189363,7 @@ defExports.fatMachineFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     GUNS: [{
@@ -189979,7 +189388,7 @@ defExports.fatTrapperFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     SHAPE: -3,
@@ -190001,7 +189410,7 @@ defExports.fatTwinFactory = {
     STAT_NAMES: statNames.minion,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     MAX_CHILDREN: 6,
     GUNS: [{
@@ -190039,7 +189448,7 @@ defExports.invisifactory = {
     BODY: {
         SPEED: base.SPEED * .775,
         ACCELERATION: base.ACCEL * .9,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.minion,
     MAX_CHILDREN: 6,
@@ -190068,7 +189477,7 @@ defExports.factoryOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .85,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
 	MAX_CHILDREN: 6,
@@ -190100,7 +189509,7 @@ defExports.flankFactory = {
     MAX_CHILDREN: 6,
     BODY: {
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: function(guns = []) {
 		for (let i = 0; i < 3; i++) guns.push({
@@ -190126,8 +189535,8 @@ defExports.manufacture = {
     DANGER: 7,
     STAT_NAMES: statNames.swarm,
     BODY: {
-        ACCELERATION: base.ACCEL * 0.8,
-        FOV: base.FOV * 1.2,
+        ACCELERATION: base.ACCEL * .8,
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [15.5, 10.64, 1, 0, 0, 0, 0]
@@ -190469,7 +189878,7 @@ defExports.ultSwissToolset = {
     COLOR: 26,
     SHAPE: 7,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .125,
         ACCELERATION: base.ACCEL * .5,
         HEALTH: 1250,
@@ -190580,54 +189989,51 @@ defExports.specThrusterAI = makeBossAI(defExports.specThruster, {
 });
 defExports.reanimGasser = makeReanimated(defExports.gasser);
 defExports.reanimGasserAI = makeBossAI(defExports.reanimGasser, {
-	variesInSize: false,
-    value: 3e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
-defExports.fallenDesperado = makeFallen(defExports.gunScaler);
-defExports.fallenDesperadoAI = makeBossAI(defExports.fallenDesperado, {
-	variesInSize: false,
-    value: 1e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+defExports.fallenScaler = makeFallen(defExports.scaler);
+defExports.fallenScalerAI = makeBossAI(defExports.fallenScaler, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.reanimCorps = makeReanimated(defExports.trapExploderThingy);
 defExports.reanimCorpsAI = makeBossAI(defExports.reanimCorps, {
-	variesInSize: false,
-    value: 3e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
-defExports.reanimPentaBlaster = makeReanimated(defExports.pentaBlaster);
-defExports.reanimPentaBlaster.HAS_NO_RECOIL = true;
+defExports.reanimPentaBlaster = makeReanimated(defExports.pentaBlaster, { hasNoRecoil: true });
 defExports.reanimPentaBlasterAI = makeBossAI(defExports.reanimPentaBlaster, {
-	variesInSize: false,
-    value: 3e5,
-    skill: setSkill(0, 8, 1, 8, 8, 8, 7, 8, 0, 0)
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.reanimCache = makeReanimated(defExports.machArsenalAuto3);
 defExports.reanimCacheAI = makeBossAI(defExports.reanimCache, {
-	variesInSize: false,
-    value: 3e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
-defExports.fallenPenta = makeFallen(defExports.penta);
-defExports.fallenPenta.HAS_NO_RECOIL = true;
+defExports.fallenPenta = makeFallen(defExports.penta, { hasNoRecoil: true });
 defExports.fallenPentaAI = makeBossAI(defExports.fallenPenta, {
-	variesInSize: false,
-    value: 1e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
-defExports.fallenRanger = makeFallen(defExports.ranger);
-defExports.fallenRanger.BODY.FOV = 1.4;
+defExports.fallenRanger = makeFallen(defExports.ranger, { body: { fov: base.FOV * 1.4 } });
 defExports.fallenRangerAI = makeBossAI(defExports.fallenRanger, {
-	variesInSize: false,
-    value: 1e5,
-    skill: setSkill(0, 8, 9, 8, 8, 8, 7, 0, 0, 0)
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.fallenFlamethrower = makeFallen(defExports.newInferno);
 defExports.fallenFlamethrowerAI = makeBossAI(defExports.fallenFlamethrower, {
-	variesInSize: false,
-    value: 1e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.specRitoparn = makeSpectral(defExports.ritoparn);
 defExports.specRitoparnAI = makeBossAI(defExports.specRitoparn, {
@@ -190653,7 +190059,7 @@ defExports.specYottamind = makeHivemind({ // Special Case #1
     BODY: {
         ACCELERATION: base.ACCEL * .5,
         SPEED: 1.325,
-        FOV: 1.1,
+        FOV: base.FOV * 1.1,
         HEALTH: 2000
     },
     GUNS: [{
@@ -190706,9 +190112,9 @@ defExports.swarmCannonBoss = {
 defExports.swarmCannonBossAI = makeBossAI(defExports.swarmCannonBoss, { level: 150 });
 defExports.reanimOverfire = makeReanimated(defExports.overfire);
 defExports.reanimOverfireAI = makeBossAI(defExports.reanimOverfire, {
-	variesInSize: false,
-    value: 3e5,
-    skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.specQuadralet = makeSpectral(defExports.tripletDualMachine);
 applyStats(defExports.specQuadralet.GUNS, [[1, 1/6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]);
@@ -190716,12 +190122,18 @@ defExports.specQuadraletAI = makeBossAI(defExports.specQuadralet, {
 	variesInSize: false,
     skill: setSkill(0, 8, 8, 8, 8, 8, 7, 1, 0, 0)
 });
-defExports.reanimKnight = makeReanimated(defExports.knight);
+defExports.reanimKnight = makeReanimated(defExports.knight, {
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED
+    },
+    facingType: 'smoothToTarget'
+});
 defExports.reanimKnightAI = makeBossAI(defExports.reanimKnight, {
-	variesInSize: false,
-    value: 3e5,
+    variesInSize: false,
+    level: 105,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    skill: setSkill(0, 8, 4, 7, 7, 7, 7, 8, 0, 0)
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 // Special Case #2
 defExports.specAstraGun = makeAuto({
@@ -190814,7 +190226,6 @@ g.fallen_laser = convert({
 });
 defExports.fallenLaser = makeFallen({
     PARENT: [defExports.genericTank],
-	FACING_TYPE: 'slowToTarget',
     GUNS: [{
         POSITION: [22, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
@@ -190837,12 +190248,288 @@ defExports.fallenLaser = makeFallen({
         POSITION: [25, 1, 0, 0, 0, 0, 0],
         PROPERTIES: { COLOR: 12 }
     }]
-}, 'Fallen Laser');
+}, {
+    name: "Fallen Laser",
+    facingType: 'slowToTarget'
+});
 defExports.fallenLaserAI = makeBossAI(defExports.fallenLaser, {
-	variesInSize: false,
-    value: 1e5,
-	ai: {},
-    skill: setSkill(0, 8, 9, 8, 8, 8, 7, 0, 0, 0)
+    variesInSize: false,
+    level: 75,
+    ai: {},
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenAnnihilator = makeFallen(defExports.annihilator);
+defExports.fallenAnnihilatorAI = makeBossAI(defExports.fallenAnnihilator, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0)
+});
+defExports.fallenSpreadshot = makeFallen(defExports.diepSpreadshot);
+defExports.fallenSpreadshotAI = makeBossAI(defExports.fallenSpreadshot, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenFlail = makeFallen(defExports.flail, {
+    body: {
+        acceleration: base.ACCEL * .9,
+        speed: base.SPEED * .8
+    }
+});
+defExports.fallenFlailAI = makeBossAI(defExports.fallenFlail, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 0, 8, 8, 8, 9, 6, 0, 0)
+});
+defExports.fallenAka0 = makeFallen(defExports.aka0, {
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED
+    }
+});
+defExports.fallenAkaAI0 = makeBossAI(defExports.fallenAka0, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'animateOnDistance'],
+	variables: {
+        animationCase: 1,
+        animationDistance: 45
+    },
+    skill: setSkill(0, 2, 6, 8, 8, 8, 9, 4, 0, 0),
+    onAlt: (me, entities) => animate(me, 'fallenAkaAI', 31, 20, true, 0, entities)
+});
+for (let i = 1, j = 31; i < j; i++) {
+	defExports[`fallenAka${i}`] = makeFallen(defExports[`aka${i}`], {
+        body: {
+            acceleration: base.ACCEL * (.7 - .325/j*i),
+            speed: base.SPEED * (1 - .775/j*i)
+        }
+    });
+	defExports[`fallenAkaAI${i}`] = makeBossAI(defExports[`fallenAka${i}`], {
+		variesInSize: false,
+		level: 75,
+		skill: setSkill(0, 4, 6, 8, 8, 8, 9, 2, 0, 0)
+	});
+}
+defExports.fallenAka31 = makeFallen(defExports.aka31, { hasNoRecoil: true });
+defExports.fallenAkaAI31 = makeBossAI(defExports.fallenAka31, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'animateOnDistance'],
+    variables: {
+        animationCase: 2,
+        animationDistance: 32
+    },
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0),
+    onAlt: (me, entities) => animate(me, 'fallenAkaAI', 31, 20, false, 0, entities)
+});
+defExports.fallenHurricane = makeFallen(defExports.hurricane, { facingType: 'autospin' });
+defExports.fallenHurricaneAI = makeBossAI(defExports.fallenHurricane, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenSurfer = makeFallen(defExports.surfer, {
+    body: {
+        acceleration: base.ACCEL,
+        speed: base.SPEED
+    },
+    facingType: 'smoothToTarget'
+});
+defExports.fallenSurferAI = makeBossAI(defExports.fallenSurfer, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenEngineer = makeFallen(defExports.engineer);
+defExports.fallenEngineerAI = makeBossAI(defExports.fallenEngineer, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenHivemind = makeFallen(defExports.hivemind);
+defExports.fallenHivemindAI = makeBossAI(defExports.fallenHivemind, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenMortar = makeFallen(defExports.mortar);
+defExports.fallenMortarAI = makeBossAI(defExports.fallenMortar, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenAuto5 = makeFallen(defExports.auto5, { facingType: 'autospin' });
+defExports.fallenAuto5AI = makeBossAI(defExports.fallenAuto5, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenShrapnel = makeFallen(defExports.miniNukeShooter);
+defExports.fallenShrapnelAI = makeBossAI(defExports.fallenShrapnel, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenFortress = makeFallen({
+    PARENT: [defExports.genericTank],
+    STAT_NAMES: statNames.generic,
+    GUNS: [{
+        POSITION: [7, 7.5, .6, 7, 0, 60, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.swarm, g.less_reload, g.bit_more_damage]),
+            TYPE: [defExports.swarm, { CONTROLLERS: ['canRepel'] }],
+            STAT_CALCULATOR: gunCalcNames.swarm
+        }
+    }, {
+        POSITION: [7, 7.5, .6, 7, 0, 180, 1 / 3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.swarm, g.less_reload, g.bit_more_damage]),
+            TYPE: [defExports.swarm, { CONTROLLERS: ['canRepel'] }],
+            STAT_CALCULATOR: gunCalcNames.swarm
+        }
+    }, {
+        POSITION: [7, 7.5, .6, 7, 0, 300, 2 / 3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.swarm, g.less_reload, g.bit_more_damage]),
+            TYPE: [defExports.swarm, { CONTROLLERS: ['canRepel'] }],
+            STAT_CALCULATOR: gunCalcNames.swarm
+        }
+    }, {
+        POSITION: [14, 9, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [4, 9, 1.5, 14, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.slow]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [14, 9, 1, 0, 0, 120, 0]
+    }, {
+        POSITION: [4, 9, 1.5, 14, 0, 120, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.slow]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [14, 9, 1, 0, 0, 240, 0]
+    }, {
+        POSITION: [4, 9, 1.5, 14, 0, 240, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.slow]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }]
+}, {
+    name: "Fallen Fortress",
+    body: { fov: base.FOV * 1.3 },
+    facingType: 'autospin'
+});
+defExports.fallenFortressAI = makeBossAI(defExports.fallenFortress, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0)
+});
+defExports.fallenBattleship = makeFallen(defExports.battleship);
+defExports.fallenBattleshipAI = makeBossAI(defExports.fallenBattleship, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenSlayer = makeFallen(defExports.slayer, {
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED
+    },
+    facingType: 'smoothToTarget'
+});
+defExports.fallenSlayerAI = makeBossAI(defExports.fallenSlayer, {
+    variesInSize: false,
+    level: 75,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.fallenShotgun = makeFallen(defExports.shotgun);
+defExports.fallenShotgunAI = makeBossAI(defExports.fallenShotgun, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0)
+});
+defExports.fallenMecha = makeFallen(defExports.mecha);
+defExports.fallenMechaAI = makeBossAI(defExports.fallenMecha, {
+    variesInSize: false,
+    level: 75,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimFielder = makeReanimated(defExports.fielder);
+defExports.reanimFielderAI = makeBossAI(defExports.reanimFielder, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimFabricator = makeReanimated(defExports.twinSideFighter, {
+    body: {
+        acceleration: base.ACCEL,
+        speed: base.SPEED
+    },
+    facingType: 'smoothToTarget'
+});
+defExports.reanimFabricatorAI = makeBossAI(defExports.reanimFabricator, {
+    variesInSize: false,
+    level: 105,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimMegafort = makeReanimated(defExports.megafort, { facingType: 'autospin' });
+defExports.reanimMegafortAI = makeBossAI(defExports.reanimMegafort, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimChevron = makeReanimated(defExports.chevron, {
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8
+    }
+});
+defExports.reanimChevronAI = makeBossAI(defExports.reanimChevron, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimPrizefighter = makeReanimated(defExports.prizefighter);
+defExports.reanimPrizefighterAI = makeBossAI(defExports.reanimPrizefighter, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimArsonist = makeReanimated(defExports.arsonistRemoved);
+defExports.reanimArsonistAI = makeBossAI(defExports.reanimArsonist, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimBent3 = makeReanimated(defExports.bent3, { facingType: 'autospin' });
+defExports.reanimBent3AI = makeBossAI(defExports.reanimBent3, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimWildfire = makeReanimated(defExports.snipeInferno, { body: { fov: base.FOV * 1.2 } });
+defExports.reanimWildfireAI = makeBossAI(defExports.reanimWildfire, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
+});
+defExports.reanimSixShot = makeReanimated(defExports.sixShot);
+defExports.reanimSixShotAI = makeBossAI(defExports.reanimSixShot, {
+    variesInSize: false,
+    level: 105,
+    skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0)
 });
 defExports.mariahCareyAI = makeBossAI(defExports.mariahCarey, {
     value: 25e5,
@@ -192259,7 +191946,7 @@ defExports.protNestKeeper = {
     SHAPE: 5,
     SIZE: 50,
     BODY: {
-        FOV: 1.3,
+        FOV: base.FOV * 1.3,
         SPEED: base.SPEED * .25,
         HEALTH: base.HEALTH * 12,
         SHIELD: base.SHIELD * 3,
@@ -192631,25 +192318,6 @@ defExports.arrasHexagon = {
         ['crackerPoly', 5]
     ]
 };
-defExports.betaHexagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Hexagon',
-    VALUE: 22500,
-    SHAPE: 6,
-    SIZE: 37,
-    COLOR: mixColors('#7ADBBC', '#56E012', .5),
-    BODY: {
-        DAMAGE: 2,
-        DENSITY: 80,
-        HEALTH: 315,
-        RESIST: 1.275,
-        SHIELD: 46.5,
-        REGEN: .025
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: [['hexagon', 100]]
-};
 defExports.moreEggmancer = {
     PARENT: [defExports.genericTank],
     LABEL: 'Eggmancer',
@@ -192658,7 +192326,7 @@ defExports.moreEggmancer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     MAX_CHILDREN: 20,
     CAN_NECROMIZE: defaultEggNecros,
@@ -192711,7 +192379,7 @@ defExports.playableBisectorBullet = {
     STAT_NAMES: statNames.generic,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [20, 6.5, 1, 0, 0, 0, 0],
@@ -192894,21 +192562,27 @@ defExports.carryingGunshipAI = makeBossAI(defExports.carryingGunship, {
 defExports.underDestroy = makeHybrid(defExports.destroyer, 'under', {
     name: 'Tent',
     credit: 'This tank was named by Misfit.',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underMini = makeHybrid(defExports.mini, 'under', {
     name: 'Undermini',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.underRifle = makeHybrid(defExports.rifle, 'under', {
     name: 'Underbarrel',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .85,
-    fov: 1.225
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .85,
+        fov: base.FOV * 1.225
+    }
 });
 defExports.underBorer = makeHybrid({
     PARENT: [defExports.genericTank],
@@ -192930,41 +192604,55 @@ defExports.underBorer = makeHybrid({
     }]
 }, 'under', {
     name: 'Underbore',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.underGatling = makeHybrid(defExports.gatling, 'under', {
     name: 'Undergatling',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .85,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .85,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.underShootist = makeHybrid(defExports.minishotSniper, 'under', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.sorcerSniper = makeHybrid(defExports.sniper, 'egg', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.enchantSniper = makeHybrid(defExports.sniper, 'triangle', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.exortSniper = makeHybrid(defExports.sniper, 'pentagon', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .75,
-    fov: 1.2
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .75,
+        fov: base.FOV * 1.2
+    }
 });
 defExports.underArtillery = makeHybrid(defExports.artillery, 'under', {
     name: 'Underart',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.necroLittleMissile = deepCopy(defExports.littleMissile);
 defExports.necroLittleMissile.GUNS[0].PROPERTIES.TYPE = [defExports.bullet, {
@@ -192987,15 +192675,19 @@ defExports.underLaunch = makeHybrid({
     }]
 }, 'under', {
     name: 'Underlaunch',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underMulti = makeHybrid(defExports.multishot, 'under', {
     name: 'Undermulti',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.necroExplosiveShell = deepCopy(defExports.explosiveShell),
     defExports.necroExplosiveShell.GUNS[0].PROPERTIES.TYPE = [defExports.bulletLayer6, {
@@ -193026,9 +192718,11 @@ defExports.underKinetic = makeHybrid({
     }]
 }, 'under', {
     name: 'Undernetic',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1,
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    },
     necroGun: 1
 });
 defExports.underKinetic.GUNS.unshift({ POSITION: [16.5, 11.5, 1, 0, 0, 180, 0] })
@@ -193053,9 +192747,11 @@ defExports.underSwarm = makeHybrid({
     }]
 }, 'under', {
     name: 'Underswarm',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.necroAutoTurret3 = deepCopy(defExports.autoTurret3),
     defExports.necroAutoTurret3.GUNS[0].PROPERTIES.TYPE = [defExports.bulletLayer6, {
@@ -193083,16 +192779,18 @@ defExports.underTailgator = makeHybrid({
     }]
 }, 'under', {
     name: 'Undergator',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .85,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .85,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underFlankTrap = {
     PARENT: [defExports.genericTank],
     LABEL: 'Harpy',
     DANGER: 7,
     STAT_NAMES: statNames.generic,
-    BODY: { FOV: 1.1 },
+    BODY: { FOV: base.FOV * 1.1 },
     SHAPE: 4,
     CAN_NECROMIZE: defaultSquareNecros,
     GUNS: [{
@@ -193131,9 +192829,11 @@ defExports.underFlankTrap = {
 };
 defExports.underContagion = makeHybrid(defExports.contagion, 'under', {
     name: 'Undertagion',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.necroSplitTrap = deepCopy(defExports.splitTrap);
 for (let gun of defExports.necroSplitTrap.GUNS) gun.PROPERTIES.TYPE = [defExports.trap, {
@@ -193165,21 +192865,27 @@ defExports.underPacker = makeHybrid({
     }]
 }, 'under', {
     name: 'Underpacker',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underSwarmTrap = makeHybrid(defExports.swarmTrapper, 'under', {
     name: 'Swarming Undertrapper',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underMachTrapper = makeHybrid(defExports.machTrapper, 'under', {
     name: 'Undermach',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 }),
 defExports.underMachTrapper.CREDIT = 'This tank was named by Misfit.';
 defExports.necroTrapboxTurret = deepCopy(defExports.trapboxTurret);
@@ -193209,51 +192915,69 @@ defExports.underArsenal = makeHybrid({
     }]
 }, 'under', {
     name: 'Undersenal',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.underMinelayer = makeHybrid(defExports.minelayer, 'under', {
     name: 'Underlayer',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.underTraprang = makeHybrid(defExports.traprang, 'under', {
     name: 'Underrang',
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.sorcerTrap = makeHybrid(defExports.trapper, 'egg', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.enchantTrap = makeHybrid(defExports.trapper, 'triangle', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.exortTrap = makeHybrid(defExports.trapper, 'pentagon', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .75,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .75,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.sorcerPounder = makeHybrid(defExports.pounder, 'egg', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.15
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.15
+    }
 });
 defExports.enchantPounder = makeHybrid(defExports.pounder, 'triangle', {
-    accel: base.ACCEL * .7,
-    speed: base.SPEED * .8,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .7,
+        speed: base.SPEED * .8,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.exortPounder = makeHybrid(defExports.pounder, 'pentagon', {
-    accel: base.ACCEL * .6,
-    speed: base.SPEED * .75,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .6,
+        speed: base.SPEED * .75,
+        fov: base.FOV * 1.1
+    }
 });
 defExports.necromancerOverdrive = {
     PARENT: [defExports.genericTank],
@@ -193262,7 +192986,7 @@ defExports.necromancerOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .6,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 4,
@@ -193327,7 +193051,7 @@ defExports.bigUnderseerOverdrive = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .775,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 4,
@@ -193498,7 +193222,7 @@ defExports.machTrapbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [22, 6.75, 17/9, 0, 0, 0, 0]
@@ -193550,7 +193274,7 @@ defExports.megaTrapbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .8,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 12.75, 1, 0, 0, 0, 0]
@@ -193586,7 +193310,7 @@ defExports.arsenalTrapbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 8.75, 1, 0, 0, 0, 0]
@@ -193629,7 +193353,7 @@ defExports.traprangbang = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [2.5, 6.75, -.65, 20, 0, 0, 0],
@@ -193707,7 +193431,7 @@ defExports.foglock = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .825,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     GUNS: [{
         POSITION: [20, 6.75, 1, 0, 0, 0, 0]
@@ -193730,10 +193454,6 @@ defExports.foglock = {
         POSITION: [13, 8, -1.3, 0, 0, 180, 0]
     }]
 };
-defExports.eggSpiritTier1AIWeak = makeBossAI(defExports.eggSpiritTier1, {
-    value: 4e5,
-    skill: setSkill(0, 3, 3, 4, 4, 4, 4, 0, 0, 0)
-});
 defExports.industrianAIWeak = makeBossAI(defExports.industrian, {
     body: {
         health: 7000,
@@ -193801,25 +193521,6 @@ defExports.nestAlphaHexagon = {
         ["hexagonNestKeeperAI", 20]
     ]
 };
-defExports.betaHeptagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Heptagon',
-    VALUE: 31250,
-    SHAPE: 7,
-    SIZE: 43,
-    COLOR: 26,
-    BODY: {
-        DAMAGE: 2.375,
-        DENSITY: 80,
-        HEALTH: 317.5,
-        RESIST: 1.4,
-        SHIELD: 49,
-        REGEN: .01
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
-    EVOLUTIONS: []
-};
 defExports.nestHeptagon = {
     PARENT: [defExports.newHeptagon],
     EVOLUTIONS: [
@@ -193840,24 +193541,6 @@ defExports.nestAlphaHeptagon = {
         ["", 80],
         ["heptagonNestKeeperAI", 20]
     ]
-};
-defExports.betaOctagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Octagon',
-    VALUE: 40000,
-    SHAPE: 8,
-    SIZE: 42, //42.5,
-    COLOR: 242,
-    BODY: {
-        DAMAGE: 2.5,
-        DENSITY: 82.5,
-        HEALTH: 320,
-        RESIST: 1.475,
-        SHIELD: 51.5,
-        REGEN: .005
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
 };
 defExports.nestOctagon = {
     PARENT: [defExports.newOctagon],
@@ -193880,24 +193563,6 @@ defExports.nestAlphaOctagon = {
         ["octagonNestKeeperAI", 20]
     ]
 };
-defExports.betaNonagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Nonagon',
-    VALUE: 55000,
-    SHAPE: 9,
-    SIZE: 45,
-    COLOR: 195,
-    BODY: {
-        DAMAGE: 2.65,
-        DENSITY: 85,
-        HEALTH: 322.5,
-        RESIST: 1.7,
-        SHIELD: 54,
-        REGEN: .005
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true
-};
 defExports.nestNonagon = {
     PARENT: [defExports.newNonagon],
     EVOLUTIONS: [
@@ -193918,24 +193583,6 @@ defExports.nestAlphaNonagon = {
         ["", 80],
         ["", 20]
     ]
-};
-defExports.betaDecagon = {
-    PARENT: [defExports.food],
-    LABEL: 'Beta Decagon',
-    VALUE: 62500,
-    SHAPE: 10,
-    SIZE: 47, //47.5,
-    COLOR: 6,
-    BODY: {
-        DAMAGE: 2.875,
-        DENSITY: 90,
-        HEALTH: 325,
-        RESIST: 1.85,
-        SHIELD: 54.75,
-        REGEN: .005
-    },
-    DRAW_HEALTH: true,
-    GIVE_KILL_MESSAGE: true,
 };
 defExports.nestDecagon = {
     PARENT: [defExports.newDecagon],
@@ -194231,7 +193878,7 @@ defExports.onkDouser = createTurretBoss({
     }, {
         POSITION: [20, 10, 1.4, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.waterstick, convert({ size: 1.4 })]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.waterstick, _siz(1.4)]),
             TYPE: defExports.droplet
         }
     }]
@@ -194732,7 +194379,7 @@ defExports.swarmroll = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .75,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [18, 8, 1, 0, 0, 0, 0]
@@ -194754,7 +194401,7 @@ defExports.bandedKrait = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [10, 11, -0.5, 11, 0, 0, 0]
@@ -194777,7 +194424,7 @@ defExports.assassinhive = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .7,
-        FOV: 1.4
+        FOV: base.FOV * 1.4
     },
     GUNS: [{
         POSITION: [20.4, 13.5, -1.2, 5, 0, 0, 0],
@@ -194823,7 +194470,7 @@ defExports.lawrenceRiver = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [17.4, 6.75, -1.2, 5, 4, 0, 0],
@@ -194853,7 +194500,7 @@ defExports.siloMiniSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.35
+        FOV: base.FOV * 1.35
     },
     GUNS: [{
         POSITION: [28.4, 14, -1.3, 0, 0, 0, 0],
@@ -194887,7 +194534,7 @@ defExports.autoSnipehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [17.4, 13.5, 1.2, 5, 0, 0, 0],
@@ -194909,7 +194556,7 @@ defExports.apini = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.3
+        FOV: base.FOV * 1.3
     },
     GUNS: [{
         POSITION: [18, 11.5, -1.2, 5, 0, 0, 0],
@@ -194937,7 +194584,7 @@ defExports.kevinsBeesSwarmer = {
     BODY: {
         ACCELERATION: base.ACCEL * .75,
         SPEED: base.SPEED * .8,
-        FOV: 1.05
+        FOV: base.FOV * 1.05
     },
     GUNS: [{
         POSITION: [14, 14, -1.2, 5, 0, 0, 0],
@@ -194960,7 +194607,7 @@ defExports.kevinsBeesSnipehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [17.4, 13.5, -1.2, 5, 0, 0, 0],
@@ -194989,7 +194636,7 @@ defExports.miniHiveClicker = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 5.5, -1.6, 5, 0, 0, 0],
@@ -195012,7 +194659,7 @@ defExports.twoSnipehive = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .7,
-        FOV: 1.25
+        FOV: base.FOV * 1.25
     },
     GUNS: [{
         POSITION: [15.4, 13.5, -1.2, 5, 0, 0, 0],
@@ -195208,7 +194855,7 @@ defExports.guitarBorer = {
     DANGER: 7,
     BODY: {
         ACCELERATION: base.ACCEL * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [16, 3, 1, 0, 8, 0, 0],
@@ -195252,9 +194899,11 @@ defExports.guitarBorer = {
 };
 defExports.trueOvergunner = makeHybrid(defExports.gunner, 'over', {
     name: 'Overguitar',
-    acceleration: base.ACCEL * .75,
-    speed: base.SPEED * .9,
-    fov: 1.1
+    body: {
+        acceleration: base.ACCEL * .75,
+        speed: base.SPEED * .9,
+        fov: base.FOV * 1.1
+    }
 }),
     defExports.trueOvergunner.CREDIT = 'This tank was named by Violet.';
 defExports.guitarCruiser = {
@@ -195266,7 +194915,7 @@ defExports.guitarCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .8,
         SPEED: base.SPEED * .8,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     GUNS: [{
         POSITION: [12, 6.5, .6, 0, 6.75, 0, 0],
@@ -195693,7 +195342,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`sentrySwarmAnim${i}`] = {
     SIZE: 10 + 10/j*i,
     VALUE: 5000 + 55000/j*i,
     BODY: {
-        FOV: .5 + .748/j*i,
+        FOV: base.FOV * .5 + .748/j*i,
         HEALTH: 4.5 + 605.5/j*i,
         SHIELD: 3.5 + 106.5/j*i,
         REGEN: base.REGEN * (1 + .3/j*i),
@@ -195712,7 +195361,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`semiCrushSentryAnim${i}`] = {
     SHAPE: 102,
     COLOR: 4,
     BODY: {
-        FOV: .5 + .65/j*i,
+        FOV: base.FOV * .5 + .65/j*i,
         HEALTH: 4.5 + 1195.5/j*i,
         DAMAGE: base.DAMAGE * (1 + .25/j*i),
         REGEN: base.REGEN * (1 - .25/j*i),
@@ -195755,7 +195404,7 @@ for (let i = 1, j = 31; i < j; i++) {
         VALUE: 5000 + 395000/j*i,
         FACING_TYPE: 'autospin',
         BODY: {
-            FOV: .5 + .1/j*i,
+            FOV: base.FOV * .5 + .1/j*i,
             ACCELERATION: .75 - .27/j*i,
             DAMAGE: base.DAMAGE * (1.6 - .35/j*i),
             HEALTH: 40 + 920/j*i,
@@ -195804,7 +195453,7 @@ for (let i = 1, j = 31; i < j; i++) {
         SIZE: 20 + 8/j*i,
         VALUE: 8000 + 392000/j*i,
         BODY: {
-            FOV: .5 + .5/j*i,
+            FOV: base.FOV * .5 + .5/j*i,
             ACCELERATION: (.4 + .04/j*i),
             DAMAGE: base.DAMAGE * (2 - .75/j*i),
             HEALTH: 70 + 730/j*i,
@@ -195852,7 +195501,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`greenSentrySwarmAnim${i}`] = {
     SIZE: 10 + 10/j*i,
     VALUE: 5000 + 195000/j*i,
     BODY: {
-        FOV: .5 + .748/j*i,
+        FOV: base.FOV * .5 + .748/j*i,
         HEALTH: 4.5 + 605.5/j*i,
         SHIELD: 3.5 + 106.5/j*i,
         REGEN: base.REGEN * (1 + .3/j*i),
@@ -195873,7 +195522,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`skimSentryAnim${i}`] = {
     SIZE: 10 + 14/j*i,
     VALUE: 5000 + 245000/j*i,
     BODY: {
-        FOV: .5 + .75/j*i,
+        FOV: base.FOV * .5 + .75/j*i,
         SPEED: base.SPEED * (.5 - .4/j*i),
         HEALTH: base.HEALTH * (.225 + 11.775/j*i),
         REGEN: base.REGEN * (1 - .5/j*i),
@@ -195901,7 +195550,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`summonerLiteAnim${i}`] = {
     SIZE: 10 + 12/j*i,
     VALUE: 5000 + 195000/j*i,
     BODY: {
-        FOV: .5 + .748/j*i,
+        FOV: base.FOV * .5 + .748/j*i,
         HEALTH: base.HEALTH * (.25 + 37.75/j*i),
         SHIELD: base.SHIELD * (1 + 37/j*i),
         REGEN: base.REGEN * (1 - .65/j*i),
@@ -198519,14 +198168,14 @@ defExports.pirateShip = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.flank]),
             TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.drone
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }, {
         POSITION: [9, 8.5, .6, 7, 0, 270, .5],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.swarm, g.flank]),
             TYPE: defExports.swarm,
-            STAT_CALCULATOR: gunCalcNames.drone
+            STAT_CALCULATOR: gunCalcNames.swarm
         }
     }]
 };
@@ -199124,7 +198773,7 @@ defExports.heavierDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 4,
@@ -199146,7 +198795,7 @@ defExports.heavierOverseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 5,
@@ -199178,7 +198827,7 @@ defExports.fatterCruiser = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .85,
-        FOV: 1.2
+        FOV: base.FOV * 1.2
     },
     STAT_NAMES: statNames.swarm,
     GUNS: [{
@@ -199205,7 +198854,7 @@ defExports.heavierNavyist = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 3,
@@ -199235,7 +198884,7 @@ defExports.biggerUnderseer = {
     BODY: {
         ACCELERATION: base.ACCEL * .7,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.necro,
     SHAPE: 4,
@@ -199270,7 +198919,7 @@ defExports.heavyProbationerContagion = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -199287,7 +198936,7 @@ defExports.heavyProbationerContagion = {
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
-            MAX_CHILDREN: 4,
+            MAX_CHILDREN: 4
         }
     }]
 };
@@ -199298,7 +198947,7 @@ defExports.destroyHeatseeker = {
     DANGER: 8,
     BODY: {
         ACCELERATION: base.ACCEL * .7,
-        FOV: 1.15
+        FOV: base.FOV * 1.15
     },
     GUNS: [{
         POSITION: [21, 13.5, 1, 0, 0, 0, 0],
@@ -199321,7 +198970,7 @@ defExports.heavierMotor = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 3,
@@ -199349,7 +198998,7 @@ defExports.destroyMiniLightning = {
     BODY: {
         ACCELERATION: base.ACCEL * .6,
         SPEED: base.SPEED * .7,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 4,
@@ -199387,7 +199036,7 @@ defExports.donutDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     MAX_CHILDREN: 4,
@@ -199414,7 +199063,7 @@ defExports.xTerminatorDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -199461,7 +199110,7 @@ defExports.directorConqueror = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .65,
-        FOV: 1.9
+        FOV: base.FOV * 1.9
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -199514,7 +199163,7 @@ defExports.sparrerDirector = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.generic,
     GUNS: [{
@@ -199551,7 +199200,7 @@ defExports.directorGuardianLauncher = {
     BODY: {
         ACCELERATION: base.ACCEL * .65,
         SPEED: base.SPEED * .75,
-        FOV: 1.1
+        FOV: base.FOV * 1.1
     },
     STAT_NAMES: statNames.drone,
     GUNS: [{
@@ -199667,7 +199316,7 @@ defExports.damageTester_1 = {
         POSITION: [21, 24, -5/6, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.decentralize, g.double_reload, g.no_spread]),
-            TYPE: defExports.bullet
+            TYPE: [defExports.bullet, { NO_SPEED_CALCULATION: true }]
         }
     }]
 };
@@ -199681,10 +199330,32 @@ defExports.damageTester_2 = {
         POSITION: [20.5, 19.5, 1, 0, 0, 0, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.anni, g.double_reload, g.no_spread]),
-            TYPE: defExports.bullet
+            TYPE: [defExports.bullet, { NO_SPEED_CALCULATION: true }]
         }
     }]
 };
+defExports.arsenion = makeMinion(defExports.arsenal);
+defExports.arsenalFactory = makeAuto({
+    PARENT: [defExports.genericTank],
+    DANGER: 8,
+    STAT_NAMES: statNames.minion,
+    BODY: {
+        SPEED: base.SPEED * .75,
+        FOV: base.FOV * 1.1
+    },
+    MAX_CHILDREN: 4,
+    SHAPE: -3,
+    GUNS: [{
+        POSITION: [7, 12, 1.2, 7, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory]),
+            TYPE: defExports.arsenion,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true
+        }
+    }]
+}, "Pillory", { size: 9 });
 
 //for (let i = 0; i < 999; i++) defExports[`blankEntity${i}`] = {};
 
@@ -199693,7 +199364,8 @@ Make Snipe Guard level 30 and adjust its branches accordingly
 Make an S-Assassin then make S-Ranger and Hitman branch from it instead of Lumberjack
 Carrier branches
 Make Sawtooth
-Add Pillory
+Fallen Spike
+Hnoss Terrestial
 */
 
 
@@ -199735,10 +199407,12 @@ branch("testbed_boss", "Bosses", [
     defExports.mariahCarey, defExports.colossusBoss, defExports.bluestar, defExports.sliderBoss, defExports.grudgeBoss, defExports.eliteSanctuary, defExports.roguemothership, defExports.vivisection, defExports.redsection, defExports.greensection, defExports.yellowsection, defExports.bluesection, defExports.vivisectionempty, defExports.orbitalSpaceBoss,
     defExports.curveplexBoss, defExports.PCU, defExports.purifierBoss, defExports.streakBoss, defExports.goldenstreakBoss, defExports.leshy, defExports.leshyred, defExports.eliteShrapnel, defExports.redistribution, defExports.bigRedBoss, defExports.lavendicus, defExports.leaferBoss, defExports.greenGearBoss, defExports.pestilencePrim,
     defExports.eliteDustbowl, defExports.odin, defExports.athena, defExports.moonCore, defExports.moonShardA, defExports.moonShardB, defExports.serpentTest, defExports.caelus, defExports.turretAssistedSummoner, defExports.metalCrasherBoss, defExports.icePalisade, defExports.anniversaryGuardian, defExports.anniversarySummoner, defExports.anniversaryDefender,
-    defExports.ultSwissToolset, defExports.specFlankLiner, defExports.specLib, defExports.specSolidago, defExports.specWatchtrap, defExports.specThruster, defExports.reanimGasser, defExports.fallenDesperado, defExports.reanimCorps, defExports.reanimPentaBlaster, defExports.reanimCache, defExports.fallenPenta, defExports.fallenRanger, defExports.fallenFlamethrower,
+    defExports.ultSwissToolset, defExports.specFlankLiner, defExports.specLib, defExports.specSolidago, defExports.specWatchtrap, defExports.specThruster, defExports.reanimGasser, defExports.fallenScaler, defExports.reanimCorps, defExports.reanimPentaBlaster, defExports.reanimCache, defExports.fallenPenta, defExports.fallenRanger, defExports.fallenFlamethrower,
     defExports.specRitoparn, defExports.specAuto8, defExports.specDodeca, defExports.specYottamind, defExports.specInviso4, defExports.swarmCannonBoss, defExports.reanimOverfire, defExports.specQuadralet, defExports.reanimKnight, defExports.specAstra, defExports.gaisenblaster, defExports.youkaiBossFrame31, defExports.moonRabbitFrame0, defExports.protNestKeeper,
     defExports.sassasade, defExports.terminatorBoss, defExports.carryingGunship, defExports.shaman, defExports.invoke, defExports.occult, defExports.arcanist, defExports.runecast, defExports.spellbind, defExports.squareNestKeeper, defExports.triangleNestKeeper, defExports.hexagonNestKeeper, defExports.heptagonNestKeeper, defExports.octagonNestKeeper,
-    defExports.reversedGuardian, defExports.guardianJet, defExports.heptadecagonBoss, defExports.wallerBoss, defExports.walletBoss, defExports.armorboatBoss, defExports.disrupterBoss, defExports.kinderbumper, defExports.treeTopper, defExports.fallenLaser
+    defExports.reversedGuardian, defExports.guardianJet, defExports.heptadecagonBoss, defExports.wallerBoss, defExports.walletBoss, defExports.armorboatBoss, defExports.disrupterBoss, defExports.kinderbumper, defExports.treeTopper, defExports.fallenLaser, defExports.fallenAnnihilator, defExports.fallenSpreadshot, defExports.fallenFlail, defExports.fallenAkaAI0,
+    defExports.fallenHurricane, defExports.fallenSurfer, defExports.fallenEngineer, defExports.fallenHivemind, defExports.fallenMortar, defExports.fallenAuto5, defExports.fallenShrapnel, defExports.fallenFortress, defExports.fallenSlayer, defExports.fallenShotgun, defExports.fallenMecha, defExports.reanimFielder, defExports.reanimFabricator, defExports.reanimMegafort,
+    defExports.reanimChevron, defExports.reanimPrizefighter, defExports.reanimArsonist, defExports.reanimBent3, defExports.reanimWildfire, defExports.reanimSixShot
 ]);
 branch("testbed_primes_tanks", "Tertia Tanks", [
     defExports.keeperBoss
@@ -199879,7 +199553,7 @@ branch("testbed_crf_weapons", "CRF Weapons", [
 ]);
 branch("testbed_crf_bosses", "CRF Bosses", [
     defExports.defender2, defExports.AWP_4, defExports.AWP_5, defExports.AWP_8_alt, defExports.AWP_9, defExports.careenerAI, defExports.nonation, defExports.fueron, defExports.ultima3, defExports.fireworkBoss, defExports.ck_1, defExports.ship36, defExports.hellbringer,
-    defExports.EK_3AI, defExports.frigateShipAI, defExports.destroyerShipAI, defExports.awpsqrt3_2, defExports.eliteFlailParent, defExports.awpBent, defExports.rogueSliderAI, defExports.atriumAI, defExports.squareBossTier2, defExports.squareBossTier3, defExports.guardSpreadling, defExports.squareBossTier4, defExports.squareBossTier5,
+    defExports.eggBossTier3AI, defExports.frigateShipAI, defExports.destroyerShipAI, defExports.awpsqrt3_2, defExports.eliteFlailParent, defExports.awpBent, defExports.rogueSliderAI, defExports.atriumAI, defExports.squareBossTier2, defExports.squareBossTier3, defExports.guardSpreadling, defExports.squareBossTier4, defExports.squareBossTier5,
     defExports.triangleBossTier2, defExports.triangleBossTier3, defExports.triangleBossTier4, defExports.triangleBossTier5, defExports.pentagonBossTier2, defExports.pentagonBossTier3, defExports.pentagonBossTier4, defExports.hexagonBossTier2, defExports.hexagonBossTier3, defExports.hexagonBossTier4, defExports.obp2, defExports.obp3,
     defExports.heptagonBossTier2, defExports.heptagonBossTier3, defExports.guardianAI, defExports.eliteBasicAI, defExports.lucrehulkAI, defExports.lucrehulkCarrierAI, defExports.lucrehulkBattleshipAI, defExports.armySentrySwarmAI, defExports.armySentryGunAI, defExports.armySentryTrapAI, defExports.armySentryRangerAI, defExports.pulsarAI,
     defExports.eliteDestroyerAI, defExports.eliteGunnerAI, defExports.fallenBoosterAI, defExports.fallenOverlordAI, defExports.colliderAI, defExports.deltrabladeAI, defExports.messengerAI, defExports.leviathanAI, defExports.derogatorAI, defExports.blitzkriegAI, defExports.hexadecagorAI, defExports.demolisherAI, defExports.hexashipAI,
@@ -199919,7 +199593,7 @@ branch("dreadnoughts", "Dreadnoughts", [
 
 // Featured Tanks
 branch("featured_tanks", "Featured Tanks", [
-    defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword, defExports.zeppelin, defExports.bulwark,
+    defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword, defExports.zeppelin, defExports.bulwark,
     defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.spark, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.underseer, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
     defExports.tankRandomizer, defExports.basic
 ], "testbed_parent");
@@ -200196,7 +199870,7 @@ defExports.flankRifle.UPGRADES_TIER_4 = [defExports.hexaRifle, defExports.rifle3
 defExports.autoClicker.UPGRADES_TIER_4 = [defExports.clickerception, defExports.autoTwinClicker, defExports.clickerFactory, defExports.cookieClickbrid];
 defExports.minigun2.UPGRADES_TIER_4 = [defExports.streamliner2, defExports.miniAstra, defExports.miniTwin2, defExports.cropdust2, defExports.swordAuto2];
 defExports.snipeStalker.UPGRADES_TIER_4 = [defExports.invisiOsci, defExports.tam0];
-defExports.mini.UPGRADES_TIER_4 = [defExports.miniOscilloscope, defExports.misitor0, defExports.uziItself];
+defExports.mini.UPGRADES_TIER_4 = [defExports.miniOscilloscope, defExports.misitor0];
 defExports.twinClicker.UPGRADES_TIER_4 = [defExports.autoTwinClicker, defExports.doubleClicker, defExports.gunnerClinker];
 defExports.minishotAssassin.UPGRADES_TIER_4 = [defExports.recruitAssassin, defExports.artyBulldozer, defExports.arthropod];
 // MACHINE GUN
@@ -200327,7 +200001,7 @@ defExports.elamficitor.UPGRADES_TIER_4 = [defExports.ficitor, defExports.invisNe
 defExports.bigUnderseer.UPGRADES_TIER_4 = [defExports.autoGoldola, defExports.pergola, defExports.factorial, defExports.bigUnderseerOverdrive, defExports.biggerUnderseer];
 defExports.overdrive.UPGRADES_TIER_4 = [defExports.overwork, defExports.trapdrive, defExports.gundrive, defExports.harddrive, defExports.hyperdrive, defExports.drivenaught, defExports.overdriveMaster, defExports.bansheeOverdrive, defExports.machOverdrive, defExports.twinOverdrive, defExports.overOverdrive, defExports.battledrive, defExports.overdriver, defExports.opiate, defExports.homingdrive, defExports.revitalist, defExports.esquire];
 defExports.overlord.UPGRADES_TIER_4 = [defExports.overwork, defExports.heavyOverlord, defExports.juggernaut, defExports.autoOverlord, defExports.contagionOverlord, defExports.guerrilla, defExports.cartographer, defExports.megaStovepipe, defExports.hoinfodaman, defExports.tidepod, defExports.overmaster, defExports.newOverluxe, defExports.overlordTrapper, defExports.divisor, defExports.megaLightning, defExports.overlordMoneko, defExports.guidedOverlord, defExports.miniGuardian];
-defExports.trapperFactory.UPGRADES_TIER_4 = [defExports.builderFactory, defExports.traprangFactory, defExports.portaFortess, defExports.contagiory, defExports.entrencher, defExports.fatTrapperFactory];
+defExports.trapperFactory.UPGRADES_TIER_4 = [defExports.builderFactory, defExports.traprangFactory, defExports.portaFortess, defExports.contagiory, defExports.entrencher, defExports.fatTrapperFactory, defExports.arsenalFactory];
 defExports.heavyOverseer.UPGRADES_TIER_4 = [defExports.heavyOverlord, defExports.heavyManager, defExports.contagionApprentice, defExports.overload, defExports.antiderivative, defExports.lionsMane, defExports.esquire, defExports.heavierOverseer];
 defExports.overgunner.UPGRADES_TIER_4 = [defExports.gundrive, defExports.discoverer, defExports.overflame, defExports.remote, defExports.trueOvergunner];
 defExports.overtrap.UPGRADES_TIER_4 = [defExports.trapdrive, defExports.overbuild, defExports.trapperSwarm, defExports.arsenalOvertrap, defExports.battletrapper, defExports.overlordTrapper, defExports.mixedNumber];
@@ -200350,7 +200024,7 @@ defExports.beehive.UPGRADES_TIER_4 = [defExports.beehive2, defExports.beedrive, 
 defExports.autoOverseer.UPGRADES_TIER_4 = [defExports.autoOverlord, defExports.mechaOverseer, defExports.overception, defExports.airway, defExports.obtuse, defExports.wintermint];
 defExports.sounder.UPGRADES_TIER_4 = [defExports.zoomSounder, defExports.assassinSounder, defExports.sounderCarrier, defExports.sounderBattle, defExports.sounderBeehive, defExports.megaSounder, defExports.sniperClockwork];
 defExports.droneception.UPGRADES_TIER_4 = [defExports.overception, defExports.spawnerception, defExports.cruiserception];
-defExports.autoSpawner.UPGRADES_TIER_4 = [defExports.spawnerception, defExports.solarSystem, defExports.autoFactory];
+defExports.autoSpawner.UPGRADES_TIER_4 = [defExports.spawnerception, defExports.solarSystem, defExports.autoFactory, defExports.arsenalFactory];
 defExports.autoCruiser.UPGRADES_TIER_4 = [defExports.cruiserception, defExports.sandstm, defExports.autoClockwork, defExports.autoCruisedrive, defExports.autoShipTank, defExports.battlerock, defExports.autoclave, defExports.autoPiston, defExports.miniAsteroid];
 defExports.contagionOverseer.UPGRADES_TIER_4 = [defExports.contagionOverlord, defExports.contagionApprentice, defExports.xContagionOverseer, defExports.hybridDouble, defExports.lancerOverseer, defExports.opiate, defExports.crossProduct, defExports.megavirus];
 defExports.flankCruiser.UPGRADES_TIER_3 = [defExports.fortress, defExports.hybrado, defExports.doubleSwarm, defExports.cruisePound, defExports.swarmSniper, defExports.trapperSwarm, defExports.cruiserGunner, defExports.newBartizan, defExports.flankDreadnought, defExports.playableBisectorBullet];
@@ -200397,7 +200071,7 @@ defExports.obliterator.UPGRADES_TIER_3 = [defExports.bulldozer, defExports.crush
 defExports.multishot.UPGRADES_TIER_3 = [defExports.shotgun, defExports.buckshot, defExports.machshot, defExports.musket, defExports.manyshot, defExports.autoMultishot, defExports.claymore, defExports.quarry, defExports.vibrancy, defExports.hybridMultishot, defExports.swarmShotgun, defExports.blastMultishot];
 defExports.hybridPound.UPGRADES_TIER_3 = [defExports.hybrid, defExports.hybridBuilder, defExports.crusher, defExports.hybridArtillery, defExports.hybridDiepSpreadling, defExports.poundOverdrive, defExports.underPounder, defExports.hybridMultishot, defExports.hybridHeavyTwin, defExports.ecchymosis, defExports.launchbrid, defExports.megaTrapbrid];
 defExports.gunnerPound.UPGRADES_TIER_3 = [defExports.blower, defExports.heavyTwinGunnerFlank, defExports.gunbuilder, defExports.beretta, defExports.plasterer];
-defExports.pounder2.UPGRADES_TIER_3 = [defExports.heavy3, defExports.destroyer2, defExports.launcher2, defExports.builder2, defExports.blaster2, defExports.obliterator2, defExports.megaTrapper2];
+defExports.pounder2.UPGRADES_TIER_3 = [defExports.heavy3, defExports.destroyer2, defExports.launcher2, defExports.builder2, defExports.blaster2, defExports.obliterator2, defExports.megaTrapper2, defExports.ionTank];
 defExports.miniHiveShooter.UPGRADES_TIER_3 = [defExports.hiveShooter, defExports.twoHiveShooter, defExports.autoMiniSwarmer, defExports.miniMiniSwarmer, defExports.twinMiniSwarm, defExports.clockwork, defExports.snipehive];
 defExports.destroyer.UPGRADES_TIER_4 = [defExports.antidote];
 defExports.dustbowl.UPGRADES_TIER_4 = [defExports.dustdevil, defExports.tombRaider, defExports.sparkDuster];
@@ -200632,7 +200306,7 @@ defExports.longContagion.UPGRADES_TIER_4 = [defExports.twinSniperContagion, defE
 defExports.thrower.UPGRADES_TIER_4 = [defExports.xThrower, defExports.skimThrower, defExports.devourer, defExports.expenditure, defExports.muncher];
 defExports.autoTwinTrapper.UPGRADES_TIER_4 = [defExports.autoDoubleTrapper, defExports.autoHexaTrap];
 defExports.splitBuilder.UPGRADES_TIER_4 = [defExports.splitBuilder2, defExports.megaSplitBuilder, defExports.invisSplitBuilder, defExports.flankSplitBuilder, defExports.droneSplitBuilder, defExports.splitEngineer, defExports.singleSplitBuilder, defExports.operator, defExports.airmail, defExports.emailer, defExports.flankMailman];
-defExports.autoArsenal.UPGRADES_TIER_4 = [defExports.arsenalception, defExports.autoEngineer, defExports.entrencher];
+defExports.autoArsenal.UPGRADES_TIER_4 = [defExports.arsenalception, defExports.autoEngineer, defExports.arsenalFactory];
 defExports.megaTrapper2.UPGRADES_TIER_4 = [defExports.megaTrapper3, defExports.logger2, defExports.contingent];
 defExports.autoTrapGuard.UPGRADES_TIER_4 = [defExports.guardception, defExports.miniVanguard, defExports.autoBomber, defExports.autoTriTrapGuard, defExports.autoPiston, defExports.autoConqueror, defExports.autoSword];
 defExports.twinTrapper.UPGRADES_TIER_4 = [defExports.twinGigaTrapper];
@@ -200675,7 +200349,7 @@ defExports.subduerEagle.UPGRADES_TIER_4 = [defExports.hunterEagle, defExports.st
 defExports.gleamer.UPGRADES_TIER_4 = [defExports.spiteshot, defExports.splatter, defExports.pulsejet, defExports.resplendent, defExports.xenon, defExports.jukeNuke, defExports.dazzler, defExports.betelgeuse];
 // AUTO-2
 defExports.auto2.UPGRADES_TIER_2 = [defExports.auto3, defExports.swivel2, defExports.trapper2, defExports.single2, defExports.machine2, defExports.autoAuto2, defExports.pounder2, defExports.pellet2, defExports.auto22, defExports.subduer2, defExports.revolutionist, defExports.cephalopod, defExports.thief, defExports.director2];
-defExports.auto2.UPGRADES_TIER_3 = [defExports.spindrift, defExports.barSpinner, defExports.ionTank];
+defExports.auto2.UPGRADES_TIER_3 = [defExports.spindrift, defExports.barSpinner];
 defExports.auto3.UPGRADES_TIER_3 = [defExports.auto5, defExports.heavy3, defExports.auto4, defExports.sniper3, defExports.trapper3, defExports.machine3, defExports.shuriken, defExports.banshee, defExports.twin3, defExports.multitool, defExports.swivel3, defExports.autoTank, defExports.littleArtillery3, defExports.pellet3, defExports.autoAuto3, defExports.auto32, defExports.auto23, defExports.subduer3, defExports.director3, defExports.bulletHell];
 defExports.swivel2.UPGRADES_TIER_3 = [defExports.swivel3, defExports.axis4];
 defExports.trapper2.UPGRADES_TIER_3 = [defExports.autoTrapper2, defExports.trapper3, defExports.builder2, defExports.megaTrapper2];
@@ -200699,10 +200373,10 @@ defExports.subduer3.UPGRADES_TIER_4 = [defExports.subduer5, defExports.bigSubdue
 defExports.bigSubduer2.UPGRADES_TIER_4 = [defExports.bigSubduer3, defExports.predator2, defExports.biggerSubduer2];
 defExports.hunter2.UPGRADES_TIER_4 = [defExports.hunter3, defExports.predator2, defExports.dualAuto2, defExports.arquebus2, defExports.devastator2];
 defExports.spray2.UPGRADES_TIER_4 = [defExports.sprayer3, defExports.searcher2, defExports.splasher2];
-defExports.auto3.UPGRADES_TIER_4 = [defExports.starship, defExports.plasma, defExports.kickflip, defExports.autoShields, defExports.barSpinner3];
+defExports.auto3.UPGRADES_TIER_4 = [defExports.starship, defExports.kickflip, defExports.autoShields, defExports.barSpinner3];
 defExports.trapper3.UPGRADES_TIER_4 = [defExports.builder3, defExports.trapper5, defExports.megaTrapper3, defExports.trapperSwivel3, defExports.newMegafort];
 defExports.auto5.UPGRADES_TIER_4 = [defExports.auto7, defExports.heavy5, defExports.auto6, defExports.sniper5, defExports.machine5, defExports.twin5, defExports.swivel5, defExports.trapper5, defExports.littleArtillery5, defExports.auto25, defExports.auto52, defExports.multitool5, defExports.twinAuto4, defExports.subduer5, defExports.infrared, defExports.autoMulti, defExports.rangefinder, defExports.director5, defExports.miniAsteroid];
-defExports.heavy3.UPGRADES_TIER_4 = [defExports.giga3, defExports.obliterator3, defExports.heavy5, defExports.megaTrapper3, defExports.artillery3, defExports.poundIntercept3, defExports.swivelPound, defExports.builder3, defExports.squad];
+defExports.heavy3.UPGRADES_TIER_4 = [defExports.giga3, defExports.obliterator3, defExports.heavy5, defExports.megaTrapper3, defExports.artillery3, defExports.poundIntercept3, defExports.swivelPound, defExports.builder3, defExports.squad, defExports.plasma];
 defExports.sniper3.UPGRADES_TIER_4 = [defExports.assassin3, defExports.sniper5, defExports.hunter3, defExports.miniAstra, defExports.sniperSwivel3, defExports.clicker3, defExports.rifle3, defExports.autoTankSniper, defExports.gatling3, defExports.railgun3];
 defExports.machine3.UPGRADES_TIER_4 = [defExports.machine5, defExports.sprayer3, defExports.gatling3, defExports.blaster3, defExports.submachine3, defExports.swivelMachine, defExports.miniAstra];
 defExports.auto4.UPGRADES_TIER_4 = [defExports.auto6, defExports.swivel4, defExports.arachnidAuto4, defExports.blasterAuto4, defExports.mechanizer];
@@ -200878,7 +200552,7 @@ defExports.revolutionbrid.UPGRADES_TIER_4 = [defExports.revelation, defExports.a
 defExports.basekick.UPGRADES_TIER_3 = [defExports.appurtenance];
 defExports.basekick.UPGRADES_TIER_4 = [defExports.sidekick, defExports.gunnerSidekick, defExports.assassinSidekick, defExports.bentSidekick, defExports.hunterSidekick, defExports.artillerySidekick, defExports.builderSidekick, defExports.rifleSidekick, defExports.miniSidekick, defExports.sidekickMultishot, defExports.sidekickSpreadling, defExports.sidekickDropship, defExports.kindred, defExports.revelation];
 // SUBDUER
-defExports.littleHunter.UPGRADES_TIER_2 = [defExports.mini, defExports.twinLittleHunter, defExports.hunter, defExports.spray, defExports.directorContagion, defExports.contagion, defExports.bigSubduer, defExports.littleShifter, defExports.zoomLittleHunter, defExports.subduer2, defExports.flankSubduer];
+defExports.littleHunter.UPGRADES_TIER_2 = [defExports.mini, defExports.twinLittleHunter, defExports.hunter, defExports.spray, defExports.directorContagion, defExports.contagion, defExports.bigSubduer, defExports.littleShifter, defExports.zoomLittleHunter, defExports.subduer2, defExports.flankSubduer, defExports.uziItself];
 defExports.twinLittleHunter.UPGRADES_TIER_3 = [defExports.dual, defExports.bentLittleHunter, defExports.twinContagion, defExports.twinSpray, defExports.doubleLittleHunter, defExports.gunnerHunter, defExports.hexaSubduer, defExports.bicondro];
 defExports.bigSubduer.UPGRADES_TIER_3 = [defExports.predator, defExports.xSpray, defExports.xContagion, defExports.biggerSubduer, defExports.xDirectorContagion, defExports.bigSubduer2, defExports.flankBigSubduer, defExports.bicondro];
 defExports.bigSubduer.UPGRADES_TIER_4 = [defExports.mitoAka0];
@@ -200896,6 +200570,7 @@ defExports.xContagion.UPGRADES_TIER_4 = [defExports.xThrower, defExports.coronav
 defExports.doubleLittleHunter.UPGRADES_TIER_4 = [defExports.doubleDual, defExports.autoBipartite, defExports.tripleLittleHunter, defExports.binaryAxolotl, defExports.bicameral, defExports.doubleFerreter];
 defExports.xDirectorContagion.UPGRADES_TIER_4 = [defExports.xContagionOverseer, defExports.bacterialColony];
 defExports.bicondro.UPGRADES_TIER_4 = [defExports.bicameral, defExports.exocytose];
+defExports.uziItself.UPGRADES_TIER_3 = [defExports.dualMachine];
 // MINI GROWER
 defExports.miniGrower.UPGRADES_TIER_2 = [defExports.grower, defExports.autoMiniGrower, defExports.inferno, defExports.flankMiniGrower, defExports.twinMiniGrower, defExports.kinetic];
 defExports.inferno.UPGRADES_TIER_3 = [defExports.firenado, defExports.backburner, defExports.flaregun, defExports.boomstick, defExports.pyro, defExports.autoInferno, defExports.twinferno, defExports.hybridInferno, defExports.dropferno, defExports.fume, defExports.gasLine];
@@ -200930,7 +200605,7 @@ defExports.littleArtillery.UPGRADES_TIER_4 = [defExports.minishotmind];
 defExports.hybridBasic.UPGRADES_TIER_4 = [defExports.newOverluxe, defExports.basebridMind];
 defExports.twin.UPGRADES_TIER_4 = [defExports.twinmind, defExports.diep0];
 defExports.autoBasic.UPGRADES_TIER_4 = [defExports.autoBasicHivemind];
-defExports.littleHunter.UPGRADES_TIER_4 = [defExports.submind, defExports.uziItself];
+defExports.littleHunter.UPGRADES_TIER_4 = [defExports.submind];
 defExports.flank.UPGRADES_TIER_4 = [defExports.flankmind, defExports.diep93];
 // VOIDWALKERS
 defExports.voidwalker.UPGRADES_TIER_2 = [defExports.voidshield, defExports.voidhealer, defExports.voidblaster]

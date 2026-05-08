@@ -8331,7 +8331,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             "BLACKOUT": false,
             "CANNOT_SHOOT_IN_BASE": true,
             "GAMEMODE_JS": "",
-            "DOMINATOR_SHUFFLE_TIMER": 0
+            "DOMINATOR_SHUFFLE_TIMER": 0,
+            "CAN_CLOSE": true
         }
 
         let sterilize = file => {
@@ -8627,6 +8628,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
                 this.minBetaPerms = config.MINIMUM_PERMISSIONS;
                 this.isHell = config.IS_HELL;
+                this.canClose = config.CAN_CLOSE;
             }
             isInRoom(location) {
                 return location.x >= 0 && location.x <= this.width && location.y >= 0 && location.y <= this.height;
@@ -9585,7 +9587,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             o.nameColor = o.name.includes("Bee") ? "#FFF782" : o.name.includes("Honey Bee") ? "#FCCF3B" : o.name.includes("Fallen") ? "#CCCCCC" : "#C1CAFF";
             o.autoOverride = true;
             o.invuln = true;
-            o.skill.score = 26302 + Math.floor(10000 * Math.random());
+            o.skill.score = 26302 + ran.irandom(32910);
             o.fov *= 0.85
             setTimeout(() => {
                 o.invuln = false;
@@ -9833,7 +9835,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             dominator.color = [13, 10, 12, 11, 15, 3, 35, 36, 0][-killTeam];
 
                             // If all dominators are taken by the same team, close the arena
-                            if (this.takenDominators.includes(this.amountOfDominators) && killTeam && !room.arenaClosed) {
+                            if (this.takenDominators.includes(this.amountOfDominators) && killTeam && room.canClose && !room.arenaClosed) {
                                 util.warn(`${team} has won the game! Closing arena...`);
                                 setTimeout(() => sockets.broadcast(`${team} has won the game!`, teamColor), 2e3);
                                 setTimeout(() => closeArena(), 5e3);
@@ -9884,19 +9886,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
             shuffle(time) {
                 function tick(t) { // Copied from Boss Rush.
-                    if (
-                        t === 300 ||
-                        t === 120 ||
-                        t === 60
-                    ) sockets.broadcast(`Every dominator will be shuffled in ${t/60} minute${t/60 > 1 ? 's' : ''}.`, "#FFE46B");
-                    if (t < 60) {
-                        if (
-                            t === 30 ||
-                            t === 15 ||
-                            t === 10 ||
-                            (t <= 5 && t > 0)
-                        ) sockets.broadcast(`Every dominator will be shuffled in ${t} second${t > 1 ? 's' : ''}.`, "#FFE46B");
-                    }
+                    const minuteMarks = [60, 120, 180, 240, 300, 600];
+                    const secondMarks = [1, 2, 3, 4, 5, 10, 15, 30];
+                    if (minuteMarks.includes(t)) sockets.broadcast(`Every dominator will be shuffled in ${t/60} minute${t/60 > 1 ? 's' : ''}.`, "#FFE46B");
+                    if (secondMarks.includes(t)) sockets.broadcast(`Every dominator will be shuffled in ${t} second${t > 1 ? 's' : ''}.`, "#FFE46B");
                     if (t <= 0) {
                         sockets.broadcast("Every dominator has been shuffled!");
                         entities.forEach(dom => {
@@ -9924,7 +9917,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 dom.onDead = domOnDead;
                             }
                         });
-                        sockets.broadcast("Every dominator will be shuffled again in 10 minutes.");
+                        sockets.broadcast(`Every dominator will be shuffled again in ${time/60} minutes.`);
                         return;
                     }
 
@@ -10089,6 +10082,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.eggBossTier1AI,
                 Class.eggBossTier1FaceAI,
                 Class.eggBossTier2AI,
+                Class.eggBossTier3AI,
                 Class.eggQueenTier1AI,
                 Class.eggQueenTier2AI,
                 Class.eggQueenTier3AI,
@@ -10096,12 +10090,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.eggSpiritTier2AI,
                 Class.eggSpiritTier3AI,
                 Class.ek1WithAShotgunAI,
-                Class.EK_3AI,
                 Class.eliteBasicAI,
                 Class.eliteBattleshipAI,
                 Class.eliteBorerAI,
                 Class.eliteCarpenterAI,
-                Class.eliteDefenderAI,
+                Class.eliteDefenderAIWeak,
                 Class.eliteDestroyerAI,
                 Class.eliteDirectorAI,
                 Class.eliteEngieAI,
@@ -10119,21 +10112,37 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.eliteTwinAI,
                 Class.enchantressAI,
                 Class.exorcistorAI,
+                Class.fallenAkaAI31,
+                Class.fallenAnnihilatorAI,
+                Class.fallenAuto5AI,
                 Class.fallenAutoTankAI,
+                Class.fallenBattleshipAI,
                 Class.fallenBoosterAI,
                 Class.fallenCavalcadeAI,
-                Class.fallenDesperadoAI,
                 Class.fallenDirigibleAI,
                 Class.fallenDrifterAI,
+                Class.fallenEngineerAI,
                 Class.fallenFighterAI,
+                Class.fallenFlailAI,
                 Class.fallenFlamethrowerAI,
+                Class.fallenFortressAI,
+                Class.fallenHivemindAI,
+                Class.fallenHurricaneAI,
                 Class.fallenHybridAI,
                 Class.fallenLaserAI,
+                Class.fallenMechaAI,
+                Class.fallenMortarAI,
                 Class.fallenOctoAI,
                 Class.fallenOverlordAI,
                 Class.fallenPentaAI,
                 Class.fallenPistonAI,
                 Class.fallenRangerAI,
+                Class.fallenScalerAI,
+                Class.fallenShotgunAI,
+                Class.fallenShrapnelAI,
+                Class.fallenSlayerAI,
+                Class.fallenSpreadshotAI,
+                Class.fallenSurferAI,
                 Class.fallenUziAI,
                 Class.fueronAI,
                 Class.gegenscheinAI,
@@ -10184,9 +10193,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.magnetarAI,
                 Class.messengerAI,
                 Class.metalCrasherBossAI,
-                Class.mk1AI,
-                Class.mk2AI,
-                Class.mk3AI,
+                Class.squareBossTier1AI,
+                Class.squareBossTier2AI,
+                Class.squareBossTier3AI,
                 Class.moonRabbitAIFrame0,
                 Class.moonShardAAI,
                 Class.moonShardBAI,
@@ -10215,16 +10224,23 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.pulsarAI,
                 Class.puzzlePieceBossAI,
                 Class.quasarAI,
+                Class.reanimArsonistAI,
+                Class.reanimBent3AI,
                 Class.reanimBiohazardAI,
                 Class.reanimCacheAI,
+                Class.reanimChevronAI,
                 Class.reanimCorpsAI,
+                Class.reanimFabricatorAI,
                 Class.reanimFarmerAI,
                 Class.reanimGasserAI,
                 Class.reanimHeptaTrapAI,
                 Class.reanimKnightAI,
+                Class.reanimMegafortAI,
                 Class.reanimOverfireAI,
                 Class.reanimPentaBlasterAI,
-                Class.redBurstAI,
+                Class.reanimPrizefighterAI,
+                Class.reanimSixShotAI,
+                Class.reanimWildfireAI,
                 Class.RK_1AI,
                 Class.RK_2AI,
                 Class.RK_3AI,
@@ -10270,9 +10286,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.testingthingAI,
                 Class.tetrafrasAI,
                 Class.thunderstormAI,
-                Class.tk1AI,
-                Class.tk2AI,
-                Class.tk3AI,
+                Class.triangleBossTier1AI,
+                Class.triangleBossTier2AI,
+                Class.triangleBossTier3AI,
                 Class.trapDwellerAI,
                 Class.trapeFighterAI,
                 Class.trapperzoidAI,
@@ -10319,7 +10335,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.lucrehulkAI,
                     Class.lucrehulkBattleshipAI,
                     Class.lucrehulkCarrierAI,
-                    Class.mk4AI,
+                    Class.squareBossTier4AI,
                     Class.nk4AI,
                     Class.nk5AI,
                     Class.neutronStarAI,
@@ -10330,7 +10346,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.RK_4AI,
                     Class.rod1AI,
                     Class.superSplitterSummoner,
-                    Class.tk4AI,
+                    Class.triangleBossTier4AI,
                     Class.XZ_4_MainAI
                 ],
                 30: [
@@ -10366,9 +10382,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             const waveOverrides = {
                 10: [[
-                    Class.treasuryAI,
+                    Class.eliteDefenderAI,
                     Class.morningstarAI,
-                    Class.neutronStarAI
+                    Class.neutronStarAI,
+                    Class.treasuryAI
                 ]],
                 20: [[
                     Class.clockAI,
@@ -10440,10 +10457,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     [Class.quintetAI, Class.triguardAI, Class.pentaguardianAI],
                     [2, [Class.minosAI, Class.sisyphusAI, Class.bidenAI]],
                     [Class.AWP_28AI, Class.AWP_1AI, Class.AWP_psAI],
-                    [Class.mk5AI, Class.tk5AI, Class.eggBossTier5AI],
+                    [Class.squareBossTier5AI, Class.triangleBossTier5AI, Class.eggBossTier5AI],
                     [Class.frigateShipAI, Class.destroyerShipAI],
                     [Class.mythicalCrasherAI, Class.sassafrasSupremeAI, Class.voidPentagonAI],
-                    [Class.RK_4AI, Class.tk4AI, Class.mk4AI],
+                    [Class.RK_4AI, Class.triangleBossTier4AI, Class.squareBossTier4AI],
                     [Class.polyamorousAI, Class.quintetAI],
                     [Class.squarefortAI, Class.heptahedronAI, Class.RK_3AI]
                 ],
@@ -12414,7 +12431,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             else return { alt: false };
                         case 3:
                             if (util.getDistance(this.body, targetDistance) > animationDistance[1]) return { alt: true };
-                            if (util.getDistance(this.body, targetDistance) < animationDistance[0]) return this.body.onQ(this.body);
+                            else if (util.getDistance(this.body, targetDistance) < animationDistance[0]) return this.body.onQ(this.body);
                             else return { alt: false };
                         default:
                             return { alt: false };
@@ -14139,7 +14156,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.settings.givesKillMessage = true;
                     }
                     if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity, ran);
-                    if (set.DIES_INSTANTLY != null) this.kill();
+                    if (set.DIES_INSTANTLY) this.kill();
                 } catch (e) {
                     if (this.isBot) console.error(this.tank);
                     console.error("An error occured while trying to set " + trimName(this.name) + "'s parent entity, aborting! Index: " + this.index + "." + " Export: " + global.exportNames[this.index]);
@@ -14382,7 +14399,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (!this.label.length) {
                     this.socket?.talk("m", "This tank appears to be nameless; suggest a label for it, if you'd like!", "#8cff9f");
                     this.sendMessage("You have changed your tank.");
-                } else this.sendMessage("You have changed your tank to to " + this.label + ".");
+                } else this.sendMessage("You have changed your tank to " + this.label + ".");
                 this.skill.update();
                 this.refreshBodyAttributes();
                 this.childrenMap.forEach(o => {
@@ -15621,7 +15638,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 player.body.kill();
             }
             runAnimations(gun) {
-                switch (gun.onShoot) {
+                let onShoot = gun.onShoot;
+                switch (onShoot) {
                     case "log":
                         console.log("LOG");
                         break;
@@ -17334,7 +17352,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 return 1;
                             }
                             if (this.betaData.permissions !== 3) return this.talk("Z", "[ERROR] You need a beta-tester level 3 token to use these commands.");
-                            if (!isAlive) return this.talk("Z", "[ERROR] You cannot use a beta-tester command while dead.");
+                            if (!isAlive && m[0] !== 0 && m[0] !== 24) return this.talk("Z", "[ERROR] You cannot use a beta-tester command while dead.");
                             //if (body.underControl) return socket.talk("Z", "[ERROR] You cannot use a beta-tester command while controlling a Dominator or Mothership.");
                             switch (m[0]) {
                                 case 0: { // Broadcast
@@ -17342,7 +17360,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 } break;
                                 case 1: { // Set color
                                     let color = (m[1] === 'random') ? ran.randomHexColor() : m[1];
-                                    
                                     body.color = color;
                                     player.color = color;
                                     this.rememberedColor = color;
@@ -17358,7 +17375,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 } break;
                                 case 5: { // Define tank
                                     body.upgradeTank(isNaN(m[1]) ? Class[m[1]] : Class[m[1]]);
-
                                 } break;
                                 case 6: { // Set stats
                                     if ("weapon_speed" === m[1]) body.skill.spd = m[2];
@@ -19682,7 +19698,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         bosses: [
                             Class.eggBossTier1AI,
                             Class.eggQueenTier1AI,
-                            Class.eggSpiritTier1AI,
+                            Class.eggSpiritTier1AIWeak,
                             Class.ultraCannonAI
                         ],
                         amount: ran.irandomRange(1, 4),
@@ -19696,8 +19712,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.bowAI,
                             Class.constAI,
                             Class.eliteDustbowlAI,
-                            Class.mk1AI,
                             Class.splitterSummoner,
+                            Class.squareBossTier1AI,
                             Class.squareNestKeeperAI
                         ],
                         amount: ran.irandomRange(1, 3),
@@ -19710,7 +19726,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.defenderAI,
                             Class.redBurstAI,
                             Class.skimbossAI,
-                            Class.tk1AI,
+                            Class.triangleBossTier1AI,
                             Class.triangleNestKeeperAI,
                             Class.triSeekerAI
                         ],
@@ -19743,6 +19759,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         chance: 12
                     }, {
                         bosses: [
+                            Class.heptagonBossTier1AI,
                             Class.heptagonNestKeeperAI,
                             Class.octagonNestKeeperAI,
                             Class.xyvAI
@@ -19756,22 +19773,38 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     // 3: Undeads
                     [{
                         bosses: [
+                            Class.fallenAkaAI31,
+                            Class.fallenAnnihilatorAI,
+                            Class.fallenAuto5AI,
                             Class.fallenAutoTankAI,
+                            Class.fallenBattleshipAI,
                             Class.fallenBoosterAI,
-                            Class.fallenCavalcadeAI,
-                            Class.fallenDesperadoAI,
+                            //Class.fallenCavalcadeAI,
                             Class.fallenDirigibleAI,
-                            Class.fallenDrifterAI,
+                            //Class.fallenDrifterAI,
+                            Class.fallenEngineerAI,
                             Class.fallenFighterAI,
+                            Class.fallenFlailAI,
                             Class.fallenFlamethrowerAI,
+                            Class.fallenFortressAI,
+                            Class.fallenHivemindAI,
+                            Class.fallenHurricaneAI,
                             Class.fallenHybridAI,
                             Class.fallenLaserAI,
+                            Class.fallenMechaAI,
+                            Class.fallenMortarAI,
                             Class.fallenOctoAI,
                             Class.fallenOverlordAI,
                             Class.fallenPentaAI,
                             Class.fallenPistonAI,
                             Class.fallenRangerAI,
-                            Class.fallenUziAI
+                            Class.fallenScalerAI,
+                            Class.fallenShotgunAI,
+                            Class.fallenShrapnelAI,
+                            Class.fallenSlayerAI,
+                            Class.fallenSpreadshotAI,
+                            Class.fallenSurferAI/*,
+                            Class.fallenUziAI*/
                         ],
                         amount: ran.irandomRange(2, 4),
                         name_pool: 'legacy',
@@ -19780,15 +19813,23 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         chance: 65
                     }, {
                         bosses: [
+                            Class.reanimArsonistAI,
+                            Class.reanimBent3AI,
                             Class.reanimBiohazardAI,
                             Class.reanimCacheAI,
+                            Class.reanimChevronAI,
                             Class.reanimCorpsAI,
+                            Class.reanimFabricatorAI,
                             Class.reanimFarmerAI,
                             Class.reanimGasserAI,
                             Class.reanimHeptaTrapAI,
                             Class.reanimKnightAI,
+                            Class.reanimMegafortAI,
                             Class.reanimOverfireAI,
-                            Class.reanimPentaBlasterAI
+                            Class.reanimPentaBlasterAI,
+                            Class.reanimPrizefighterAI,
+                            Class.reanimSixShotAI,
+                            Class.reanimWildfireAI
                         ],
                         amount: ran.irandomRange(1, 3),
                         name_pool: 'legacy',
@@ -19803,7 +19844,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.constAI,
                             Class.snowflakeAI,
                             Class.splitterSummoner,
-                            Class.vivisectionAI,
+                            Class.vivisectionAIWeak,
                             Class.xyvAI
                         ],
                         amount: ran.irandomRange(1, 2),
@@ -19826,7 +19867,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     [{
                         bosses: [
                             Class.bitskriegAI,
-                            Class.jetBossAI,
+                            Class.carbonfrasAIWeak,
+                            Class.jetBossAIWeak,
                             Class.pentafrasAI,
                             Class.sarfassasAI,
                             Class.sassafrasAI,
@@ -20292,7 +20334,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 const triNestSpawner = new Spawner(["nestTriangle"]);
                 const squareNestSpawner = new Spawner(["nestSquare"]);
                 const pentaNestSpawner = new Spawner((room.isHell) ? [
-                    ["nestPentagon", 8],
+                    ["nestPentagon", 9],
                     ["nestBetaPentagon", 6],
                     ["splitterPentagon", 5],
                     ["protpentagon", 4],
@@ -20301,7 +20343,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     ["star", 2],
                     "superstar"
                 ] : [
-                    ["nestPentagon", 7],
+                    ["nestPentagon", 8],
                     ["nestBetaPentagon", 5],
                     ["splitterPentagon", 4],
                     ["protpentagon", 3],
@@ -20705,14 +20747,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         if (type === "sancs" || type === "naturalMiniboss" || type === "evolutionMiniboss" || type === "nesters") continue;
                         room.census[type] = entities.map(e => e.type).filter(o => o === type).length;
                     }
-                    global.entityCensus = room.census;
+                    global.census = room.census;
                 }
                 if (!room.modelMode) {
                     createFood();
                     spawnCrasher(room.census);
                 }
             };
-
         })();
 
         setInterval(gameLoop, room.cycleSpeed)
