@@ -293,6 +293,8 @@ let ffa = (blackout = false) => {
     "TEAM_AMOUNT": 5,
     "displayName": "Fuzzy's Open 5TDM",
     "displayDesc": "Self-explanatory.",
+    "WIDTH": 8000,
+    "HEIGHT": 8000,
     "ROOM_SETUP": [
         ["R N N N r N N N r r N N N r N N N R"],
         ["N N N N N N N N N N N N N N N N N N"],
@@ -321,11 +323,9 @@ let ffa = (blackout = false) => {
             default: throw new TypeError(cell + " is not a valid cell type!");
         }
     })),
-    "WIDTH": 8000,
-    "HEIGHT": 8000,
-    "MAX_FOOD": 576, // 288
-    "MAX_COMBINED_NEST_FOOD": 72, // 36
-    "MAX_CRASHERS": 90 // 36
+    "MAX_FOOD": 504, // 288
+    "MAX_COMBINED_NEST_FOOD": 63, // 36
+    "MAX_CRASHERS": 72 // 36
 },
     random_colors = {
     "RANDOM_COLORS": true,
@@ -657,4 +657,4 @@ function select(mode, testing = false) {
     }
     return mode;
 };
-select(twoTDM(false, true));
+select(openFiveTDM);

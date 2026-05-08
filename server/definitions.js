@@ -191,6 +191,7 @@ const g = {
     "fast": [1, 1, 1, 1, 1, 1, 1, 1.2, 1, 1, 1, 1, 1],
     "faster": [1, 1, 1, 1, 1, 1, 1, 1.1, 1.1, 1, 1, 1, 1],
     "bit_slow": [1, 1, 1, 1, 1, 1, 1, .9, .9, 1, 1, 1, 1],
+    "bit_slower": [1, 1, 1, 1, 1, 1, 1, .8, .8, 1, 1, 1, 1],
     "slow": [1, 1, 1, 1, 1, 1, 1, .7, .7, 1, 1, 1, 1],
     "fried_egg": [.4, 1, 1, 1, 1, 1, 1, .0001, .0001, 15, 1, 1, 1],
     "charge": [1, 1, .5, 1, 1, .9, 1, .75, .75, 1, 1, 1.15, 1],
@@ -221,14 +222,13 @@ const g = {
     "pellet": [.775, 1, .75, 1, 1.175, 1.2, 1.15, 1.2, 1.15, 1, 1, .75, 1],
     "bore": [1.2, 1, .7, 1, 1, 1.05, 1, 1.375, 1.35, 1, 1, .7, 1],
     "punt": [1.25, 1, 1.5, 1, .75, .8, .775, .95, .925, 1, 1, 2, 1],
-    "triple_size": [1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    "double_size": [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "bigger": [1, 1, 1, 1.25, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "bit_bigger": [1, 1, 1, 1.16, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "little_bit_bigger": [1, 1, 1, 1.091, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "very_little_bit_bigger": [1, 1, 1, 1.067, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    "double_size": [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "near_double_size": [1, 1, 1, 1.85, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "double_size": [1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    "triple_size": [1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "low_power": [1, 1, 2, 1, .5, .5, .7, 1, 1, 1, 1, .5, .7],
     "lower_power": [1, 0, 1.25, 1, .5, .5, .75, 1, 1, 1, 1, 1.25, 1],
     "half_power": [1, 1, 1, 1, .5, .5, .5, 1, 1, 1, 1, 1, 1],
@@ -1182,6 +1182,16 @@ const applyStats = (guns, stats, options = {}) => {
         }
     }
 };
+g.boss_turret = convert({
+    recoil: 0,
+    size: 1.175,
+    health: 1.15,
+    damage: 1.15,
+    pen: 1.15,
+    speed: 1.1,
+    maxSpeed: 1.175,
+    density: 10
+});
 const createTurret = (type, label = 'Turret', stats = [g.blank], syncTurretSkills = true) => {
     let output = deepCopy(type);
     output.LABEL = label;
@@ -1192,7 +1202,7 @@ const createTurret = (type, label = 'Turret', stats = [g.blank], syncTurretSkill
     return output;
 };
 const createTurretBoss = (type, label = 'Turret', stats = [g.blank], syncTurretSkills = true) => {
-    return createTurret(type, label, [[1, 0, 1, 1.176, 5/3, 5/3, 5/3, 10/9, 1.176, 1, 10, 1, 1], ...stats], syncTurretSkills);
+    return createTurret(type, label, [g.boss_turret, ...stats], syncTurretSkills);
 };
 const makeIron = (type, name, options = {}) => {
     let output = deepCopy(type);
@@ -10629,13 +10639,13 @@ defExports.overgunner = makeHybrid({
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
@@ -12887,7 +12897,7 @@ defExports.trapperDominator = {
     }]
 };
 const droneDominatorProps = {
-    SHOOT_SETTINGS: combineStats([g.drone, g.drone_dominator, g.bit_slow, g.bit_slow]),
+    SHOOT_SETTINGS: combineStats([g.drone, g.drone_dominator, g.bit_slower]),
     TYPE: defExports.drone,
     AUTOFIRE: true,
     SYNCS_SKILLS: true,
@@ -38484,13 +38494,13 @@ defExports.undergunner = makeHybrid({
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
@@ -41670,13 +41680,13 @@ defExports.gundrive = {
     }, {
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet
         }
     }, {
@@ -69484,14 +69494,14 @@ defExports.trapeFighter = {
     GUNS: [{
         POSITION: [12, 2, 1, 0, -2.35, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil]),
             TYPE: defExports.bullet,
             COLOR_OVERRIDE: 13
         }
     }, {
         POSITION: [12, 2, 1, 0, 2.35, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil]),
             TYPE: defExports.bullet,
             COLOR_OVERRIDE: 13
         }
@@ -82103,7 +82113,7 @@ defExports.schoolShotgun = {
     }, {
         POSITION: [1, 2, 1, 75, -2.85, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.bit_slower]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83028,7 +83038,7 @@ defExports.sawedShotgun = {
     }, {
         POSITION: [1, 2, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83058,7 +83068,7 @@ defExports.sawedShotgun = {
     }, {
         POSITION: [1, 1.25, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83070,7 +83080,7 @@ defExports.sawedShotgun = {
     }, {
         POSITION: [1, 1, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower]),
             TYPE: defExports.realBullet
         }
     }]
@@ -83169,7 +83179,7 @@ defExports.sawedShotgunAutoGun = {
     }, {
         POSITION: [1, 2, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow, g.half_reload, g.bigger]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow, g.half_reload, g.bigger]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83199,7 +83209,7 @@ defExports.sawedShotgunAutoGun = {
     }, {
         POSITION: [1, 1.25, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.half_reload, g.bigger]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.half_reload, g.bigger]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83211,7 +83221,7 @@ defExports.sawedShotgunAutoGun = {
     }, {
         POSITION: [1, 1, 1, 29, -14, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.half_reload, g.bigger]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.half_reload, g.bigger]),
             TYPE: defExports.realBullet
         }
     }]
@@ -83302,7 +83312,7 @@ defExports.sawedShotgun2 = {
     }, {
         POSITION: [1, 2, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow, g.bit_less_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83332,7 +83342,7 @@ defExports.sawedShotgun2 = {
     }, {
         POSITION: [1, 1.25, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_less_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83344,13 +83354,13 @@ defExports.sawedShotgun2 = {
     }, {
         POSITION: [1, 1, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_less_reload]),
             TYPE: defExports.realBullet
         }
     }, {
         POSITION: [1, 2.25, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow, g.bit_less_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow, g.bit_less_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83374,7 +83384,7 @@ defExports.sawedShotgunAutoGun2 = {
     }, {
         POSITION: [1, 2, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow, g.bit_less_reload, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow, g.bit_less_reload, g.half_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83404,7 +83414,7 @@ defExports.sawedShotgunAutoGun2 = {
     }, {
         POSITION: [1, 1.25, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_less_reload, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_less_reload, g.half_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -83416,13 +83426,13 @@ defExports.sawedShotgunAutoGun2 = {
     }, {
         POSITION: [1, 1, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_less_reload, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_less_reload, g.half_reload]),
             TYPE: defExports.realBullet
         }
     }, {
         POSITION: [1, 2.25, 1, 70, -2, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slow, g.bit_slow, g.bit_slow, g.bit_less_reload, g.half_reload]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.real_shotgun, g.more_damage, g.bit_slower, g.bit_slow, g.bit_less_reload, g.half_reload]),
             TYPE: defExports.realBullet
         }
     }, {
@@ -89745,7 +89755,7 @@ defExports.wallerBossTurret = {
     }, {
         POSITION: [2.375, 6, 1.5, 15.5, 3, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slower]),
             TYPE: defExports.trap,
 			STAT_CALCULATOR: gunCalcNames.trap,
 			COLOR_OVERRIDE: 13
@@ -89755,7 +89765,7 @@ defExports.wallerBossTurret = {
     }, {
         POSITION: [2.375, 6, 1.5, 15.5, -3, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slower]),
             TYPE: defExports.trap,
 			STAT_CALCULATOR: gunCalcNames.trap,
 			COLOR_OVERRIDE: 13
@@ -89765,7 +89775,7 @@ defExports.wallerBossTurret = {
     }, {
         POSITION: [2.375, 6, 1.5, 16.375, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.trap, g.auto, g.gunner, g.twin, g.twin, g.power, g.more_reload, g.bit_slower]),
             TYPE: defExports.trap,
 			STAT_CALCULATOR: gunCalcNames.trap,
 			COLOR_OVERRIDE: 13
@@ -91610,13 +91620,13 @@ defExports.cruiserGunner = makeHybrid({
     GUNS: [{
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil, g.flank]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.lots_more_recoil, g.flank]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [19, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil, g.flank]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.lots_more_recoil, g.flank]),
             TYPE: defExports.bullet
         }
     }, {
@@ -98296,7 +98306,7 @@ defExports.thrash = { // Drones should sync up with Body-Damage stats instead of
     GUNS: [{
         POSITION: [6, 12, 1.2, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slow, g.bit_slow, g.less_power, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slower, g.less_power, g.less_power]),
             TYPE: defExports.thrasherDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -98307,7 +98317,7 @@ defExports.thrash = { // Drones should sync up with Body-Damage stats instead of
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 120, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slow, g.bit_slow, g.less_power, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slower, g.less_power, g.less_power]),
             TYPE: defExports.thrasherDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -98318,7 +98328,7 @@ defExports.thrash = { // Drones should sync up with Body-Damage stats instead of
     }, {
         POSITION: [6, 12, 1.2, 8, 0, 240, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slow, g.bit_slow, g.less_power, g.less_power]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.over, g.bit_slower, g.less_power, g.less_power]),
             TYPE: defExports.thrasherDrone,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
@@ -104555,13 +104565,13 @@ defExports.discoverer = {
     }, {
         POSITION: [23, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [23, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slow, g.bit_slow, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.flank, g.power, g.bit_slower, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
             TYPE: defExports.bullet
         }
     }, {
@@ -105674,14 +105684,14 @@ defExports.necrogunner = {
     }, {
         POSITION: [19, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet,
             COUNTS_OWN_KIDS: Infinity
         }
     }, {
         POSITION: [19, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil]),
             TYPE: defExports.bullet,
             COUNTS_OWN_KIDS: Infinity
         }
@@ -112765,7 +112775,7 @@ defExports.overluxe = {
     GUNS: [{
         POSITION: [6, 11, 1.2, 12, 0, 125, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.less_damage]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -112778,7 +112788,7 @@ defExports.overluxe = {
     }, {
         POSITION: [6, 11, 1.2, 8, 0, 125, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.less_damage]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -112791,7 +112801,7 @@ defExports.overluxe = {
     }, {
         POSITION: [6, 11, 1.2, 12, 0, 235, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.weak, g.double_reload]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.weak, g.double_reload]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -112804,7 +112814,7 @@ defExports.overluxe = {
     }, {
         POSITION: [6, 11, 1.2, 8, 0, 235, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.weak, g.double_reload]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.weak, g.double_reload]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -123766,13 +123776,13 @@ defExports.smolFlankBoxer = {
     }, {
         POSITION: [18, 12, 1, 0, 0, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.flank, g.less_power, g.less_power, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.flank, g.less_power, g.less_power, g.bit_slower]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [18, 12, 1, 0, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.flank, g.less_power, g.less_power, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.flank, g.less_power, g.less_power, g.bit_slower]),
             TYPE: defExports.bullet
         }
     }]
@@ -127904,7 +127914,7 @@ defExports.newOverluxe = {
     GUNS: [{
         POSITION: [6, 11, 1.2, 8, 0, 125, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.weak, g.double_reload]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.weak, g.double_reload]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -127917,7 +127927,7 @@ defExports.newOverluxe = {
     }, {
         POSITION: [6, 11, 1.2, 8, 0, 235, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.weak, g.double_reload]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.weak, g.double_reload]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -127930,7 +127940,7 @@ defExports.newOverluxe = {
     }, {
         POSITION: [6, 11, 1.2, 12, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.less_damage]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -127943,7 +127953,7 @@ defExports.newOverluxe = {
     }, {
         POSITION: [6, 11, 1.2, 8, 0, 180, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slow, g.bit_slow, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.drone, g.less_power, g.bit_slower, g.less_damage]),
             TYPE: [defExports.drone, {
                 INDEPENDENT: true
             }],
@@ -128163,7 +128173,7 @@ defExports.corruptUV = {
     }, {
         POSITION: [13, 8, 1, 0, 0, 0, 2 / 3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.less_damage, g.slow, g.half_reload, g.one_third_reload, g.bit_slow, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.less_damage, g.slow, g.half_reload, g.one_third_reload, g.bit_slower]),
             TYPE: defExports.uvBullet,
             COLOR: 14,
             ALT_FIRE: true
@@ -192590,13 +192600,13 @@ defExports.underBorer = makeHybrid({
     GUNS: [{
         POSITION: [23, 2, 1, 0, -2.5, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
             TYPE: defExports.bullet
         }
     }, {
         POSITION: [23, 2, 1, 0, 2.5, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slow, g.bit_slow, g.flank, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.gunner, g.power, g.bit_slower, g.flank, g.lots_more_recoil, g.faster, g.faster, g.sniper]),
             TYPE: defExports.bullet
         }
     }, {
@@ -197123,7 +197133,7 @@ defExports.treeTopper = {
 			POSITION: [10.5, 4.25, 1.15, 4, 0, 72 * (i+.5), 0],
 			PROPERTIES: {
 				AUTOFIRE: true,
-				SHOOT_SETTINGS: combineStats([g.drone, g.pound, g.bit_less_damage, g.bit_slow, g.bit_slow, convert({ reload: 2.875, size: 3.25 })]),
+				SHOOT_SETTINGS: combineStats([g.drone, g.pound, g.bit_less_damage, g.bit_slower, convert({ reload: 2.875, size: 3.25 })]),
 				TYPE: defExports.treeTopperMissile,
 				STAT_CALCULATOR: gunCalcNames.drone,
 				MAX_CHILDREN: 1
@@ -199334,6 +199344,28 @@ defExports.damageTester_2 = {
         }
     }]
 };
+defExports.damageTester_3 = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Damage Tester',
+    DANGER: 9,
+    HAS_NO_RECOIL: true,
+    ACCEPTS_SCORE: false,
+    GUNS: [{
+        POSITION: [7.25, 12.25, 1.25, 10, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.redistribute, g.quintuple_reload, g.no_spread, g.fake]),
+            TYPE: [defExports.redistributorBullet, { NO_SPEED_CALCULATION: true }]
+        }
+    }, {
+        POSITION: [18.5, 12, 1, 0, 0, 0, .125],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.destroy, g.redistribute, g.quintuple_reload, g.no_spread]),
+            TYPE: [defExports.redistributorBullet, { NO_SPEED_CALCULATION: true }]
+        }
+    }, {
+        POSITION: [9, 12, -1.45, 4, 0, 0, 0]
+    }]
+};
 defExports.arsenion = makeMinion(defExports.arsenal);
 defExports.arsenalFactory = makeAuto({
     PARENT: [defExports.genericTank],
@@ -199356,6 +199388,261 @@ defExports.arsenalFactory = makeAuto({
         }
     }]
 }, "Pillory", { size: 9 });
+g.terrestial_trap = convert({
+	reload: 1.25,
+	shudder: .075,
+	size: 1.2,
+	health: 1.25,
+	damage: 1.3,
+	pen: .5,
+	speed: .8
+});
+defExports.genericTerrestialTop = {
+    LABEL: "",
+	SHAPE: 3,
+    FACING_TYPE: ['autospin', { SPEED: .032 }],
+	AI: { FULL_VIEW: true },
+	SYNC_TURRET_SKILLS: true
+};
+defExports.genericTerrestialMiddle = {
+    LABEL: "",
+	SHAPE: 5,
+    FACING_TYPE: ['autospin', { SPEED: -.024 }],
+	AI: { FULL_VIEW: true },
+	SYNC_TURRET_SKILLS: true
+};
+defExports.genericTerrestial = {
+    PARENT: [defExports.genericTank],
+	LABEL: "Terrestial",
+    DANGER: 9,
+    SHAPE: 7,
+    SIZE: 32,
+    BODY: {
+        HEALTH: 920,
+        SHIELD: 115,
+        REGEN: base.REGEN * .05,
+        ACCELERATION: base.ACCEL * .15,
+        SPEED: base.SPEED * .3,
+        DAMAGE: 10
+    },
+    FACING_TYPE: ['autospin', { SPEED: .016 }],
+    SKILL: setWeaponSkill(9, 9, 9, 9, 9),
+    HAS_NO_SKILL_POINTS: true,
+    GUNS: function(guns = []) {
+		for (let i = 0; i < 7; i++) guns.push({
+            POSITION: [12.5, 6.5, 1, 0, 0, 360/7 * (i + .5), 0]
+        }, {
+            POSITION: [2, 6.5, 1.6, 12.5, 0, 360/7 * (i + .5), 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.terrestial_trap]),
+                TYPE: defExports.trap,
+                STAT_CALCULATOR: gunCalcNames.trap,
+                AUTOFIRE: true
+            }
+        });
+		return guns;
+	}()
+};
+defExports.aresTopMiniHiveShooter = createTurretBoss(defExports.miniHiveShooter, "Mini Swarmer");
+defExports.aresTop = {
+    PARENT: [defExports.genericTerrestialTop],
+    COLOR: 14,
+    TURRETS: function(out = []) {
+        for (let i = 0; i < 3; i++) out.push({
+            POSITION: [10, 8.5, 0, 60 + 120 * i, 160, 0],
+            TYPE: defExports.aresTopMiniHiveShooter
+        });
+        return out;
+    }()
+};
+defExports.aresMiddle = {
+    PARENT: [defExports.genericTerrestialMiddle],
+    COLOR: 14,
+    MAX_CHILDREN: 10,
+    GUNS: function(out = []) {
+        for (let i = 0; i < 5; i++) out.push({
+            POSITION: [3.75, 7, 1.2, 8, 0, 36 + 72 * i, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.drone, g.exorcist, g.turret, g.boss_turret, g.meta, g.bigger, g.bit_slower]),
+                TYPE: [defExports.pentagonDrone, { LABEL: "Slapper" }],
+                AUTOFIRE: true,
+                SYNCS_SKILLS: true,
+                STAT_CALCULATOR: gunCalcNames.drone,
+                WAIT_TO_CYCLE: true,
+                COLOR_OVERRIDE: 321
+            }
+        });
+        return out;
+    }()
+};
+defExports.ares = {
+    PARENT: [defExports.genericTerrestial],
+    NAME: "Ares",
+    COLOR: 14,
+    TURRETS: [{
+        POSITION: [14.5, 0, 0, 0, 360, 1],
+        TYPE: defExports.aresMiddle
+    }, {
+        POSITION: [8, 0, 0, 0, 360, 1],
+        TYPE: defExports.aresTop
+    }]
+};
+defExports.terrestialLittleSkimmer = createTurretBoss(defExports.littleSkimmer, "Launcher");
+defExports.ezekielTop = {
+    PARENT: [defExports.genericTerrestialTop],
+    COLOR: 2,
+    TURRETS: function(out = []) {
+        for (let i = 0; i < 3; i++) out.push({
+            POSITION: [10, 8.5, 0, 60 + 120 * i, 160, 0],
+            TYPE: defExports.terrestialLittleSkimmer
+        });
+        return out;
+    }()
+};
+defExports.ezekielMiddle = {
+    PARENT: [defExports.genericTerrestialMiddle],
+    COLOR: 2,
+    MAX_CHILDREN: 15,
+    GUNS: function(out = []) {
+        for (let i = 0; i < 5; i++) out.push({
+            POSITION: [3.75, 7, 1.2, 8, 0, 36 + 72 * i, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.drone, g.enchantress, g.turret, g.boss_turret, g.meta, g.bit_bigger, g.bit_slower]),
+                TYPE: [defExports.drone, { LABEL: "Piercer" }],
+                AUTOFIRE: true,
+                SYNCS_SKILLS: true,
+                STAT_CALCULATOR: gunCalcNames.drone,
+                WAIT_TO_CYCLE: true,
+                COLOR_OVERRIDE: 320
+            }
+        });
+        return out;
+    }()
+};
+defExports.ezekiel = {
+    PARENT: [defExports.genericTerrestial],
+    NAME: "Ezekiel",
+    COLOR: 2,
+    TURRETS: [{
+        POSITION: [14.5, 0, 0, 0, 360, 1],
+        TYPE: defExports.ezekielMiddle
+    }, {
+        POSITION: [8, 0, 0, 0, 360, 1],
+        TYPE: defExports.ezekielTop
+    }]
+};
+defExports.erisMiddleMinion = deepCopy(defExports.minion),
+    applyStats(defExports.erisMiddleMinion.GUNS, [g.less_reload, g.half_power, g.bit_slower]);
+defExports.erisTop = {
+    PARENT: [defExports.genericTerrestialTop],
+    COLOR: 5,
+    TURRETS: function(out = []) {
+        for (let i = 0; i < 3; i++) out.push({
+            POSITION: [10, 8.5, 0, 60 + 120 * i, 160, 0],
+            TYPE: defExports.terrestialLittleSkimmer
+        });
+        return out;
+    }()
+};
+defExports.erisMiddle = {
+    PARENT: [defExports.genericTerrestialMiddle],
+    COLOR: 5,
+    MAX_CHILDREN: 10,
+    GUNS: function(out = []) {
+        for (let i = 0; i < 5; i++) out.push({
+            POSITION: [3.8, 7, -1.4, 8, 0, 36 + 72 * i, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.factory, g.turret, g.boss_turret, g.less_reload, convert({ health: .7, damage: .8, maxSpeed: .85 })]),
+                TYPE: defExports.erisMiddleMinion,
+                AUTOFIRE: true,
+                SYNCS_SKILLS: true,
+                STAT_CALCULATOR: gunCalcNames.drone,
+                WAIT_TO_CYCLE: true
+            }
+        });
+        return out;
+    }()
+};
+defExports.eris = {
+    PARENT: [defExports.genericTerrestial],
+    NAME: "Eris",
+    COLOR: 5,
+    TURRETS: [{
+        POSITION: [14.5, 0, 0, 0, 360, 1],
+        TYPE: defExports.erisMiddle
+    }, {
+        POSITION: [8, 0, 0, 0, 360, 1],
+        TYPE: defExports.erisTop
+    }]
+};
+defExports.seleneTop = {
+    PARENT: [defExports.genericTerrestialTop],
+    COLOR: 13,
+    TURRETS: function(out = []) {
+        for (let i = 0; i < 3; i++) out.push({
+            POSITION: [10, 8.5, 0, 60 + 120 * i, 160, 0],
+            TYPE: defExports.terrestialLittleSkimmer
+        });
+        return out;
+    }()
+};
+defExports.seleneMiddle = {
+    PARENT: [defExports.genericTerrestialMiddle],
+    COLOR: 13,
+    MAX_CHILDREN: 30,
+    GUNS: function(out = []) {
+        for (let i = 0; i < 5; i++) out.push({
+            POSITION: [3.75, 7, 1.2, 8, 0, 36 + 72 * i, 0],
+            PROPERTIES: {
+                SHOOT_SETTINGS: combineStats([g.drone, g.summon, g.turret, g.boss_turret, g.meta, g.bit_slower]),
+                TYPE: [defExports.squareDrone, { LABEL: "Summoner Square" }],
+                AUTOFIRE: true,
+                SYNCS_SKILLS: true,
+                STAT_CALCULATOR: gunCalcNames.drone,
+                WAIT_TO_CYCLE: true,
+                COLOR_OVERRIDE: 32
+            }
+        });
+        return out;
+    }()
+};
+defExports.selene = {
+    PARENT: [defExports.genericTerrestial],
+    NAME: "Selene",
+    COLOR: 13,
+    TURRETS: [{
+        POSITION: [14.5, 0, 0, 0, 360, 1],
+        TYPE: defExports.seleneMiddle
+    }, {
+        POSITION: [8, 0, 0, 0, 360, 1],
+        TYPE: defExports.seleneTop
+    }]
+};
+defExports.aresAI = makeBossAI(defExports.ares, {
+	variesInSize: false,
+	value: 75e4,
+	skill: setWeaponSkill(9, 9, 9, 9, 9)
+});
+/*defExports.hnossAI = makeBossAI(defExports.hnoss, {
+	variesInSize: false,
+	value: 75e4,
+	skill: setWeaponSkill(9, 9, 9, 9, 9)
+});*/
+defExports.ezekielAI = makeBossAI(defExports.ezekiel, {
+	variesInSize: false,
+	value: 75e4,
+	skill: setWeaponSkill(9, 9, 9, 9, 9)
+});
+defExports.erisAI = makeBossAI(defExports.eris, {
+	variesInSize: false,
+	value: 75e4,
+	skill: setWeaponSkill(9, 9, 9, 9, 9)
+});
+defExports.seleneAI = makeBossAI(defExports.selene, {
+	variesInSize: false,
+	value: 75e4,
+	skill: setWeaponSkill(9, 9, 9, 9, 9)
+});
 
 //for (let i = 0; i < 999; i++) defExports[`blankEntity${i}`] = {};
 
@@ -199412,7 +199699,7 @@ branch("testbed_boss", "Bosses", [
     defExports.sassasade, defExports.terminatorBoss, defExports.carryingGunship, defExports.shaman, defExports.invoke, defExports.occult, defExports.arcanist, defExports.runecast, defExports.spellbind, defExports.squareNestKeeper, defExports.triangleNestKeeper, defExports.hexagonNestKeeper, defExports.heptagonNestKeeper, defExports.octagonNestKeeper,
     defExports.reversedGuardian, defExports.guardianJet, defExports.heptadecagonBoss, defExports.wallerBoss, defExports.walletBoss, defExports.armorboatBoss, defExports.disrupterBoss, defExports.kinderbumper, defExports.treeTopper, defExports.fallenLaser, defExports.fallenAnnihilator, defExports.fallenSpreadshot, defExports.fallenFlail, defExports.fallenAkaAI0,
     defExports.fallenHurricane, defExports.fallenSurfer, defExports.fallenEngineer, defExports.fallenHivemind, defExports.fallenMortar, defExports.fallenAuto5, defExports.fallenShrapnel, defExports.fallenFortress, defExports.fallenSlayer, defExports.fallenShotgun, defExports.fallenMecha, defExports.reanimFielder, defExports.reanimFabricator, defExports.reanimMegafort,
-    defExports.reanimChevron, defExports.reanimPrizefighter, defExports.reanimArsonist, defExports.reanimBent3, defExports.reanimWildfire, defExports.reanimSixShot
+    defExports.reanimChevron, defExports.reanimPrizefighter, defExports.reanimArsonist, defExports.reanimBent3, defExports.reanimWildfire, defExports.reanimSixShot, defExports.ares, defExports.ezekiel, defExports.eris, defExports.selene
 ]);
 branch("testbed_primes_tanks", "Tertia Tanks", [
     defExports.keeperBoss
@@ -199547,7 +199834,7 @@ branch("testbed_crf_doms", "CRF Dominators", [
     defExports.droneDominatorAI, defExports.autoDominatorAI, defExports.destroyerDominatorAISanctuary, defExports.gunnerDominatorAISanctuary, defExports.droneDominatorAISanctuary, defExports.steamrollDominatorAISanctuary, defExports.autoDominatorAISanctuary, defExports.crockettDominatorAISanctuary
 ]);
 branch("testbed_crf_weapons", "CRF Weapons", [
-    defExports.destroyAutoTurret, defExports.halfReloadMinion, defExports.engineer2gun, defExports.pentaTrap, defExports.interceptAnniGun, defExports.tailgatorAuto5Gun, defExports.interceptPelletGun, defExports.paladinTop, defExports.pneumaRng, defExports.ship36SplitGun, defExports.nonationDomiTurret, defExports.squireSquare, defExports.squireTri, defExports.squireArrow,
+    defExports.destroyAutoTurret, defExports.engineer2gun, defExports.pentaTrap, defExports.interceptAnniGun, defExports.tailgatorAuto5Gun, defExports.interceptPelletGun, defExports.paladinTop, defExports.pneumaRng, defExports.ship36SplitGun, defExports.nonationDomiTurret, defExports.squireSquare, defExports.squireTri, defExports.squireArrow,
     defExports.phylloxeraShard, defExports.ship22Nanogun, defExports.goldenRectChip, defExports.brainstormTurret, defExports.awpeBase, defExports.awpeDestroyer, defExports.awpeBasic, defExports.awpeDirect, defExports.awpeContagion, defExports.awpeHunter, defExports.awpeSkimmerA, defExports.awpeSkimmerB, defExports.awpeTrapA, defExports.awpeTrapB,
     defExports.awpeDecentralizerGun, defExports.awpeRailgun, defExports.razzleDazzle, defExports.basicProp, defExports.trp64, defExports.apacheGun, defExports.inceptionHiveA, defExports.america1, defExports.america2, defExports.america3, defExports.america4, defExports.america5, defExports.america6, defExports.america7,
 ]);

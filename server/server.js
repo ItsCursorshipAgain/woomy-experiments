@@ -10022,6 +10022,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.anniversarySummonerAI,
                 Class.applicusAI,
                 Class.aquamarineAI,
+                Class.aresAI,
                 Class.armorboatBossAI,
                 Class.armySentryGunAI,
                 Class.armySentryRangerAI,
@@ -10111,7 +10112,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.eliteTrapAI,
                 Class.eliteTwinAI,
                 Class.enchantressAI,
+                Class.erisAI,
                 Class.exorcistorAI,
+                Class.ezekielAI,
                 Class.fallenAkaAI31,
                 Class.fallenAnnihilatorAI,
                 Class.fallenAuto5AI,
@@ -10254,6 +10257,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.sarfassasAI,
                 Class.sassafrasAI,
                 Class.sassasadeAI,
+                Class.seleneAI,
                 Class.shamanAI,
                 Class.skimBossAI,
                 Class.sliderAI,
@@ -11967,12 +11971,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
         }
         ioTypes.spin = class extends IO {
-            constructor(b) {
+            constructor(b, o = {}) {
                 super(b);
+                this.options = o;
                 this.a = 0;
             }
             think(input) {
-                this.a += .05;
+                this.a += this.options.speed ?? .05;
                 let offset = 0;
                 if (this.body.bond != null) offset = this.body.bound.angle;
                 return {
@@ -13935,7 +13940,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     if (set.REMOVE_PREVIOUS_CONTROLLERS) this.controllers = [];
                     if (set.CONTROLLERS != null) {
                         let toAdd = [];
-                        for (let ioName of set.CONTROLLERS) toAdd.push(new ioTypes[ioName](this));
+                        for (let ioName of set.CONTROLLERS) {
+                            if (Array.isArray(ioName)) toAdd.push(new ioTypes[ioName[0]](this, ioName[1]));
+                            else toAdd.push(new ioTypes[ioName](this));
+                        }
                         this.addController(toAdd);
                     }
                     if (set.REMOVE_CONTROLLERS) for (let ioName of set.REMOVE_CONTROLLERS) this.controllers = this.controllers.filter(entry => !(entry instanceof ioTypes[ioName]));
@@ -14889,7 +14897,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (Math.abs(diff) >= this.firingArc[1]) givenAngle = this.firingArc[0];
                         } else givenAngle = this.firingArc[0];
                         this.facing += util.loopSmooth(this.facing, givenAngle, (2 / room.speed) * this.turretTraverseSpeed);
-                        if (this.bond.syncTurretSkills) this.skill.set(this.bond.skill.raw);
                         break;
                     case "toBound":
                         this.facing = this.bound.angle + this.bond.master.facing;
@@ -14907,6 +14914,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 let TAU = 2 * Math.PI;
                 this.facing = (this.facing % TAU + TAU) % TAU;
                 this.vfacing = util.angleDifference(oldFacing, this.facing) * room.speed;
+                if (this.bond?.syncTurretSkills) this.skill.set(this.bond?.skill.raw);
             }
             physics() {
                 this.velocity.x += this.accel.x * room.lagComp;
@@ -19914,7 +19922,21 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         arrival: `The Sentry Army has arrived!`,
                         chance: 100
                     }],
-                    // 8: Generics
+                    // 8: Terrestials
+                    [{
+                        bosses: [
+                            Class.aresAI,
+                            Class.erisAI,
+                            Class.ezekielAI,
+                            //Class.hnossAI,
+                            Class.seleneAI
+                        ],
+                        amount: 1,
+                        name_pool: 'all',
+                        spawns_at: 'random',
+                        chance: 100
+                    }],
+                    // 9: Generics
                     [{
                         bosses: [
                             Class.applicusAI,
