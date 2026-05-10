@@ -38,7 +38,7 @@ let ffa = (blackout = false) => {
         "MAX_CRASHERS": 72 // 36
     }
 },
-    ffa_domination = {
+    ffaDomination = {
     "SPAWN_DOMINATORS": true,
     "DOMINATOR_SHUFFLE_TIMER": 600,
     "displayName": "Fuzzy's FFA Domination",
@@ -79,7 +79,7 @@ let ffa = (blackout = false) => {
     "MAX_COMBINED_NEST_FOOD": 168,
     "MAX_CRASHERS": 224
 },
-    ffa_world = (() => {
+    ffaWorld = (() => {
     let shuffledNests = ['#E7896D', '#EFC74B', 'nest', '#7ADBBC', '#FDA54D', '#A177FC', '#65F0EC', '#E8EBF7'].sort(function() {
         return .5 - Math.random();
     });
@@ -172,6 +172,67 @@ let ffa = (blackout = false) => {
         "MAX_SANCTUARIES": 3
     }
 })(),
+    fourTDM = (() => {
+    let shuffledBases = [
+        ["bas1", "n_b1"],
+        ["bas2", "n_b2"],
+        ["bas3", "n_b3"],
+        ["bas4", "n_b4"]
+    ].sort(function() { return .5 - Math.random() });
+    return {
+        "MODE": "tdm",
+        "TEAM_AMOUNT": 4,
+        "displayName": "Fuzzy's 4TDM",
+        "displayDesc": "Self-explanatory.",
+        "ROOM_SETUP": [                /*CE CE*/
+            ["B1 B1 B1 B1 NM NM NM NM NM RK RK NM NM NM NM NM B2 B2 B2 B2"],
+            ["B1 P1 B1 B1 NM NM NM NM NM RK RK NM NM NM NM NM B2 B2 P2 B2"],
+            ["B1 B1 RD RK NM NM NM NM NM NM NM NM NM NM NM NM RK RD B2 B2"],
+            ["B1 B1 RK RK NM NM NM NM RK RK RK RK NM NM NM NM RK RK B2 B2"],
+            ["NM NM NM NM NM RK RK RK RK PN PN RK RK RK RK NM NM NM NM NM"],
+            ["NM NM NM NM RK PN PN RD RK PN PN RK RD PN PN RK NM NM NM NM"],
+            ["NM NM NM NM RK PN PN PN RD PN PN RD PN PN PN RK NM NM NM NM"],
+            ["NM NM NM NM RK RD PN PN PN PN PN PN PN PN RD RK NM NM NM NM"],
+            ["NM NM NM RK RK RK RD PN PN PN PN PN PN RD RK RK RK NM NM NM"],
+            ["RK RK NM RK PN PN PN PN PN RD RD PN PN PN PN PN RK NM RK RK"], // CE
+            ["RK RK NM RK PN PN PN PN PN RD RD PN PN PN PN PN RK NM RK RK"], // CE
+            ["NM NM NM RK RK RK RD PN PN PN PN PN PN RD RK RK RK NM NM NM"],
+            ["NM NM NM NM RK RD PN PN PN PN PN PN PN PN RD RK NM NM NM NM"],
+            ["NM NM NM NM RK PN PN PN RD PN PN RD PN PN PN RK NM NM NM NM"],
+            ["NM NM NM NM RK PN PN RD RK PN PN RK RD PN PN RK NM NM NM NM"],
+            ["NM NM NM NM NM RK RK RK RK PN PN RK RK RK RK NM NM NM NM NM"],
+            ["B4 B4 RK RK NM NM NM NM RK RK RK RK NM NM NM NM RK RK B3 B3"],
+            ["B4 B4 RD RK NM NM NM NM NM NM NM NM NM NM NM NM RK RD B3 B3"],
+            ["B4 P4 B4 B4 NM NM NM NM NM RK RK NM NM NM NM NM B3 B3 P3 B3"],
+            ["B4 B4 B4 B4 NM NM NM NM NM RK RK NM NM NM NM NM B3 B3 B3 B3"]
+        ].map(row => row[0].split(" ").map(cell => {
+            switch (cell) {
+                case "NM": return "norm";
+                case "PN": return "nest";
+                case "RD": return "roid";
+                case "RK": return "rock";
+                
+                case "P1": return shuffledBases[0][0];
+                case "P2": return shuffledBases[1][0];
+                case "P3": return shuffledBases[2][0];
+                case "P4": return shuffledBases[3][0];
+                case "B1": return shuffledBases[0][1];
+                case "B2": return shuffledBases[1][1];
+                case "B3": return shuffledBases[2][1];
+                case "B4": return shuffledBases[3][1];
+
+                default: throw new TypeError(cell + " is not a valid cell type!");
+            }
+        })),
+        "X_GRID": 20,
+        "Y_GRID": 20,
+        "WIDTH": 9000,
+        "HEIGHT": 9000,
+        "MAX_FOOD": 510, // 272 * 1.875
+        "MAX_COMBINED_NEST_FOOD": 112, // 80 * 1.4
+        "MAX_CRASHERS": 144 // 80 * 1.8
+    }
+})(),
     maze = (blackout = false) => {
     return {
         "BLACKOUT": blackout,
@@ -238,14 +299,14 @@ let ffa = (blackout = false) => {
         "BORDER_FORCE": 0.075
     }
 },
-    miniboss_rush = {
+    minibossRush = {
     "MODE": "tdm",
     "IS_BOSS_RUSH": true,
     "displayName": "Fuzzy's Miniboss Rush",
     "displayDesc": "Bite-sized Siege/Boss Rush.",
     "TEAM_AMOUNT": 1,
-    "WIDTH": 5000,
-    "HEIGHT": 5000,
+    "WIDTH": 4500,
+    "HEIGHT": 4500,
     "X_GRID": 15,
     "Y_GRID": 15,
     "MAX_FOOD": 0,
@@ -277,9 +338,7 @@ let ffa = (blackout = false) => {
             default: throw new TypeError(cell + " is not a valid cell type!");
         }
     })),
-    "PLAYER_SPAWN_TILES": ["norm"],
-    "BORDER_FORCE": 0.025,
-    "BOSS_SPAWN_INTERVAL": Infinity,
+    "BOSS_SPAWN_TIMER": 0,
     "MAXBOSSES": 5,
     "MINBOSSES": 1,
     "MAX_BOSS_INCREMENT": 2,
@@ -327,7 +386,7 @@ let ffa = (blackout = false) => {
     "MAX_COMBINED_NEST_FOOD": 63, // 36
     "MAX_CRASHERS": 72 // 36
 },
-    random_colors = {
+    randomColors = {
     "RANDOM_COLORS": true,
     "displayName": "Fuzzy's RC-FFA",
     "displayDesc": "RC stands for Random Colors!\n\nEach color is a completely random hex color.\nYours is refreshed every time you die.",
@@ -363,7 +422,7 @@ let ffa = (blackout = false) => {
     "MAX_COMBINED_NEST_FOOD": 72, // 36
     "MAX_CRASHERS": 90 // 36
 },
-    random_colors_domination = {
+    randomColorsDomination = {
     "RANDOM_COLORS": true,
     "SPAWN_DOMINATORS": true,
     "DOMINATOR_SHUFFLE_TIMER": 600,
@@ -657,4 +716,4 @@ function select(mode, testing = false) {
     }
     return mode;
 };
-select(openFiveTDM);
+select(fourTDM);

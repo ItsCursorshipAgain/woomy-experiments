@@ -10030,10 +10030,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.armySentryTrapAI,
                 Class.arcanistAI,
                 Class.article13AI,
-                Class.ascendedCareener,
+                //Class.ascendedCareener,
                 Class.ascendedPentagonAI,
-                Class.ascendedSquare,
-                Class.ascendedTriangle,
+                //Class.ascendedSquare,
+                //Class.ascendedTriangle,
                 Class.asteroidAI,
                 Class.astraAI,
                 Class.at4_bwAI,
@@ -10042,7 +10042,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.AWPOrchestra2AI,
                 Class.awpOrchestratan33AI,
                 Class.AWPOrchestra3AI,
-                Class.awpPoundAI,
+                //Class.awpPoundAI,
                 Class.AWP_1AI,
                 Class.AWP_8AI,
                 Class.AWP_11AI,
@@ -10157,6 +10157,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.greenGearBossAI,
                 Class.greenGuardianAI,
                 Class.guardianAI,
+                Class.guardianJetAI,
                 Class.gunshipAI,
                 Class.crimsonGuardianAI,
                 Class.heptagonBossAI,
@@ -10244,6 +10245,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 Class.reanimPrizefighterAI,
                 Class.reanimSixShotAI,
                 Class.reanimWildfireAI,
+                Class.reversedGuardianAI,
                 Class.RK_1AI,
                 Class.RK_2AI,
                 Class.RK_3AI,
@@ -10317,6 +10319,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 10: [
                     Class.gaisenblasterAI,
                     Class.hexashipAI,
+                    Class.pentaguardianAI,
                     Class.vulcanShipAI
                 ],
                 25: [
@@ -10355,14 +10358,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 ],
                 30: [
                     Class.bidenAI,
-                    Class.cometbetterAI,
                     Class.eliteXyvAI,
                     Class.heptadecagonBossAI,
                     Class.grudgeAIWeaker,
                     Class.minosAI,
                     Class.redistributionAI,
                     Class.sisyphusAI,
-                    Class.ultimatebetterAI
                 ],
                 50: [
                     Class.boreasAI,
@@ -10399,6 +10400,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.XZ_4_MainAI,
                     Class.heptadecagonBossAI,
                     Class.purifierBossAI,
+                    Class.quintetAI
                 ]],
                 30: [[
                     Class.mythicalCrasherAI,
@@ -10495,7 +10497,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         setTimeout(bossRushLoop, 10000);
                     }
                 } else {
-                    sockets.broadcast(`${bossesAlive} Boss${bossesAlive > 1 ? "es" : ""} left!`);
+                    sockets.broadcast(`${bossesAlive} boss${bossesAlive > 1 ? "es" : ""} left!`, '#E03E41');
                 }
             };
             function spawnBoss(class_) {
@@ -10896,11 +10898,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             let sentryDifficultyList = {
                 "0.05": [
                     "sentrySwarmAI",
-                    "sentryTrapAI",
+                    "sentryTrapAI"
                 ],
                 "0.15": [
                     "sentryGunAI",
-                    "sentryRangerAI",
+                    "sentryRangerAI"
                 ],
                 "0.20": [
                     "flashSentryAI",
@@ -10910,21 +10912,22 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 "0.25": [
                     "crushSentryAI",
                     "bladeSentryAI",
-                    "skimSentryAI",
+                    "skimSentryAI"
                 ],
                 "0.40": [
-                    "squareSwarmerAI",
+                    "squareSwarmerAI"
                 ],
                 "0.45": [
-                    "summonerLiteAI",
+                    "summonerLiteAI"
                 ],
                 "0.50": [
                     "squareGunSentry",
                     "crusaderCrash",
-                    "kamikazeCrasherLite",
+                    "morningstarLite"
                 ],
                 "0.55": [
                     "greenSentrySwarmAI",
+                    "twinkleSentryAI"
                 ],
                 "0.65": [
                     "awp39SentryAI",
@@ -11199,12 +11202,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 return {
                     target: targ,
                     goal: {
-                        x: this.body.x + (this.player.command.right - this.player.command.left),
-                        y: this.body.y + (this.player.command.down - this.player.command.up)
+                        x: this.body.x + (this.player.command.right - this.player.command.left) * !this.body.variables.paralyzed,
+                        y: this.body.y + (this.player.command.down - this.player.command.up) * !this.body.variables.paralyzed
                     },
-                    fire: this.player.command.lmb || this.player.command.autofire,
-                    main: this.player.command.lmb || this.player.command.autospin || this.player.command.autofire,
-                    alt: this.player.command.rmb
+                    fire: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autofire),
+                    main: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
+                    alt: !this.body.variables.emp && this.player.command.rmb
                 };
             }
         }
@@ -11230,9 +11233,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.body.autoOverride = this.body.passive || this.player.command.override;
                 return {
                     target: targ,
-                    fire: this.player.command.lmb || this.player.command.autofire,
-                    main: this.player.command.lmb || this.player.command.autospin || this.player.command.autofire,
-                    alt: this.player.command.rmb
+                    fire: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autofire),
+                    main: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
+                    alt: !this.body.variables.emp && this.player.command.rmb
                 };
             }
         }
@@ -11243,8 +11246,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             think(input) {
                 if (input.main || input.alt) return {
                     goal: {
-                        x: input.target.x + this.body.x,
-                        y: input.target.y + this.body.y
+                        x: input.target.x * !this.body.paralyzed + this.body.x,
+                        y: input.target.y * !this.body.paralyzed + this.body.y
                     },
                     power: 1
                 };
@@ -11330,7 +11333,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown) {
+                if (this.countdown && !this.body.variables.paralyzed) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -11353,7 +11356,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown) {
+                if (this.countdown && !this.body.variables.paralyzed) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -11378,7 +11381,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown) {
+                if (this.countdown && !this.body.variables.paralyzed) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -11640,6 +11643,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 					if (!FARMER && entity.dangerValue < 1) return;
 					if (entity.alpha < 0.5 && !canSeeInvis) return;
 					if (c.SANDBOX && entity.sandboxId !== body.sandboxId) return;
+					if (master.isTephania && entity.socket?.betaData.globalName === "Fuzz") return;
 
 					switch (entity.type) {
 						case "drone":
@@ -11696,7 +11700,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 			think(input) {
 				// Cede control to the player by returning an empty object.
 				if (input.main || input.alt ||
-					((this.body.isRogueBoss && this.body.source.autoOverride) || this.body.master.autoOverride) ||
+					(this.body.isRogueBoss && this.body.source.autoOverride) ||
+                    this.body.master.autoOverride ||
 					this.body.master.master.passive ||
 					(this.body.master.master.invuln && !this.body.master.master.grantedInvuln)) {
 					return {};
@@ -11742,8 +11747,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 // Mutate and return the pre-allocated output object.
                 this.output.target.x = diffX + this.lead * target.velocity.x;
                 this.output.target.y = diffY + this.lead * target.velocity.y;
-                this.output.fire = true;
-                this.output.main = true;
+                this.output.fire = !this.body.variables.emp || !this.body.master.variables.emp;
+                this.output.main = !this.body.variables.emp || !this.body.master.variables.emp;
 
                 return this.output;
             }
@@ -11760,9 +11765,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     return {};
                 }
 				if(++this.tick > room.cycleSpeed){
-		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * ((room.bossRush) ? 3 : 2)) {
+		            while (util.getDistance(this.goal, this.body) < this.body.SIZE * ((room.bossRush) ? 4 : 2)) {
                     	this.goal = room.randomType(
-                            (room.bossRush && room['bas1']?.length && ran.chance(.4)) ? "bas1" :
+                            (room.bossRush && room['bas1']?.length && ran.chance(.35)) ? "bas1" :
                             (room.isHell) ? ((ran.chance(.2)) ? "norm" : ran.choose(room.presentNests)) :
                             (room.presentNests.length && ran.chance(.2)) ? ran.choose(room.presentNests) :
                             "norm"
@@ -11792,6 +11797,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         goal,
                         power = 1,
                         target = new Vector(input.target.x, input.target.y);
+                    if (this.body.paralyzed) target.null();
                     if (input.alt) {
                         if (target.length < leash) goal = {
                             x: this.body.x + target.x,
@@ -11834,6 +11840,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         goal,
                         power = 1,
                         target = new Vector(input.target.x, input.target.y);
+                    if (this.body.paralyzed) target.null();
                     if (input.main) {
                         let dir = this.turnwise * target.direction + .01;
                         goal = {
@@ -13859,6 +13866,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (choice === '' || (choice.endsWith('estKeeperAI') && room.census.nesters >= room.maxNesters) || (choice === 'rogueEgg' && room.randomColors)) this.setEvolution(evolutionArray);
                             else if (this.miscIdentifier === 'Rogue Egg') {
                                 const savedName = this.name;
+                                this.miscIdentifier = "None";
                                 switch (room.gameMode) {
                                     case 'ffa':
                                         if (this.team !== -20) this.source = this.variables.savedMaster;
@@ -17768,7 +17776,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 while (dirtyCheck(loc, 50) && i--);
                             }
                     }
-                    if (c.PLAYER_SPAWN_TILES) {
+                    if (room.bossRush) {
+                        do loc = (room.bas1?.length) ? room.randomType('bas1') : room.randomType('norm');
+                        while (dirtyCheck(loc, 50) && i--);
+                    } else if (c.PLAYER_SPAWN_TILES) {
                         let tile = ran.choose(c.PLAYER_SPAWN_TILES);
                         do loc = room.randomType(tile);
                         while (dirtyCheck(loc, 50) && i--);
@@ -18540,12 +18551,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     n.master.onDealtDamageUniv(n.master, my, finalDmg.my);
                                 }
 								
-                                if (n.hitsOnlyTeam) {
-                                    finalDmg.my *= (n.team === my.team) ? -1 : 0;
-                                }
-                                if (my.hitsOnlyTeam) {
-                                    finalDmg.n *= (my.team === n.team) ? -1 : 0;
-                                }
+                                if (n.hitsOnlyTeam) finalDmg.my *= (n.team === my.team) ? -1 : 0;
+                                if (my.hitsOnlyTeam) finalDmg.n *= (my.team === n.team) ? -1 : 0;
 								if (n.invuln && !("bullet trap swarm drone minion".includes(my.type))) finalDmg.my = 0;
 								if (my.invuln && !("bullet trap swarm drone minion".includes(n.type))) finalDmg.n = 0;
 								if (n.bail || my.bail) {
@@ -19169,15 +19176,22 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 room.lastCycle = util.time();
                 room.mspt = (performance.now() - start);
                 room.lagComp = Math.min(5, Math.max(1, room.mspt / room.cycleSpeed))
-                const border = 2150
                 if (c.serverName === "Boss Rush") {
+                    const border = 2150;
                     entities.forEach(entity => {
                         if (entity.x < border && entity.team != -100 && !entity.passive && !entity.godmode) { entity.kill()/*entity.x += 15*/ }
                         if (entity.type == 'miniboss' && entity.x < 5500) { entity.x += Math.random() * 1.5 }
                         if (entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }
                         if (entity.label.includes("Ascended") && entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }//fix ascended stuff not moving
                     })
-                }
+                }/* else if (c.displayName === "Fuzzy's Miniboss Rush") {
+                    entities.forEach(e => {
+                        if (e.type === 'miniboss') {
+                            if (e.y < room.height / 15 * 3) e.y += Math.random() * 5;
+                            if (e.y > room.height / 15 * 12) e.y -= Math.random() * 5;
+                        }
+                    })
+                }*/
             };
         })();
 
@@ -19626,13 +19640,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     [{
                         bosses: [
                             Class.eliteMinesweeperAI,
+                            (ran.dice(150)) ? Class.goldStreakAI : Class.streakAI,
                             Class.guardianAI,
                             Class.leviathanAI,
                             Class.magnetarAI,
                             Class.metalCrasherBossAI,
                             Class.pulsarAI,
                             Class.quasarAI,
-                            (ran.dice(150)) ? Class.goldStreakAI : Class.streakAI,
+                            Class.reversedGuardianAI,
                             Class.trapeFighterAI,
                             Class.trapperzoidAI
                         ],
@@ -19644,10 +19659,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         bosses: [
                             Class.at4_bwAI,
                             Class.cranberryGuardianAI,
+                            Class.crimsonGuardianAI,
                             Class.colliderAI,
                             Class.curveplexAI,
                             Class.greenGuardianAI,
-                            Class.crimsonGuardianAI,
+                            Class.guardianJetAI,
                             Class.lavenderGuardianAI,
                             Class.orbitalspaceAI,
                             Class.purifierBossAI,
@@ -20016,7 +20032,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     return message;
                 };
 
-                if (room.bossTimer > c.BOSS_SPAWN_TIMER && ran.dice(3 * c.BOSS_SPAWN_TIMER - room.bossTimer)) {
+                if (c.BOSS_SPAWN_TIMER > 0 && room.bossTimer > c.BOSS_SPAWN_TIMER && ran.dice(3 * c.BOSS_SPAWN_TIMER - room.bossTimer)) {
                     room.bossTimer = 0;
                     
                     let chosen = chooseBossClass(bossClasses);
