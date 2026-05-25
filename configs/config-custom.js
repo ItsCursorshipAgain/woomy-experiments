@@ -1,4 +1,23 @@
-let ffa = (blackout = false) => {
+let developer = (level = 3, teams = false, teamAmount = 1) => {
+    return {
+        "MODE": (teams) ? "tdm" : "ffa",
+        "MINIMUM_PERMISSIONS": level,
+        "displayName": "Fuzzy's Developer Server",
+        "displayDesc": "Self-explanatory; no unauthorized players may join.",
+        "TEAM_AMOUNT": teamAmount,
+        "WIDTH": 2000,
+        "HEIGHT": 2000,
+        "X_GRID": 1,
+        "Y_GRID": 1,
+        "ROOM_SETUP": [["norm"]],
+        "MAX_FOOD": 0,
+        "MAX_NEST_FOOD": 0,
+        "MAX_CRASHERS": 0,
+        "MAX_SANCS": 0,
+        "BOSS_SPAWN_TIMER": 0
+    }
+},
+    ffa = (blackout = false) => {
     return {
         "BLACKOUT": blackout,
         "displayName": (blackout) ? "Fuzzy's Blackout FFA" : "Fuzzy's FFA",
@@ -291,11 +310,11 @@ let ffa = (blackout = false) => {
             }
         })),
         "MAX_FOOD": 625, // 961
-        "MAX_COMBINED_NEST_FOOD": 61, // 49
-        "MAX_CRASHERS": 110, // 98
+        "MAX_COMBINED_NEST_FOOD": 49, // 49
+        "MAX_CRASHERS": 98, // 98
         "MAX_SANCS": 1,
         "EVOLVE_TIME_RAN_ADDER": 240000,
-        "EVOLVE_HALT_CHANCE": .6,
+        "EVOLVE_HALT_CHANCE": .4,
         "BORDER_FORCE": 0.075
     }
 },
@@ -305,18 +324,19 @@ let ffa = (blackout = false) => {
     "displayName": "Fuzzy's Miniboss Rush",
     "displayDesc": "Bite-sized Siege/Boss Rush.",
     "TEAM_AMOUNT": 1,
-    "WIDTH": 4500,
-    "HEIGHT": 4500,
+    "WIDTH": 5000,
+    "HEIGHT": 5000,
     "X_GRID": 15,
     "Y_GRID": 15,
     "MAX_FOOD": 0,
     "MAX_NEST_FOOD": 0,
     "MAX_CRASHERS": 0,
     "MAX_SANCS": 0,
+    "BOSS_SPAWN_TIMER": 0,
     "ROOM_SETUP": [   /*C*/
         ["B B B B B B B B B B B B B B B"],
         ["B B B B B B B B B B B B B B B"],
-        ["R R R R R R R R R R R R R R R"],
+        ["N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N"],
@@ -326,25 +346,25 @@ let ffa = (blackout = false) => {
         ["N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N"],
-        ["R R R R R R R R R R R R R R R"],
+        ["N N N N N N N N N N N N N N N"],
         ["B B B B B B B B B B B B B B B"],
         ["B B B B B B B B B B B B B B B"]
     ].map(row => row[0].split(" ").map(cell => {
         switch (cell) {
             case "N": return "norm";
             case "S": return "bas1";
-            case "B": return "bosp";
-            case "R": return "bas2";
+            case "B": return "bas2";
             default: throw new TypeError(cell + " is not a valid cell type!");
         }
     })),
-    "BOSS_SPAWN_TIMER": 0,
     "MAXBOSSES": 5,
-    "MINBOSSES": 1,
-    "MAX_BOSS_INCREMENT": 2,
+    "MINBOSSES": 2,
+    "MAX_BOSS_INCREMENT": 3,
     "MAX_BOSS_INCREMENT_INTERVAL": 5,
     "MIN_BOSS_INCREMENT": 2,
     "MIN_BOSS_INCREMENT_INTERVAL": 10,
+    "MAX_BOSS_CAP": 20,
+    "MIN_BOSS_CAP": 10,
     "CANNOT_SHOOT_IN_BASE": false
 },
     openFiveTDM = {
@@ -597,9 +617,9 @@ let ffa = (blackout = false) => {
         "HEIGHT": 10000,
         "X_GRID": 21,
         "Y_GRID": 21,
-        "MAX_FOOD": 869, // 331
-        "MAX_COMBINED_NEST_FOOD": 130, // 74
-        "MAX_CRASHERS": 185 // 74
+        "MAX_FOOD": 761, // 331
+        "MAX_COMBINED_NEST_FOOD": 85, // 74
+        "MAX_CRASHERS": 170 // 74
     };
 })(),
     twoTDM = (isHell = false, hasDominators = false) => {
@@ -694,7 +714,7 @@ let ffa = (blackout = false) => {
         "MAX_FOOD": (isHell) ? 0 : 631, // 361
         "MAX_COMBINED_NEST_FOOD": (isHell) ? 474 : 160, // 120
         "MAX_CRASHERS": (isHell) ? 474 : 200, // 120
-        "EVOLVE_HALT_CHANCE": (isHell) ? .8 : .4
+        "EVOLVE_HALT_CHANCE": (isHell) ? .6 : .2
     };
 };
 function select(mode, testing = false) {
@@ -702,7 +722,6 @@ function select(mode, testing = false) {
     mode.BOSS_SPAWN_TIMER ??= 240;
     mode.EVOLVE_TIME ??= 60000;
     mode.EVOLVE_TIME_RAN_ADDER ??= 120000;
-    mode.EVOLVE_HALT_CHANCE ??= .4;
     mode.MAX_SANCS ??= 2;
     mode.SHINY_CHANCE ??= 1/1000;
     
@@ -716,4 +735,4 @@ function select(mode, testing = false) {
     }
     return mode;
 };
-select(fourTDM);
+select(ffa());

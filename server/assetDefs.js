@@ -82,3 +82,8 @@ setAsset('fatStar', "M 171, 0 C 171, 25.414 114.544, 51.807 99.606, 72.368 84.66
 	path2d: true,
 	path2dDiv: 128
 });
+setAsset('wadafaColor', '#D0E3F2', { color: true });
+setAsset('halfCircle', "M 13.38, -127.3 A 128, 128 0 0 1 128, 0 128, 128 0 0 1 13.38, 127.3 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
