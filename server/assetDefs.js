@@ -87,3 +87,26 @@ setAsset('halfCircle', "M 13.38, -127.3 A 128, 128 0 0 1 128, 0 128, 128 0 0 1 1
 	path2d: true,
 	path2dDiv: 128
 });
+setAsset('umbraShape', "M -128.6, 73.100322 V -73.1 l -69.875, -157.4875 132.225, 81.1625 282.725, 91.375 v 116.1 l -282.725, 91.375 -132.225, 81.1625 z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('ccaRed', '#DD0024', { color: true });
+setAsset('ccaBlack', '#444444', { color: true });
+setAsset('spritementGreen', '#43FF3A', { color: true });
+setAsset('spritementBlue', '#0E38FC', { color: true });
+setAsset('spritementYellow', '#FFFE32', { color: true });
+setAsset('battleSpiderMandible', 'M 56, 0 A 56, 128 0 0 1 0, 128 56, 128 0 0 1 -56, 0 56, 128 0 0 1 0, -128 56,128 0 0 1 56, 0 Z', {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('battleSpiderBlack', '#2E2B2E', { color: true });
+setAsset('battleSpiderRed', '#F80014', { color: true });
+setAsset('battlezoidYellow', '#FAFE31', { color: true });
+setAsset('hnossGray', '#828293', { color: true });
+setAsset('hnossLightGreen', '#E9FFCE', { color: true });
+setAsset('hnossDarkGreen', '#8FB75C', { color: true });
+setAsset('6PointedStar', "m -1.2745055,-0.73559036 .8496635,-1.54e-5 L -5.9657109e-7,-1.4711814 .42484199,-0.73560576 1.2745055,-0.73559036 .84968469,-1.7597132e-6 1.2745055,0.73558804 .42484199,0.73560224 -5.9657109e-7,1.4711779 -0.424842,0.73559964 -1.2745055,0.73558804 -0.8496847,-1.7597132e-6 Z", {
+	path2d: true,
+	path2dDiv: 1
+});
