@@ -79,26 +79,22 @@ let developer = (options = {}) => {
     }
 },
     ffa = (options = {}) => {
-    let elimination = options.elimination ?? false,
-        blackout = options.blackout ?? false,
+    let blackout = options.blackout ?? false,
         randomColors = options.randomColors ?? false,
         lottery = options.lottery ?? false;
     return {
-        "ELIMINATION_MODE": elimination,
         "BLACKOUT": blackout,
         "RANDOM_COLORS": randomColors,
         "TANK_LOTTERY": lottery,
-        "displayName": (elimination) ? "Fuzzy's FFA Elimination" :
-                       (blackout) ? "Fuzzy's Blackout FFA" :
-                       (randomColors) ? "Fuzzy's Random Color FFA" :
-                       (lottery) ? "Fuzzy's Lottery FFA" :
+        "displayName": (blackout) ? "Fuzzy's Blackout FFA" :
+                       (randomColors) ? "Random Color FFA" :
+                       (lottery) ? "Lottery FFA" :
                        "Fuzzy's FFA",
-        "displayDesc": (elimination) ? "Everyone for themselves, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nCan you handle the challenge? Only one way to find out!" :
-                       (randomColors) ? "Everyone for themselves, now with unique colors for each player and bot! Die and respawn for your color to be refreshed." :
-                       (lottery) ? "FFA, but you start as a random tank and become another one whenever you respawn." :
+        "displayDesc": (randomColors) ? "Everyone for themselves, now with unique colors for each player and bot! Die and respawn for your color to be refreshed." :
+                       (lottery) ? "Everyone for themselves, but you start as a random tank and become another one whenever you respawn." :
                        "Self-explanatory.",
-        "WIDTH": elimination ? 5500 : 8500,
-        "HEIGHT": elimination ? 5500 : 8500,
+        "WIDTH": 8500,
+        "HEIGHT": 8500,
         "ROOM_SETUP": [
             ["R N N N G N N N R R N N N G N N N R"],
             ["N N N N N N N N N N N N N N N N N N"],
@@ -127,52 +123,67 @@ let developer = (options = {}) => {
                 default: throw new TypeError(cell + " is not a valid cell type!");
             }
         })),
-        "MAX_FOOD": elimination ? 375 : 504, // 288
-        "MAX_COMBINED_NEST_FOOD": elimination ? 49 : 63, // 36
-        "MAX_CRASHERS": elimination ? 54 : 72, // 36
-        "tabLimit": elimination ? 1 : 2
+        "MAX_FOOD": 504, // 288
+        "MAX_COMBINED_NEST_FOOD": 63, // 36
+        "MAX_CRASHERS": 72 // 36
     }
 },
-    ffaDomination = {
-    "SPAWN_DOMINATORS": true,
-    "DOMINATOR_SHUFFLE_TIMER": 600,
-    "displayName": "Fuzzy's FFA Domination",
-    "displayDesc": "FFA, but there are two dominators on the arena for players to capture; doing so will put the dominator on their team.\n\nThe game does not end even if both dominators are captured by the same player.",
-    "ROOM_SETUP": [       /*C*/
-        ["R r N N N N N N N N N N N N N N N r R"],
-        ["r r N N N N N N N N N N N N N N N r r"],
-        ["N N N N N N N N N R N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N N"],
-        ["N N N N R N N N N N N N N N R N N N N"],
-        ["N N N N N N N r P P P r N N N N N N N"],
-        ["N N N N N N r P P P P P r N N N N N N"],
-        ["N N N N N r P P P P P P P r N N N N N"],
-        ["N r N r N P P P P P P P P P N r N r N"],
-        ["N N D N N P P P P R P P P P N N D N N"], // C
-        ["N r N r N P P P P P P P P P N r N r N"],
-        ["N N N N N r P P P P P P P r N N N N N"],
-        ["N N N N N N r P P P P P r N N N N N N"],
-        ["N N N N N N N r P P P r N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N N"],
-        ["N N N N R N N N N N N N N N R N N N N"],
-        ["N N N N N N N N N R N N N N N N N N N"],
-        ["r r N N N N N N N N N N N N N N N r r"],
-        ["R r N N N N N N N N N N N N N N N r R"]
-    ].map(row => row[0].split(" ").map(cell => {
-        switch (cell) {
-            case "N": return "norm";
-            case "P": return "nest";
-            case "R": return "roid";
-            case "r": return "rock";
-            case "D": return "domi";
-            default: throw new TypeError(cell + " is not a valid cell type!");
-        }
-    })),
-    "X_GRID": 19,
-    "Y_GRID": 19,
-    "MAX_FOOD": 909,
-    "MAX_COMBINED_NEST_FOOD": 168,
-    "MAX_CRASHERS": 224
+    ffaElimination = (options = {}) => {
+    let blackout = options.blackout ?? false,
+        randomColors = options.randomColors ?? false,
+        lottery = options.lottery ?? false;
+    return {
+        "ELIMINATION_MODE": true,
+        "BLACKOUT": blackout,
+        "RANDOM_COLORS": randomColors,
+        "TANK_LOTTERY": lottery,
+        "displayName": (blackout) ? "Blackout FFA Elimination" :
+                       (randomColors) ? "Random Color Elimination" :
+                       (lottery) ? "Lottery FFA Elimination" :
+                       "FFA Elimination",
+        "displayDesc": (blackout) ? "Everyone for themselves in the darkness, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
+                       (randomColors) ? "Everyone for themselves with unique colors, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
+                       (lottery) ? "Everyone for themselves with randomized tanks, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
+                       "Everyone for themselves, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room.",
+        "WIDTH": 5500,
+        "HEIGHT": 5500,
+        "ROOM_SETUP": [
+            ["R N N N G N N N R R N N N G N N N R"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N G N N N N N N N N N N G N N N"],
+            ["G N N N N N N N N N N N N N N N N G"],
+            ["N N N N N N N N P P N N N N N N N N"],
+            ["N N N N N N R P P P P R N N N N N N"],
+            ["N N N N N N P P P P P P N N N N N N"],
+            ["R N N N N P P P R R P P P N N N N R"],
+            ["R N N N N P P P R R P P P N N N N R"],
+            ["N N N N N N P P P P P P N N N N N N"],
+            ["N N N N N N R P P P P R N N N N N N"],
+            ["N N N N N N N N P P N N N N N N N N"],
+            ["G N N N N N N N N N N N N N N N N G"],
+            ["N N N G N N N N N N N N N N G N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["N N N N N N N N N N N N N N N N N N"],
+            ["R N N N G N N N R R N N N G N N N R"]
+        ].map(row => row[0].split(" ").map(cell => {
+            switch (cell) {
+                case "N": return "norm";
+                case "P": return "nest";
+                case "R": return "roid";
+                case "G": return "rock";
+                default: throw new TypeError(cell + " is not a valid cell type!");
+            }
+        })),
+        "MAX_FOOD": 389, // 288
+        "MAX_COMBINED_NEST_FOOD": 63, // 36
+        "MAX_CRASHERS": 72, // 36
+        "BOSS_SPAWN_TIMER": 0,
+        "EVOLVE_TIME": 60_000,
+        "EVOLVE_TIME_RAN_ADDER": 120_000,
+        "EVOLVE_HALT_CHANCE": .3,
+        "tabLimit": 1
+    }
 },
     ffaWorld = (() => {
     let shuffledNests = ['#E7896D', '#EFC74B', 'nest', '#7ADBBC', '#FDA54D', '#A177FC', '#65F0EC', '#E8EBF7'].sort(function() {
@@ -458,8 +469,8 @@ let developer = (options = {}) => {
         "TEAM_AMOUNT": teamAmount,
         "displayName": `Fuzzy's Open ${teamAmount}TDM`,
         "displayDesc": "Self-explanatory.",
-        "WIDTH": 10000,
-        "HEIGHT": 10000,
+        "WIDTH": 9000,
+        "HEIGHT": 9000,
         "ROOM_SETUP": [
             ["R N N N r N N N r r N N N r N N N R"],
             ["N N N N N N N N N N N N N N N N N N"],
@@ -1052,4 +1063,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(maze({ elimination: true }));
+select(ffa({ randomColors: true }), { lifespan: 3600 });
