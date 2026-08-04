@@ -175,13 +175,13 @@ let developer = (options = {}) => {
                 default: throw new TypeError(cell + " is not a valid cell type!");
             }
         })),
-        "MAX_FOOD": 389, // 288
-        "MAX_COMBINED_NEST_FOOD": 63, // 36
-        "MAX_CRASHERS": 72, // 36
+        "MAX_FOOD": 350, // 288
+        "MAX_COMBINED_NEST_FOOD": 57, // 36
+        "MAX_CRASHERS": 65, // 36
         "BOSS_SPAWN_TIMER": 0,
         "EVOLVE_TIME": 60_000,
         "EVOLVE_TIME_RAN_ADDER": 120_000,
-        "EVOLVE_HALT_CHANCE": .3,
+        "EVOLVE_HALT_CHANCE": .4,
         "tabLimit": 1
     }
 },
@@ -1063,4 +1063,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(ffa({ randomColors: true }), { lifespan: 3600 });
+select(minibossRush);

@@ -135,8 +135,8 @@ const g = {
     "spread_main": [.75, .25, .5, 1, .63, 1, .9, 1.92, 1.154, 1, 1, 1, 1],
     "spread": [1.5, 1, .25, 1, 1.1, 1.16, 1, .7, .7, 1, 1, .25, 1],
     "spread1": [1.75, .45, .125, 1.1, .85, 1.6, 1.15, 1.05, .75, 1, 1.5, .25, 1.15],
-    "spread2": [1, .1, .345, 1.1, .9, .6, 1.25, .825, .775, 1, .9, .5, .85],
-    "skim": [1.25, .8, .8, .9, 1.6, 1.2, 2.5, .45, .45, 1.325, 1, 1, 1.25],
+    "spread2": [1, .1, .345, 1.1, .9, .7, 1.25, .825, .775, 1, .9, .5, 1],
+    "skim": [1.25, .8, .8, .9, 1.75, 1.35, 2.75, .45, .45, 1.325, 1, 1, 1.35],
     "dustbowlDust": [0.95, 1, 1, 1, 1.1, 0.95, 1.5, 1, 1, 1, 1, 1, 2],
     "bent": [1, 1, .8, 1, .9, 1, .95, 1, 1, 1, .8, .5, 1],
     "triplet": [1.125, 2/3, .9, 1, .925, 1, 1, 1.1, 1.1, 1, 1.1, .9, .95],
@@ -296,7 +296,7 @@ const g = {
     "mothership": [1.25, 1, 1, 1, 1, 1, 1.1, .775, .8, 15, 1, 1, 1.15],
     "skimboss": [1, .5, 1, .9, 1.2, 1.2, 1.2, 1.1, 1, .7, 1, 1, 1],
     "quadtrap": [1.15, 1, 1, 1, .75, .8, .8, 1.4, .9, .75, .9, 1, .9],
-    "laser": [.355, 1, 0, 1, .65, .6, .65, 1.3875, 1, 1.15, .3, 0, 1.75],
+    "laser": [.355, .5, 0, 1, .65, .6, .65, 1.3875, 1, 1.15, .3, 0, 1.75],
     "basemaker": [2.5, 1.4, .1, 1, 1, .5, 1, .5, 1, 1, 1, 15, 1],
     "stronger": [1, 1, 1, 1, 1.05, 1.05, 1, 1.1, 1, 1, 1, 1, 1],
     "bit_less_knock": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, .95, 1, .95],
@@ -312,7 +312,7 @@ const g = {
     "more_spread": [1, 1, 1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 1],
     "gatekeeper": [.875, 1, 1, 1.25, 1.1, 1.1, 1.05, 2, 3, .8, .1, 1, 1],
     "contagi": [1, .5, 1.5, 1, 1.23, .8, 2.5, 1.05, 1, 1, .9, .75, .7],
-    "shellExplode": [1, 0, 0, 1, 3, .25, 4, 0, 0, .1, 2, 0, 1],
+    "shellExplode": [1, 0, 0, 1, 3, .3, 5, 0, 0, .1, 3, 0, 3],
     "c4": [1000, 0, 0, 1, 3, 6, 3, 0, 0, .1, 2, 0, 1],
     "detSwarm": [1, 0, 0, .5, 3, .2, 2, 0, 0, .1, 2, 0, 1],
     "trap_fragment": [1000, 0, .75, .7, 2, 1.45, 1.3, 1.15, 1, .4, 1.5, .5, 1.1],
@@ -3699,6 +3699,7 @@ function makeBossAI(type, options = {}) {
     output.SKILL = options.skill ?? setSkill(0, 6, 6, 7, 7, 7, 7, 5, 0, 0);
     output.SKILL_CAP = options.skillCap ?? setSkill(9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
     output.BROADCAST_MESSAGE = options.broadcastMessage ?? `${util.addArticle((output.LABEL || output.PARENT[0].LABEL || 'Unnamed Boss'), true)} has been defeated!`;
+    output.EVOLUTIONS = options.evolutions ?? [];
     if (options.onDefined != null) output.ON_DEFINED = options.onDefined;
     if (options.onTick != null) output.ON_TICK = options.onTick;
     if (options.onAlt != null) output.ON_ALT = options.onAlt;
@@ -3709,7 +3710,6 @@ function makeBossAI(type, options = {}) {
 function makeSentryAI(type, options = {}) {
     let output = deepCopy(type);
 
-    if (options.reset != null) output.PARENT.unshift(defExports.genericEntity); 
     output.TYPE = 'crasher';
     output.VARIES_IN_SIZE = options.variesInSize ?? true;
     output.VALUE = options.value ?? 5000;
@@ -3738,33 +3738,6 @@ function makeDominatorAI(type, options = {}) {
 
     return output;
 };
-function simpleMakeRogues(defExport, type) {
-    defExports[defExport] = deepCopy(type);
-    defExports[defExport].PARENT = defExports[defExport].PARENT || [],
-        defExports[defExport].PARENT.unshift(defExports.genericEntity);
-    defExports[defExport].LABEL = `Rogue ${type.LABEL ?? type.PARENT[0].LABEL}`;
-    defExports[defExport].TEAM = -20;
-    defExports[defExport].COLOR = 17;
-    defExports[defExport].HITS_OWN_TYPE = 'pushOnlyTeam';
-    defExports[defExport].AI = defExports[defExport].AI || defExports[defExport].PARENT[0].AI || {},
-        defExports[defExport].AI.IGNORE_SHAPES = true;
-    defExports[defExport].BROADCAST_MESSAGE = `A ${defExports[defExport].LABEL} has been defeated!`;
-
-    for (let i = 1; i < 9; i++) {
-        defExports[`${defExport}Team${i}`] = deepCopy(defExports[defExport]);
-        defExports[`${defExport}Team${i}`].TEAM = -i;
-        defExports[`${defExport}Team${i}`].COLOR = [10, 12, 11, 15, 3, 35, 36, 0][i - 1];
-        //defExports[`${defExport}Team${i}`].CONTROLLERS.push('hangOutNearMaster');
-        defExports[`${defExport}Team${i}`].INDEPENDENT = true;
-    }
-
-    defExports[`${defExport}FFA`] = deepCopy(defExports[defExport]);
-    defExports[`${defExport}FFA`].TEAM = null;
-    defExports[`${defExport}FFA`].COLOR = 'FFA_RED';
-    defExports[`${defExport}FFA`].CONTROLLERS.push('hangOutNearMaster');
-    defExports[`${defExport}FFA`].AI.SKYNET = true;
-    defExports[`${defExport}FFA`].INDEPENDENT = true;
-};
 function createRogue(type, aiOptions = {}) {
     aiOptions.ai ??= { NO_LEAD: true, IGNORE_SHAPES: true };
     aiOptions.hitsOwnType = 'pushOnlyTeam';
@@ -3776,35 +3749,33 @@ function createRogue(type, aiOptions = {}) {
     output = makeBossAI(output, aiOptions);
     return output;
 };
-function setGreaterEvolution(me, sockets, room, evolution, options = {}) {
-    let preTimeout = options.preTimeout ?? 300000,
-    postTimeout = options.postTimeout ?? 3000,
-    broadcastType = options.broadcastType ?? 1,
-    namePool = options.namePool ?? '',
-    hasAnimation = options.animation || null,
-    animFrameDef = hasAnimation?.frameDef ?? '',
-        animFrameAmount = hasAnimation?.frameCount ?? 30,
-        animDuration = hasAnimation?.duration ?? 1000;
-    
-    if (me.greaterEvolutionTimeout) clearTimeout(me.greaterEvolutionTimeout);
-    //if (me.type === 'crasher' && c.IS_HELL) return;
-    me.greaterEvolutionTimeout = setTimeout(() => {
+function makeEvolution(evolution, options = {}) {
+    let output = {},
+        identifier = options.identifier ?? false;
+
+    output.IS_EVOLUTION = true;
+    output.ON_DEFINED = function(me, entities, sockets) {
+        let timeout = options.postTimeout ?? 3000,
+        broadcastType = options.broadcastType ?? 1,
+        namePool = options.namePool ?? '',
+        hasAnimation = options.animation || null,
+        animFrameDef = hasAnimation?.frameDef ?? '',
+            animFrameAmount = hasAnimation?.frameCount ?? 30,
+            animDuration = hasAnimation?.duration ?? 1000;
+        
         if (!me.isAlive()) return;
-        if (me.type === 'crasher' && room.census.evolutionMiniboss >= c.MAX_EVO_BOSSES) {
-            setGreaterEvolution(me, sockets, room, evolution, options);
-            return;
-        }
         switch (broadcastType) {
             case 0:
                 break;
             case 1:
-                sockets.broadcast(`The ${util.addBelonging(me.label)} wrath has remained unhindered for too long; it appears to be evolving…`);
+                sockets.broadcast(`The ${util.addBelonging(me.label)} wrath has remained unhindered for too long; it appears to be evolving…`, '#FFE46B');
                 break;
             case 2:
-                sockets.broadcast(`${util.addArticle(me.label, true)} has remained alive for long enough; it appears to be evolving…`);
+                sockets.broadcast(`${util.addArticle(me.label, true)} has remained alive for long enough; it appears to be evolving…`, '#FFE46B');
                 break;
         };
-        const oldLabel = me.label;
+        const oldLabel = me.label,
+              oldIdentifier = me.miscIdentifier;
         setTimeout(() => {
             me.controllers = [];
             me.variables.emp = true;
@@ -3816,28 +3787,31 @@ function setGreaterEvolution(me, sockets, room, evolution, options = {}) {
                     for (let i = 1; i < animFrameAmount + 2; i++) setTimeout(() => {
                         if (i === animFrameAmount + 1) {
                             if (me.isDead()) return sockets.broadcast('The ' + me.label + ' was consoled just in time.');
-                            if (namePool) me.name = rnd.chooseBossName(namePool, 1)[0];
                             me.define(Class[evolution]);
                             me.variables.emp = false;
                             me.refreshBodyAttributes();
-                            sockets.broadcast(`The ${oldLabel} has evolved into ${util.addArticle(me.label)}!`);
-                            me.miscIdentifier = "Evolution Miniboss";
+                            if (namePool) me.name = util.handleSpecialName(rnd.chooseBossName(namePool, 1)[0], me.label);
+                            sockets.broadcast(`The ${oldLabel} has evolved into ${util.addArticle(me.label)}!`, '#E03E41');
+                            me.miscIdentifier = oldIdentifier;
                         } else if (me.isAlive()) {
                             me.define(Class[animFrameDef + i]);
                             me.refreshBodyAttributes();
+                            me.miscIdentifier = oldIdentifier;
                         }
                     }, animDuration/(animFrameAmount + 1) * i);
                 } else {
-                    if (namePool) me.name = rnd.chooseBossName(namePool, 1)[0];
                     me.define(Class[evolution]);
                     me.variables.emp = false;
                     me.refreshBodyAttributes();
-                    sockets.broadcast(`The ${oldLabel} has evolved into ${util.addArticle(me.label)}!`);
-                    me.miscIdentifier = "Evolution Miniboss";
+                    if (namePool) me.name = util.handleSpecialName(rnd.chooseBossName(namePool, 1)[0], me.label);
+                    sockets.broadcast(`The ${oldLabel} has evolved into ${util.addArticle(me.label)}!`, '#E03E41');
+                    me.miscIdentifier = oldIdentifier;
                 }
             } else sockets.broadcast('The ' + me.label + ' was consoled just in time.');
-        }, postTimeout)
-    }, preTimeout)
+        }, timeout)
+    }
+
+    return output;
 };
 function makeSurf(type, options = {}) {
     let output = deepCopy(type);
@@ -4013,9 +3987,9 @@ defExports.egg = {
         ["square", 73],
         ["eggCrasher", 25],
         ["friedEgg", .9],
-        ["hardshellegg", .6],
+        ["hardshellegg", .7],
         ["gem", .25],
-        ["rogueEgg", .2],
+        ["rogueEgg", .1],
         ["obsidianEgg", .04],
         ["eggColony", .006],
         ["fakeegg", .004]
@@ -14134,7 +14108,7 @@ defExports.eliteSprayerAI = makeBossAI(defExports.eliteSprayer, {
     value: 15e4,
     skill: setSkill(0, 9, 6, 8, 8, 8, 6, 0, 0, 0),
     controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'ultimateSprayAI')
+    evolutions: [['eliteToUltimateSprayer', 100]]
 });
 defExports.eliteDestroyer = {
     PARENT: [defExports.elite],
@@ -14177,7 +14151,7 @@ defExports.eliteDestroyerAI = makeBossAI(defExports.eliteDestroyer, {
     value: 15e4,
     skill: setSkill(0, 9, 6, 8, 8, 8, 6, 0, 0, 0),
     controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'ultimateDestroyerAI')
+    evolutions: [['eliteToUltimateDestroyer', 100]]
 });
 defExports.eliteGunner = {
     PARENT: [defExports.elite],
@@ -16027,40 +16001,34 @@ defExports.sentrySwarmAI = makeSentryAI(defExports.sentrySwarm, {
         ["squareSwarmerAI", 52],
         [["greenSentrySwarmAI", "tealSentrySwarmAI", "lavenderSentrySwarmAI", "cranberrySentrySwarmAI", "blackSentrySwarmAI", "crimsonSentrySwarmAI"], 18.4],
         ["varpAI", 14.5],
-        ["crusaderCrashAI", 12],
-        ['alphaSentryAI', 3],
+        ["crusaderCrashAI", 10],
+        [['sentryToIndustry', 'liteToBaseGuardian'], 5, true],
         ["armySentrySwarmAI", .1]
-    ],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'guardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseGuardian' }
-    })
+    ]
 });
 defExports.scorcherSentryAI = makeSentryAI(defExports.scorcherSentry);
 defExports.sentryGunAI = makeSentryAI(defExports.sentryGun, {
     evolutions: [
-        ["semiCrushSentryAI", 38.9],
-        ["bladeSentryAI", 30],
-        ["squareGunSentryAI", 30],
-        ['alphaSentryAI', 1],
-        ["armySentryGunAI", .1]
+        ["semiCrushSentryAI", 38.5],
+        ["bladeSentryAI", 28],
+        ["squareGunSentryAI", 28],
+        ['sentryToIndustry', 5, true],
+        ["armySentryGunAI", .5]
     ]
 });
 defExports.sentryTrapAI = makeSentryAI(defExports.sentryTrap, {
     evolutions: [
-        ["palisadeLiteAI", 98.9],
-        ['alphaSentryAI', 1],
-        ["armySentryTrapAI", .1]
+        ["palisadeLiteAI", 94.5],
+        ['sentryToIndustry', 5, true],
+        ["armySentryTrapAI", .5]
     ]
 });
 defExports.sentryRangerAI = makeSentryAI(defExports.sentryRanger, {
     evolutions: [
-        ["", 98.8],
-        ['alphaSentryAI', 1],
-        ["armySentryRangerAI", .1],
-        ["awp39SentryAI", .1],
+        ["", 84.5],
+        ["awp39SentryAI", 10],
+        ['sentryToIndustry', 5, true],
+        ["armySentryRangerAI", .5]
     ]
 });
 defExports.miniboss = {
@@ -16128,7 +16096,7 @@ defExports.fallenBoosterAI = makeBossAI(defExports.fallenBooster, {
     level: 75,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'fallenDrifterAI')
+    evolutions: [['fallenDrifterEvolution', 100]]
 });
 defExports.sent = makeHybrid(defExports.assassin, {
     type: 'under',
@@ -34272,33 +34240,19 @@ defExports.palisadeAI = makeBossAI(defExports.palisade, {
     value: 3e5,
     controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth'],
     skill: setSkill(0, 9, 0, 9, 9, 9, 9, 0, 0, 0),
-    onDefined: function(me, entities, sockets, Entity, ran, room) {
-        switch (Math.floor(Math.random() * 2) + 1) {
-            case 1:
-                setGreaterEvolution(me, sockets, room, 'confidentialAI');
-                break;
-            case 2:
-                setGreaterEvolution(me, sockets, room, 'icePalisadeAI');
-                break;
-        }
-    }
+    evolutions: [
+        ['palisadeToConfidential', 65],
+        ['baseToPolarPalisade', 35]
+    ]
 });
 defExports.defenderAI = makeBossAI(defExports.defender1, {
     value: 15e4,
     skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    onDefined: function(me, entities, sockets, Entity, ran, room) {
-        switch (Math.floor(Math.random() * 3) + 1) {
-            case 1:
-                setGreaterEvolution(me, sockets, room, 'custodianAI', { animation: { frameDef: 'defenderToCustodian' } });
-                break;
-            case 2:
-                setGreaterEvolution(me, sockets, room, 'anniversaryDefenderAI', { animation: { frameDef: 'baseToAnniversaryDefender' } });
-                break;
-            case 3:
-                setGreaterEvolution(me, sockets, room, 'eliteDefenderAIWeak');
-                break;
-        }
-    }
+    evolutions: [
+        ['baseToAnniversaryDefender', 50],
+        ['defenderToCustodian', 35],
+        ['baseToEliteDefender', 15]
+    ]
 });
 defExports.ultraPuntAutoGun1 = {
     LABEL: '',
@@ -40090,16 +40044,10 @@ defExports.splitSummonerCoreAI = makeSentryAI(defExports.splitSummonerCore, { va
 defExports.summonerAI = makeBossAI(defExports.summoner, {
 	value: 2e5,
     skill: setSkill(2, 9, 3, 6, 6, 5, 9, 1, 2, 2),
-    onDefined: function(me, entities, sockets, Entity, ran, room) {
-        switch (Math.floor(Math.random() * 2) + 1) {
-            case 1:
-                setGreaterEvolution(me, sockets, room, 'turretAssistedSummonerAI');
-                break;
-            case 2:
-                setGreaterEvolution(me, sockets, room, 'anniversarySummonerAI');
-                break;
-        }
-    }
+    evolutions: [
+        ['summonerToTAS', 65],
+        ['baseToAnniversarySummoner', 35]
+    ]
 });
 defExports.splitterSummoner = {
     PARENT: [defExports.genericTank],
@@ -45550,43 +45498,18 @@ defExports.guardianAI = makeBossAI(defExports.guardian, {
     value: 6e4,
 	controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     skill: setSkill(4, 4, 9, 6, 6, 6, 9, 1, 1, 1),
+    evolutions: [
+        [['pinkToGreenGuardian', 'pinkToTealGuardian', 'pinkToLavenderGuardian', 'pinkToCranberryGuardian', 'pinkToBlackGuardian', 'pinkToCrimsonGuardian'], 36],
+        ['baseToAnniversaryGuardian', 25],
+        ['baseToTriguardian', 18],
+        ['guardianToBattleCarrier', 12],
+        ['baseToScramjetGuardian', 9],
+    ],
     onDefined: function(me, entities, sockets, Entity, ran, room) {
         if (ran.chance(1/100)) {
             me.name = "Tephania";
             me.nameColor = mixColors('#E8EBF7', '#EF99C3', .5);
             me.isTephania = true;
-        }
-        switch (ran.irandomRange(1, 10)) {
-            case 1:
-                setGreaterEvolution(me, sockets, room, 'greenGuardianAI', { animation: { frameDef: 'pinkToGreenGuardian' } });
-                break;
-            case 2:
-                setGreaterEvolution(me, sockets, room, 'tealGuardianAI', { animation: { frameDef: 'pinkToTealGuardian' } });
-                break;
-            case 3:
-                setGreaterEvolution(me, sockets, room, 'lavenderGuardianAI', { animation: { frameDef: 'pinkToLavenderGuardian' } });
-                break;
-            case 4:
-                setGreaterEvolution(me, sockets, room, 'cranberryGuardianAI', { animation: { frameDef: 'pinkToCranberryGuardian' } });
-                break;
-            case 5:
-                setGreaterEvolution(me, sockets, room, 'blackGuardian', { animation: { frameDef: 'pinkToBlackGuardian' } });
-                break;
-            case 6:
-                setGreaterEvolution(me, sockets, room, 'crimsonGuardianAI', { animation: { frameDef: 'pinkToCrimsonGuardian' } });
-                break;
-            case 7:
-                setGreaterEvolution(me, sockets, room, 'anniversaryGuardianAI', { animation: { frameDef: 'baseToAnniversaryGuardian' } });
-                break;
-            case 8:
-                setGreaterEvolution(me, sockets, room, 'triguardianAI', { animation: { frameDef: 'baseToTriguardian' } });
-                break;
-            case 9:
-                setGreaterEvolution(me, sockets, room, 'guardianJetAI');
-                break;
-            case 10:
-                setGreaterEvolution(me, sockets, room, 'battleCarrierAI');
-                break;
         }
     },
     onDead: function({ sockets, ran, Entity }) {
@@ -63903,19 +63826,12 @@ defExports.pulsar = {
         }
     }]
 };
-defExports.pulsarAI = {
-    PARENT: [defExports.pulsar],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { NO_LEAD: true },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Pulsar has been defeated!',
-    ON_DEFINED: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'chk1AI')
-};
+defExports.pulsarAI = makeBossAI(defExports.pulsar, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
+    evolutions: [['pulsarToCHK', 100]]
+});
 defExports.aquaDrone = {
     PARENT: [defExports.drone],
     LABEL: 'Twitcher',
@@ -65124,26 +65040,19 @@ defExports.flashSentryAI = makeSentryAI(defExports.flashSentry, {
         ["flashGunnerSentryAI", 1]
     ]
 });
-defExports.flashGunnerSentryAI = makeSentryAI(defExports.flashGunnerSentry, { value: 40000 });
+defExports.flashGunnerSentryAI = makeSentryAI(defExports.flashGunnerSentry, { value: 100000 });
 defExports.semiCrushSentryAI = makeSentryAI(defExports.semiCrushSentry, {
     evolutions: [
-        ["crushSentryAI", 60],
-        ["skimSentryAI", 40]
-    ],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'pulsarAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBasePulsar' }
-    })
+        ["crushSentryAI", 54],
+        ["skimSentryAI", 38],
+        ["liteToBasePulsar", 8, true]
+    ]
 });
 defExports.crushSentryAI = makeSentryAI(defExports.crushSentry, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'colliderAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'crushSentryAnim' }
-    }),
+    evolutions: [
+        ['', 90],
+        ['liteToBaseCollider', 10, true]
+    ],
     onDead: function({ sockets, ran, Entity }) {
 		for (let i = 0; i < 3; i++) {
 			let sentry = new Entity({
@@ -65156,12 +65065,10 @@ defExports.crushSentryAI = makeSentryAI(defExports.crushSentry, {
 	}
 });
 defExports.bladeSentryAI = makeSentryAI(defExports.bladeSentry, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'deltrabladeAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'bladeSentryAnim' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseDeltrablade', 10, true]
+    ]
 });
 defExports.colliderMachTurret = {
     BODY: { FOV: 2 },
@@ -65403,18 +65310,12 @@ defExports.icecollider = {
     }],
     PROPS: [makeAura(217)]
 };
-defExports.colliderAI = {
-    PARENT: [defExports.collider],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { NO_LEAD: true },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Collider has been defeated!',
-	ON_DEAD: function({ sockets, ran, Entity }) {
+defExports.colliderAI = makeBossAI(defExports.collider, {
+    value: 4e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
+    evolutions: [['baseToIceCollider', 100]],
+    onDead: function({ sockets, ran, Entity }) {
 		let names = ran.chooseBossName("c", 3);
 		for (let i = 0; i < 3; i++) {
 			let boss = new Entity({
@@ -65425,21 +65326,13 @@ defExports.colliderAI = {
 			boss.define(Class.messengerAI);
             boss.name = names[i];
 		}
-	},
-    ON_DEFINED: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'icecolliderAI', { animation: { frameDef: 'baseToIceCollider' }})
-};
-defExports.icecolliderAI = {
-    PARENT: [defExports.icecollider],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 6e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { NO_LEAD: true },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'An Ice Collider has been defeated!',
-	ON_DEAD: function ({ sockets, ran, Entity }) {
+	}
+})
+defExports.icecolliderAI = makeBossAI(defExports.icecollider, {
+    value: 6e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
+    onDead: function({ sockets, ran, Entity }) {
 		let names = ran.chooseBossName("c", 3);
 		for (let i = 0; i < 3; i++) {
 			let boss = new Entity({
@@ -65451,7 +65344,7 @@ defExports.icecolliderAI = {
             boss.name = names[i];
 		}
 	}
-};
+})
 defExports.bentMachine = {
     PARENT: [defExports.genericTank],
     LABEL: 'Bent Machine',
@@ -65710,18 +65603,11 @@ defExports.greendeltrablade = {
     }],
     PROPS: [makeAura(31)]
 };
-defExports.deltrabladeAI = {
-    PARENT: [defExports.deltrablade],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { NO_LEAD: true },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Deltrablade has been defeated!',
-	ON_DEAD: function ({ sockets, ran, Entity }) {
+defExports.deltrabladeAI = makeBossAI(defExports.deltrablade, {
+    value: 4e5,
+    skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
+    evolutions: [['orangeToGreenDeltrablade', 100]],
+    onDead: function ({ sockets, ran, Entity }) {
 		let rand = Math.floor(Math.random() * 6 + 1) + 2;
 		for (let i = 0; i < rand; i++) {
 			let crash = new Entity({
@@ -65731,32 +65617,24 @@ defExports.deltrabladeAI = {
 			crash.team = -100;
 			crash.define(Class.bladeCrasher);
 		}
-	},
-    ON_DEFINED: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'greendeltrabladeAI', { animation: { frameDef: 'orangeToGreenDeltrablade' } })
-};
-defExports.greendeltrabladeAI = {
-    PARENT: [defExports.greendeltrablade],
-    TYPE: 'miniboss',
-    VARIES_IN_SIZE: true,
-    LEVEL: 60,
-    VALUE: 4e5,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { NO_LEAD: true },
-    HITS_OWN_TYPE: 'hard',
-    SKILL: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    BROADCAST_MESSAGE: 'A Green Deltrablade has been defeated!',
-	ON_DEAD: function ({ sockets, ran, Entity }) {
+	}
+});
+defExports.greendeltrabladeAI = makeBossAI(defExports.greendeltrablade, {
+    value: 6e5,
+    skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
+    broadcastMessage: 'A Green Deltrablade has been defeated!',
+    onDead: function ({ sockets, ran, Entity }) {
 		let rand = Math.floor(Math.random() * 6 + 1) + 2;
 		for (let i = 0; i < rand; i++) {
 			let crash = new Entity({
 				x: this.x,
 				y: this.y
 			})
-			crash.team = this.team;
+			crash.team = -100;
 			crash.define(Class.poisonBlades);
 		}
 	}
-};
+});
 defExports.messengerStreamTurret = {
     LABEL: 'Streamliner',
     BODY: {
@@ -93130,7 +93008,7 @@ defExports.ultMultitool = {
 };
 defExports.ultMultitoolAI = makeBossAI(defExports.ultMultitool, {
     value: 4e5,
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'ultSwissToolsetAI')
+    evolutions: [['ultimateMultitoolToSwissToolset', 100]]
 });
 defExports.machMegaArsenal = {
     PARENT: [defExports.genericTank],
@@ -109155,13 +109033,7 @@ defExports.arenaCPredatorMachine = makeAuto(makeAutoN(defExports.xPredator, 3), 
 defExports.eggBossTier1AI = makeBossAI(defExports.eggBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'eggBossTier2AI', {
-        animation: {
-            frameDef: 'ekAnim',
-            frameCount: 20,
-            animDuration: 500
-        }
-    })
+    evolutions: [['eggBossTier1To2', 100]]
 });
 defExports.eggBossTier2AI = makeBossAI(defExports.eggBossTier2, {
     value: 6e5,
@@ -109182,7 +109054,7 @@ defExports.eggBossTier5AI = makeBossAI(defExports.eggBossTier5, {
 defExports.eggQueenTier1AI = makeBossAI(defExports.eggQueenTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'eggQueenTier2AI')
+    evolutions: [['eggQueenTier1To2', 100]]
 });
 defExports.eggQueenTier2AI = makeBossAI(defExports.eggQueenTier2, {
     value: 6e5,
@@ -115615,17 +115487,12 @@ defExports.trapperCloserAI = {
         }
     }]
 };
-defExports.cometAI = {
-    PARENT: [defExports.comet],
-    TYPE: 'miniboss',
-    LEVEL: 60,
-    VALUE: 5e4,
-    CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal'],
-    AI: { SKYNET: true },
-    BROADCAST_MESSAGE: 'A Comet has been defeated!',
-    SKILL: setSkill(2, 2, 5, 3, 2, 3, 9, 9, 0, 0),
-    ON_DEFINED: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'meteorKingTier1AI')
-};
+defExports.cometAI = makeBossAI(defExports.comet, {
+    value: 3e5,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
+    skill: setSkill(2, 2, 5, 3, 2, 3, 9, 9, 0, 0),
+    evolutions: [['cometToMTK', 100]]
+})
 defExports.cometbetterAI = {
     PARENT: [defExports.cometbetter],
     TYPE: 'miniboss',
@@ -134153,20 +134020,16 @@ defExports.traprangFactory = {
     }]
 };
 defExports.skimSentryAI = makeSentryAI(defExports.skimSentry, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'skimBossAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseSkimboss' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseSkimboss', 10, true]
+    ]
 });
 defExports.greenSentrySwarmAI = makeSentryAI(defExports.greenSentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'greenGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBasePS3_33' }
-    })
+    evolutions: [
+        ['', 90]
+        ['liteToBasePS3_33', 10, true]
+    ]
 });
 defExports.ac3 = makeAutoN(defExports.arenaCloser, 3, 'AC-3');
 defExports.dropshipTrapGun = {
@@ -136805,12 +136668,10 @@ defExports.summonerLite = {
 };
 defExports.squareSwarmerAI = makeSentryAI(defExports.squareSwarmer);
 defExports.summonerLiteAI = makeSentryAI(defExports.summonerLite, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'summonerAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'a-z',
-        animation: { frameDef: 'summonerLiteAnim' }
-    })
+    evolutions: [
+        ['', 90]
+        ['liteToBaseSummoner', 10, true]
+    ]
 });
 defExports.swarmDropship = {
     PARENT: [defExports.genericTank],
@@ -180094,7 +179955,7 @@ defExports.leshyAIred = {
 defExports.triangleBossTier1AI = makeBossAI(defExports.triangleBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'triangleBossTier2AI')
+    evolutions: [['triangleBossTier1To2', 100]]
 });
 defExports.triangleBossTier2AI = makeBossAI(defExports.triangleBossTier2, {
     value: 6e5,
@@ -180115,7 +179976,7 @@ defExports.triangleBossTier5AI = makeBossAI(defExports.triangleBossTier5, {
 defExports.squareBossTier1AI = makeBossAI(defExports.squareBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'minion', 'fleeAtLowHealth', 'canRepel'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'squareBossTier2AI')
+    evolutions: [['squareBossTier1To2', 100]]
 });
 defExports.squareBossTier2AI = makeBossAI(defExports.squareBossTier2, {
     value: 6e5,
@@ -180136,13 +179997,13 @@ defExports.squareBossTier5AI = makeBossAI(defExports.squareBossTier5, {
 defExports.eggSpiritTier1AI = makeBossAI(defExports.eggSpiritTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'eggSpiritTier2AI')
+    evolutions: [['eggSpiritTier1To2', 100]]
 });
 defExports.eggSpiritTier1AIWeak = makeBossAI(defExports.eggSpiritTier1, {
     value: 2e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth', 'canRepel'],
     skill: setSkill(0, 3, 3, 4, 4, 4, 4, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'eggSpiritTier2AIWeak')
+    evolutions: [['eggSpiritTier1To2Weak', 100]]
 });
 defExports.eggSpiritTier2AI = makeBossAI(defExports.eggSpiritTier2, {
     value: 6e5,
@@ -181828,7 +181689,7 @@ defExports.soulless5AI = makeBossAI(defExports.soulless5, { value: 4e6 });
 defExports.pentagonBossTier1AI = makeBossAI(defExports.pentagonBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'pentagonBossTier2AI')
+    evolutions: [['pentagonBossTier1To2', 100]]
 });
 defExports.pentagonBossTier2AI = makeBossAI(defExports.pentagonBossTier2, {
     value: 6e5,
@@ -181846,7 +181707,7 @@ defExports.hexagonBossTier1AI = makeBossAI(defExports.hexagonBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
     broadcastMessage: "An HK-Ⅰ has been defeated!",
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'hexagonBossTier2AI')
+    evolutions: [['hexagonBossTier1To2', 100]]
 });
 defExports.hexagonBossTier2AI = makeBossAI(defExports.hexagonBossTier2, {
     value: 6e5,
@@ -181867,7 +181728,7 @@ defExports.heptagonBossTier1AI = makeBossAI(defExports.heptagonBossTier1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal', 'fleeAtLowHealth'],
     broadcastMessage: "An HPK-Ⅰ has been defeated!",
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'heptagonBossTier2AI')
+    evolutions: [['heptagonBossTier1To2', 100]]
 });
 defExports.heptagonBossTier2AI = makeBossAI(defExports.heptagonBossTier2, {
     value: 6e5,
@@ -181887,7 +181748,7 @@ defExports.chk1AI = makeBossAI(defExports.chk1, {
     value: 4e5,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     skill: setSkill(0, 8, 5, 7, 7, 8, 5, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'chk2AI')
+    evolutions: [['chk1To2', 100]]
 });
 defExports.chk2AI = makeBossAI(defExports.chk2, {
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
@@ -181972,7 +181833,7 @@ defExports.fallenHybridAI = makeBossAI(defExports.fallenHybrid, {
     variesInSize: false,
     level: 75,
     skill: setSkill(0, 6, 9, 8, 8, 8, 6, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'fallenCavalcadeAI')
+    evolutions: [['fallenCavalcadeEvolution', 100]]
 });
 defExports.fallenOctoAI = makeBossAI(defExports.fallenOcto, {
     variesInSize: false,
@@ -184346,7 +184207,7 @@ defExports.fallenSurferAI = makeBossAI(defExports.fallenSurfer, {
     level: 75,
     controllers: ['nearestDifferentMaster', 'mapTargetToGoal'],
     skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'fallenSurferAI')
+    evolutions: [['fallenDrifterEvolution'], 100]
 });
 defExports.fallenEngineer = makeFallen(defExports.engineer);
 defExports.fallenEngineerAI = makeBossAI(defExports.fallenEngineer, {
@@ -190160,11 +190021,8 @@ defExports.twinkleSentry = {
 	SIZE: 10,
 	BODY: {
 		FOV: base.FOV * .55,
-        DAMAGE: base.DAMAGE * 18,
+        DAMAGE: base.DAMAGE * 15,
         DENSITY: base.DENSITY * 25,
-        HEALTH: base.HEALTH * 1.25,
-        SHIELD: base.SHIELD * 2.35,
-        RESIST: base.RESIST * 1.15,
         SPEED: base.SPEED * .35,
 		ACCELERATION: base.ACCEL * .375
     },
@@ -190907,7 +190765,7 @@ for (let i = 1, j = 31; i < j; i++) defExports[`liteToBaseSkimboss${i}`] = {
         TYPE: defExports.skimTurretAnim
     }]
 };
-for (let i = 1, j = 31; i < j; i++) defExports[`summonerLiteAnim${i}`] = {
+for (let i = 1, j = 31; i < j; i++) defExports[`liteToBaseSummoner${i}`] = {
     PARENT: [defExports.genericTank],
     TYPE: i < 16 ? 'crasher' : 'miniboss',
     LABEL: i < 16 ? 'Summoner Lite' : 'Summoner',
@@ -194612,44 +194470,34 @@ for (let i = 1, j = 31; i < j; i++) defExports[`liteToBaseHB3_37${i}`] = {
 	}
 };
 defExports.tealSentrySwarmAI = makeSentryAI(defExports.tealSentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'tealGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseS2_22' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseS2_22', 10, true]
+    ]
 });
 defExports.lavenderSentrySwarmAI = makeSentryAI(defExports.lavenderSentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'lavenderGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseGSπ_ππ' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseGSπ_ππ', 10, true]
+    ]
 });
 defExports.cranberrySentrySwarmAI = makeSentryAI(defExports.cranberrySentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'cranberryGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseSSπ_ππ' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseSSπ_ππ', 10, true]
+    ]
 });
 defExports.blackSentrySwarmAI = makeSentryAI(defExports.blackSentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'blackGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseAT4_BW' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseAT4_BW', 10, true]
+    ]
 });
 defExports.crimsonSentrySwarmAI = makeSentryAI(defExports.crimsonSentrySwarm, {
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'crimsonGuardianAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'c',
-        animation: { frameDef: 'liteToBaseHB3_37' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseHB3_37', 10, true]
+    ]
 });
 defExports.palisadeLiteTrapTurret = deepCopy(defExports.palisadeTrapTurret),
     applyStats(defExports.palisadeLiteTrapTurret.GUNS, [g.more_reload]);
@@ -194705,7 +194553,7 @@ defExports.palisadeTrapTurretProp = {
         POSITION: [4, 14, 1.8, 16, 0, 0, 0]
     }]
 };
-for (let i = 1, j = 31; i < j; i++) defExports[`liteToBasePalisade${i}`] = {
+for (let i = 1, j = 31; i < j; i++) defExports[`protoToBasePalisade${i}`] = {
 	PARENT: [defExports.genericTank],
     LABEL: (i < 16) ? "Proto-Palisade" : "Palisade",
     TYPE: (i < 16) ? 'crasher' : 'miniboss',
@@ -194767,12 +194615,10 @@ for (let i = 1, j = 31; i < j; i++) defExports[`liteToBasePalisade${i}`] = {
 };
 defExports.palisadeLiteAI = makeSentryAI(defExports.palisadeLite, {
     value: 9000,
-    evolutions: [['confidentialLiteAI', 100]],
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'palisadeAI', {
-        broadcastType: 2,
-        namePool: 'castle',
-        animation: { frameDef: 'liteToBasePalisade' }
-    })
+    evolutions: [
+        ['confidentialLiteAI', 90],
+        ['protoToBasePalisade', 10, true]
+    ]
 });
 defExports.confidentialLiteTrapTurret = deepCopy(defExports.confidentialTrapTurret),
     applyStats(defExports.confidentialLiteTrapTurret.GUNS, [g.more_reload]);
@@ -194826,10 +194672,10 @@ defExports.confidentialLite = {
 };
 defExports.confidentialLiteAI = makeSentryAI(defExports.confidentialLite, {
     value: 12000,
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'confidentialAI', {
-        broadcastType: 2,
-        namePool: 'castle'
-    })
+    evolutions: [
+        ['', 90],
+        ['protoToBaseConfidential', 10, true]
+    ]
 });
 defExports.terrestrialTop = {
     LABEL: "",
@@ -196752,21 +196598,17 @@ defExports.brownCometLite = deepCopy(defExports.cometLite),
     defExports.brownCometLite.COLOR = 190;
 defExports.cometLiteAI = makeSentryAI(defExports.cometLite, {
     value: 7500,
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'cometAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'all',
-        animation: { frameDef: 'liteToBaseComet' }
-    })
+    evolutions: [
+        ['', 90],
+        ['liteToBaseComet', 10, true]
+    ]
 });
 defExports.brownCometLiteAI = makeSentryAI(defExports.brownCometLite, {
     value: 7500,
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'brownCometAI', {
-        preTimeout: 150000,
-        broadcastType: 2,
-        namePool: 'all',
-        animation: { frameDef: 'brownLiteToBrownBaseComet' }
-    })
+    evolutions: [
+        ['', 90],
+        ['brownLiteToBrownBaseComet', 10, true]
+    ]
 });
 for (let i = 0, j = 31; i < j; i++) {
     defExports[`liteToBaseComet${i}`] = {
@@ -202066,7 +201908,7 @@ defExports.fallenSteamrollerAI = makeBossAI(defExports.fallenSteamroller, {
     variesInSize: false,
     level: 75,
     skill: setSkill(0, 6, 6, 8, 8, 8, 9, 0, 0, 0),
-    onDefined: (me, entities, sockets, Entity, ran, room) => setGreaterEvolution(me, sockets, room, 'fallenCavalcadeAI')
+    evolution: [['fallenCavalcadeEvolution', 100]]
 });
 defExports.fallenRainmaker = makeFallen(defExports.accelMini, { body: { fov: base.FOV * 1.3 } });
 defExports.fallenRainmakerAI = makeBossAI(defExports.fallenRainmaker, {
@@ -203550,6 +203392,7 @@ defExports.hzLite0 = {
     COLOR: 108,
     SIZE: 9,
     BODY: { FOV: base.FOV * .8 },
+    UPGRADE_TOOLTIP: 'Right click or press shift to close and open your shell.',
     GUNS: [{
         POSITION: [15, 8, 1, 0, 0, 0, 0],
         PROPERTIES: {
@@ -203711,6 +203554,7 @@ defExports.hzLite31 = {
         ACCELERATION: 0,
         SPEED: 0
     },
+    UPGRADE_TOOLTIP: 'Right click or press shift to open and close your shell.',
     PROPS: [{
         POSITION: [1.375, 0, 0, 0, 1],
         SHAPE: [
@@ -203741,6 +203585,134 @@ defExports.hzLite31 = {
 defExports.messengerLiteAI = makeSentryAI(defExports.messengerLite, { value: 35000 });
 defExports.blitzkriegLiteAI = makeSentryAI(defExports.blitzkriegLite);
 defExports.ultraPuntLiteAI = makeSentryAI(defExports.ultraPuntLite);
+// NEW EVOLUTIONS
+// Sentries
+defExports.sentryToIndustry = makeEvolution('alphaSentryAI', {
+    broadcastType: 2,
+    namePool: 'c'
+});
+defExports.liteToBaseGuardian = makeEvolution('guardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseGuardian' }
+});
+defExports.liteToBasePulsar = makeEvolution('pulsarAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBasePulsar' }
+});
+defExports.liteToBaseCollider = makeEvolution('colliderAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'crushSentryAnim' }
+});
+defExports.liteToBaseDeltrablade = makeEvolution('deltrabladeAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'bladeSentryAnim' }
+});
+defExports.liteToBaseSkimboss = makeEvolution('skimBossAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseSkimboss' }
+});
+defExports.liteToBasePS3_33 = makeEvolution('greenGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBasePS3_33' }
+});
+defExports.liteToBaseSummoner = makeEvolution('summonerAI', {
+    broadcastType: 2,
+    namePool: 'a-z',
+    animation: { frameDef: 'liteToBaseSummoner' }
+});
+defExports.liteToBaseS2_22 = makeEvolution('tealGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseS2_22' }
+});
+defExports.liteToBaseGSπ_ππ = makeEvolution('lavenderGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseGSπ_ππ' }
+});
+defExports.liteToBaseSSπ_ππ = makeEvolution('cranberryGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseSSπ_ππ' }
+});
+defExports.liteToBaseAT4_BW = makeEvolution('blackGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseAT4_BW' }
+});
+defExports.liteToBaseHB3_37 = makeEvolution('crimsonGuardianAI', {
+    broadcastType: 2,
+    namePool: 'c',
+    animation: { frameDef: 'liteToBaseHB3_37' }
+});
+defExports.protoToBasePalisade = makeEvolution('palisadeAI', {
+    broadcastType: 2,
+    namePool: 'castle',
+    animation: { frameDef: 'protoToBasePalisade' }
+});
+defExports.protoToBaseConfidential = makeEvolution('confidentialAI', {
+    broadcastType: 2,
+    namePool: 'castle'
+});
+defExports.liteToBaseComet = makeEvolution('cometAI', {
+    broadcastType: 2,
+    namePool: 'all',
+    animation: { frameDef: 'liteToBaseComet' }
+});
+defExports.brownLiteToBrownBaseComet = makeEvolution('brownCometAI', {
+    broadcastType: 2,
+    namePool: 'all',
+    animation: { frameDef: 'brownLiteToBrownBaseComet' }
+});
+// Bosses
+defExports.eliteToUltimateSprayer = makeEvolution('ultimateSpray');
+defExports.eliteToUltimateDestroyer = makeEvolution('ultimateDestroy');
+defExports.fallenDrifterEvolution = makeEvolution('fallenDrifterAI');
+defExports.palisadeToConfidential = makeEvolution('confidentialAI');
+defExports.baseToPolarPalisade = makeEvolution('icePalisadeAI');
+defExports.defenderToCustodian = makeEvolution('custodianAI', { animation: { frameDef: 'defenderToCustodian' } });
+defExports.baseToAnniversaryDefender = makeEvolution('anniversaryDefenderAI', { animation: { frameDef: 'baseToAnniversaryDefender' } });
+defExports.baseToEliteDefender = makeEvolution('eliteDefenderAIWeak');
+defExports.summonerToTAS = makeEvolution('turretAssistedSummonerAI');
+defExports.baseToAnniversarySummoner = makeEvolution('anniversarySummonerAI');
+defExports.pinkToGreenGuardian = makeEvolution('greenGuardianAI', { animation: { frameDef: 'pinkToGreenGuardian' } });
+defExports.pinkToTealGuardian = makeEvolution('tealGuardianAI', { animation: { frameDef: 'pinkToTealGuardian' } });
+defExports.pinkToLavenderGuardian = makeEvolution('lavenderGuardianAI', { animation: { frameDef: 'pinkToLavenderGuardian' } });
+defExports.pinkToCranberryGuardian = makeEvolution('cranberryGuardianAI', { animation: { frameDef: 'pinkToCranberryGuardian' } });
+defExports.pinkToBlackGuardian = makeEvolution('blackGuardian', { animation: { frameDef: 'pinkToBlackGuardian' } });
+defExports.pinkToCrimsonGuardian = makeEvolution('crimsonGuardianAI', { animation: { frameDef: 'pinkToCrimsonGuardian' } });
+defExports.baseToAnniversaryGuardian = makeEvolution('anniversaryGuardianAI', { animation: { frameDef: 'baseToAnniversaryGuardian' } });
+defExports.baseToTriguardian = makeEvolution('triguardianAI', { animation: { frameDef: 'baseToTriguardian' } });
+defExports.baseToScramjetGuardian = makeEvolution('guardianJetAI');
+defExports.guardianToBattleCarrier = makeEvolution('battleCarrierAI');
+defExports.pulsarToCHK = makeEvolution('chk1AI');
+defExports.baseToIceCollider = makeEvolution('icecolliderAI', { animation: { frameDef: 'baseToIceCollider' } });
+defExports.orangeToGreenDeltrablade = makeEvolution('greendeltrabladeAI', { animation: { frameDef: 'orangeToGreenDeltrablade' } });
+defExports.ultimateMultitoolToSwissToolset = makeEvolution('ultSwissToolsetAI');
+defExports.eggBossTier1To2 = makeEvolution('eggBossTier2AI', {
+    animation: {
+        frameDef: 'ekAnim',
+        frameCount: 20,
+        animDuration: 500
+    }
+});
+defExports.eggQueenTier1To2 = makeEvolution('eggQueenTier2AI');
+defExports.cometToMTK = makeEvolution('meteorKingTier1AI');
+defExports.triangleBossTier1To2 = makeEvolution('triangleBossTier2AI');
+defExports.squareBossTier1To2 = makeEvolution('squareBossTier2AI');
+defExports.eggSpiritTier1To2 = makeEvolution('eggSpiritTier2AI');
+defExports.eggSpiritTier1To2Weak = makeEvolution('eggSpiritTier2AIWeak');
+defExports.pentagonBossTier1To2 = makeEvolution('pentagonBossTier2AI');
+defExports.hexagonBossTier1To2 = makeEvolution('hexagonBossTier2AI');
+defExports.heptagonBossTier1To2 = makeEvolution('heptagonBossTier2AI');
+defExports.chk1To2 = makeEvolution('chk2AI');
+defExports.fallenCavalcadeEvolution = makeEvolution('fallenCavalcadeAI');
 /*
 defExports.pndNomad = {};
 defExports.pndNomad = {};
@@ -203970,8 +203942,8 @@ defExports.computer.UPGRADES_TIER_4 = [defExports.overload];
 // Sentries
 branch("testbed_sentry", "Sentries", [
     defExports.sentry, defExports.sentrySwarm, defExports.scorcherSentry, defExports.sentryGun, defExports.sentryTrap, defExports.sentryRanger, defExports.splitSummonerCore, defExports.superSplitSummonerCore, defExports.morningstarLite, defExports.flashSentry, defExports.flashGunnerSentry, defExports.semiCrushSentry, defExports.crushSentry, defExports.bladeSentry, defExports.varp,
-    defExports.squareGunSentry, defExports.skimSentry, defExports.greenSentrySwarm, defExports.tealSentrySwarm, defExports.lavenderSentrySwarm, defExports.cranberrySentrySwarm, defExports.blackSentrySwarm, defExports.crimsonSentrySwarm, defExports.awp39Sentry, defExports.squareSwarmer, defExports.summonerLite, defExports.crusaderCrash, defExports.palisadeLite, defExports.confidentialLite,
-    defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzriegLite, defExports.ultraPuntLite, defExports.hzLite0
+    defExports.squareGunSentry, defExports.skimSentry, defExports.greenSentrySwarm, defExports.tealSentrySwarm, defExports.lavenderSentrySwarm, defExports.cranberrySentrySwarm, defExports.blackSentrySwarm, defExports.crimsonSentrySwarm, defExports.awp39Sentry, defExports.squareSwarmer, defExports.summonerLite, defExports.crusaderCrash, defExports.twinkleSentry, defExports.palisadeLite,
+    defExports.confidentialLite, defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzriegLite, defExports.ultraPuntLite, defExports.hzLite0
 ]);
 
 // Overdone Tanks
@@ -204128,8 +204100,8 @@ defExports.testbed.UPGRADES_TIER_1 = [
 // ELIMINATION MODE
 branch("eliminationSentries", "Sentries", [
     defExports.sentry, defExports.sentrySwarm, defExports.scorcherSentry, defExports.sentryGun, defExports.sentryTrap, defExports.sentryRanger, /*defExports.splitSummonerCore, defExports.superSplitSummonerCore,*/ defExports.morningstarLite, defExports.flashSentry, defExports.flashGunnerSentry, defExports.semiCrushSentry, defExports.crushSentry, defExports.bladeSentry, defExports.varp,
-    defExports.squareGunSentry, defExports.skimSentry, defExports.greenSentrySwarm, defExports.tealSentrySwarm, defExports.lavenderSentrySwarm, defExports.cranberrySentrySwarm, defExports.blackSentrySwarm, defExports.crimsonSentrySwarm, defExports.awp39Sentry, defExports.squareSwarmer, defExports.summonerLite, defExports.crusaderCrash, defExports.palisadeLite, defExports.confidentialLite,
-    defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzkriegLite, defExports.ultraPuntLite, defExports.hzLite0
+    defExports.squareGunSentry, defExports.skimSentry, defExports.greenSentrySwarm, defExports.tealSentrySwarm, defExports.lavenderSentrySwarm, defExports.cranberrySentrySwarm, defExports.blackSentrySwarm, defExports.crimsonSentrySwarm, defExports.awp39Sentry, defExports.squareSwarmer, defExports.summonerLite, defExports.crusaderCrash, defExports.twinkleSentry, defExports.palisadeLite,
+    defExports.confidentialLite, defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzkriegLite, defExports.ultraPuntLite, defExports.hzLite0
 ], "elimination_parent");
 defExports.eliminationMenu.UPGRADES_TIER_4 = [
     defExports.eliminationSentries,

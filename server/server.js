@@ -5477,19 +5477,23 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             
             determineLast() {
                 let scores = [],
+                    deceasedPlayers = [],
                     upForElimination = [];
                 players.forEach(function(player) {
-                    if (player.socket.status.isCompeting && !player.socket.status.eliminated) scores.push((!player.socket.status.deceased && player.body != null) ? player.body.skill.score : player.socket.status.previousScore);
+                    if (player.socket.status.isCompeting && !player.socket.status.eliminated) {
+                        if (!player.socket.status.deceased && player.body != null) scores.push(player.body.skill.score);
+                        else deceasedPlayers.push(player);
+                    }
                 });
                 scores.sort((a, b) => a - b);
                 let lowestScore = scores[0];
                 players.forEach(function(player) {
-                    if (!room.eliminationsPaused && !room.eliminationsEnded && player.socket.status.isCompeting && !player.socket.status.eliminated && (!player.socket.status.deceased && player.body != null && player.body.skill.score === lowestScore || player.socket.status.deceased && player.socket.status.previousScore === lowestScore)) {
+                    if (!room.eliminationsPaused && !room.eliminationsEnded && !deceasedPlayers.length && player.socket.status.isCompeting && !player.socket.status.eliminated && player.body.skill.score === lowestScore) {
                         upForElimination.push(player);
                         if (player.body != null) player.body.nameColor = teamBodyColors[1];
                     } else if (player.body != null) player.body.nameColor = player.socket.betaData.nameColor;
                 });
-                return upForElimination;
+                return (deceasedPlayers.length) ? deceasedPlayers : upForElimination;
             }
 
             tallyPlayers() {
@@ -6251,6 +6255,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 			think(input) {
 				// Cede control to the player by returning an empty object.
 				if (input.main || input.alt ||
+                    (this.body.master.master.isRogue && this.body.master.caretaker?.autoOverride) ||
                     this.body.master.autoOverride ||
 					this.body.master.master.passive ||
 					(this.body.master.master.invuln && !this.body.master.master.grantedInvuln)) {
@@ -7268,8 +7273,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 throw JSON.stringify(stats);
             }
         }
-        const setSkill = (s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) => [s7, s5, s4, s6, s3, s10, s1, s2, s9, s8];
-        const setWeaponSkill = (s1, s2, s3, s4, s5) => [s5, s3, s2, s4, s1, 0, 0, 0, 0, 0];
         class Gun {
             constructor(body, info, gunIndex) {
                 this.lastShot = {
@@ -8552,7 +8555,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             
             setEvolution(evolutionArray) {
                 if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
-                if (this.greaterEvolutionTimeout) clearTimeout(this.greaterEvolutionTimeout);
                 if (evolutionArray?.length) {
                     this.evolutionTimeout = setTimeout(() => {
                         try {
@@ -8560,8 +8562,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             let options = [],
                                 chances = [];
                             for (let arr of evolutionArray) {
+                                if (arr[2] && room.census.evolutionMiniboss >= room.maxEvoBosses) continue;
                                 options.push(arr[0]);
                                 chances.push(arr[1]);
+                            }
+                            if (!options.length) {
+                                this.setEvolution(evolutionArray);
+                                return;
                             }
                             let choice = options[ran.chooseChance(...chances)];
                             if (Array.isArray(choice)) choice = ran.choose(choice);
@@ -8577,6 +8584,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 sockets.broadcast(`${util.addArticle(this.label, true)} has hatched out of a Rogue Egg!`, '#E03E41');
                                 this.name ||= savedName;
                                 this.isRogue = true;
+                            } else if (Class[choice].IS_EVOLUTION) {
+                                this.miscIdentifier = 'Evolution Miniboss';
+                                Class[choice].ON_DEFINED(this, entities, sockets);
                             } else {
                                 const savedLabel = this.label,
                                       savedType = this.type;
@@ -8589,10 +8599,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                         case (choice === 'ascendedPentagonAI'):
                                             this.name = ran.chooseBossName('b', 1)[0];
                                             sockets.broadcast(`${util.addArticle(savedLabel, true)} has evolved into ${util.addArticle(this.label)}!`, '#E03E41');
-                                            break;
-                                        case (choice === 'alphaSentryAI'):
-                                            this.name = ran.chooseBossName('c', 1)[0];
-                                            sockets.broadcast(`${util.addArticle(savedLabel, true)} has evolved into ${util.addArticle(this.label)}!`, '#E03E41');
+                                            this.miscIdentifier = 'Evolution Miniboss';
                                             break;
                                         case (choice.endsWith('estKeeperAI')):
                                             for (let key in this) if (key.endsWith('NestFood')) this[key] = undefined;
@@ -8603,7 +8610,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 }
                             }
                         } catch (err) { util.error("Error while trying to evolve " + global.exportNames[this.index]) }
-                    }, (c.EVOLVE_TIME + ran.irandom(c.EVOLVE_TIME_RAN_ADDER)) * ((this.type === "crasher" || this.isSentry) ? .5 : (["Rogue Egg", "Golden Nonagon"].includes(this.miscIdentifier)) ? 3 : 1)) // Crashers evolve 2x as fast
+                    }, (c.EVOLVE_TIME + ran.irandom(c.EVOLVE_TIME_RAN_ADDER)) * ((this.type === "crasher" || this.isSentry) ? .5 : (this.type === "miniboss") ? 2 : (["Rogue Egg", "Golden Nonagon"].includes(this.miscIdentifier)) ? 3 : 1))
                 }
             }
             define(set, extra, addExtraToParents = false) {
@@ -10344,7 +10351,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
                 // Evolve stuff
                 if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
-                if (this.greaterEvolutionTimeout) clearTimeout(this.greaterEvolutionTimeout);
                 // Explosions, phases and whatnot
                 if (skipEvents === false) {
                     if (this.onDead != null && !this.hasDoneOnDead) {
