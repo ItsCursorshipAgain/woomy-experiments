@@ -1,7 +1,8 @@
 import { assets, ASSET_MAGIC } from "../shared/assets.js";
 import { oneVsOne } from "./modes/oneVsOne.js";
+import { warfront } from "./modes/warfront.js";
 
-const modeFuncs = { oneVsOne }
+const modeFuncs = { oneVsOne, warfront }
 
 // COMPAT //
 const worker = typeof parentPort === "undefined" ? self : parentPort
@@ -3565,23 +3566,39 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
         })();
 
         const spawnBot = (loc = null) => {
-            let position = loc,
-                max = 100,
-                team = c.serverName === "Infiltration" ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
+            // Find a normal spawn for our team if no loc provided
+            let max = 100;
+            let team;
             if (!loc) {
-                let spawnSectors = ["spn", "bas", "n_b", "bad"].map(r => r + team).filter(sector => room[sector] && room[sector].length);
-                do position = room.randomType(
-                    (c.serverName === "Infiltration") ? "edge" :
-                    (room.gameMode === "tdm" && spawnSectors.length) ? ran.choose(spawnSectors) :
-                    "norm"
-                );
-                while (dirtyCheck(position, 400) && max-- > 0);
+                let i = 10;
+                if (room.gameMode === "tdm") {
+                    team = c.serverName === "Infiltration" ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
+
+                    let spawnSectors = team === 20 ? ["edge"] : ["spn", "bas", "n_b", "bad"].map(r => r + team).filter(sector => room[sector] && room[sector].length);
+                    const sector = ran.choose(spawnSectors);
+                    if (sector && room[sector].length) {
+                        do loc = room.randomType(sector);
+                        while (dirtyCheck(loc, 50) && i--);
+                    } else {
+                        do loc = room.gaussInverse(5);
+                        while (dirtyCheck(loc, 50) && i--);
+                    }
+                } else if (c.PLAYER_SPAWN_TILES) {
+                    i = 10
+                    let tile = ran.choose(c.PLAYER_SPAWN_TILES)
+                    do loc = room.randomType(tile);
+                    while (dirtyCheck(loc, 50) && i--);
+                } else {
+                    do loc = room.randomType(c.serverName === "Infiltration" ? "edge" : "norm");
+                    while (dirtyCheck(loc, 50) && max-- > 0);
+                }
             }
-            let o = new Entity(position);
-            o.color = (room.randomColors) ? ran.randomHexColor() : 'FFA_RED';
+            let o = new Entity(loc);
             if (room.gameMode === "tdm") {
                 o.team = -team;
-                o.color = team === 20 ? 17 : teamColors[team - 1];
+                o.color = team === 20 ? 17 : [10, 12, 11, 15, 3, 35, 36, 0][team - 1];
+            } else {
+                o.color = 12;
             }
             // Reload, Pen, Bullet Health, Bullet Damage, Bullet Speed, Capacity, Body Damage, Max Health, Regen, Speed
             let tank = c.serverName === "Infiltration" ? Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])] : ran.choose(botTanks),
@@ -6269,7 +6286,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     if (damageRef.collisionArray.length && currentHealth < this.oldHealth) {
                         this.oldHealth = currentHealth;
                         const collider = damageRef.collisionArray[0];
-                        this.targetLock = (collider.master.id === -1) ? collider.source : collider.master;
+                        this.targetLock = collider.master ? (collider.master.id === -1) ? collider.source : collider.master : null;
                     }
                 }
 
@@ -9688,6 +9705,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             this.variables.masterOnSpawnFacing = 1
                         }
                         break;
+                    case "vertical":
+                        this.facing = -1.5881855
+                        break;
                 }
                 let TAU = 2 * Math.PI;
                 this.facing = (this.facing % TAU + TAU) % TAU;
@@ -9898,6 +9918,28 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.velocity.y = bounces ? this.velocity.y *= -0.5 : 0;
                     }*/
                     let force = c.BORDER_FORCE;
+
+                    if (myCell === "edge") {
+                        const cellLoc = room.isAt(loc);
+                        const diffX = Math.abs(loc.x - cellLoc.x);
+                        const diffY = Math.abs(loc.y - cellLoc.y);
+
+                        // Only move on the axis with the greater distance to avoid drifting
+                        if (diffX >= diffY) {
+                            if (loc.x < cellLoc.x) {
+                                this.accel.x -= this.realSize * force / room.speed;
+                            } else if (loc.x > cellLoc.x) {
+                                this.accel.x += this.realSize * force / room.speed;
+                            }
+                        } else {
+                            if (loc.y < cellLoc.y) {
+                                this.accel.y -= this.realSize * force / room.speed;
+                            } else if (loc.y > cellLoc.y) {
+                                this.accel.y += this.realSize * force / room.speed;
+                            }
+                        }
+                    }
+
                     this.isOutsideRoom = false
                     switch (c.ARENA_TYPE) {
                         case 1: // Round
@@ -9953,19 +9995,19 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         default: // Default rectangular
                             if (this.x < 0) {
                                 this.isOutsideRoom = true
-                                this.accel.x -= Math.min(this.x - this.realSize + 50, 0) * force / room.speed;
+                                this.accel.x -= Math.min(this.x - this.realSize, 0) * force / room.speed;
                             }
                             if (this.x > room.width) {
                                 this.isOutsideRoom = true
-                                this.accel.x -= Math.max(this.x + this.realSize - room.width - 50, 0) * force / room.speed;
+                                this.accel.x -= Math.max(this.x + this.realSize - room.width, 0) * force / room.speed;
                             }
                             if (this.y < 0) {
                                 this.isOutsideRoom = true
-                                this.accel.y -= Math.min(this.y - this.realSize + 50, 0) * force / room.speed;
+                                this.accel.y -= Math.min(this.y - this.realSize, 0) * force / room.speed;
                             }
                             if (this.y > room.height) {
                                 this.isOutsideRoom = true
-                                this.accel.y -= Math.max(this.y + this.realSize - room.height - 50, 0) * force / room.speed;
+                                this.accel.y -= Math.max(this.y + this.realSize - room.height, 0) * force / room.speed;
                             }
                             break;
                     }
@@ -13995,28 +14037,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
 
                 for (let mode of c.modes) {
-                    modeFuncs[mode].runTick({ entities: entities, sockets: sockets })
+                    modeFuncs[mode].runTick({ entities: entities, sockets: sockets, room: room })
                 }
 
                 room.lastCycle = util.time();
                 room.mspt = (performance.now() - start);
                 room.lagComp = Math.min(5, Math.max(1, room.mspt / room.cycleSpeed))
-                if (c.serverName === "Boss Rush") {
-                    const border = 2150;
-                    entities.forEach(entity => {
-                        if (entity.x < border && entity.team != -100 && !entity.passive && !entity.godmode) { entity.kill()/*entity.x += 15*/ }
-                        if (entity.type == 'miniboss' && entity.x < 5500) { entity.x += Math.random() * 1.5 }
-                        if (entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }
-                        if (entity.label.includes("Ascended") && entity.x < border) { entity.x = (c.WIDTH - border) * Math.random() + border }//fix ascended stuff not moving
-                    })
-                }/* else if (c.displayName === "Fuzzy's Miniboss Rush") {
-                    entities.forEach(e => {
-                        if (e.type === 'miniboss') {
-                            if (e.y < room.height / c.Y_GRID * 3) e.y += Math.random() * 5;
-                            if (e.y > room.height / c.Y_GRID * 12) e.y -= Math.random() * 5;
-                        }
-                    })
-                }*/
             };
         })();
 
@@ -15187,7 +15213,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
 
                 for (let mode of c.modes) {
-                    modeFuncs[mode].initNpcs({ Entity: Entity })
+                    modeFuncs[mode].initNpcs({ Entity: Entity, Class: Class, room: room })
                 }
 
                 return () => {
@@ -15206,7 +15232,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 if (room.bots.length < room.botCap && !global.arenaClosed) {
                                     for (let j = room.bots.length; j < room.botCap; j++) {
                                         if (Math.random() > .5) {
-                                            const bot = spawnBot(null);
+                                            const bot = spawnBot();
                                             bot.sandboxId = room.id;
                                             room.bots.push(bot);
                                         }
@@ -15834,6 +15860,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     flatten(photo, visible, playerContext)
                     numberInView++
                 }
+
+                // Gamemode view packet event
+                for (let mode of c.modes) {
+                    if (modeFuncs[mode].viewPacket) numberInView += modeFuncs[mode].viewPacket({ flatten: flatten, visible: visible, playerContext: playerContext });
+                }
+
                 // Query the grid for entities whose AABBs overlap with the search area.
                 // This gives us a list of entities that are *potentially* visible.
                 grid.getCollisions(searchArea, (entity) => {
