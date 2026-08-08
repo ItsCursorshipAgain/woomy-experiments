@@ -10091,7 +10091,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.regenerate();
                 this.damageReceived = 0;
                 if (this.isDead()) {
-                    if (this.variables.onfire && this.miscIdentifier !== 'Rogue Egg') this.collisionArray.push(this.variables.onfireBy);
                     for (let i = 0; i < this.guns.length; i++) {
                         let gun = this.guns[i];
                         if (gun.shootOnDeath) {
@@ -10124,7 +10123,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
                     // Just in case one of the onDead events revives the tank from death (like dominators), don't run it
                     if (this.isDead()) {
-                    if (this.variables.onfire) this.collisionArray.push(this.variables.onfireBy);
                         let killers = [],
                             killTools = [],
                             notJustFood = false,
@@ -10142,27 +10140,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 }
                             }
                             if (master.settings.acceptsScore) {
-                                if (master.type === "tank" || master.type === "miniboss") {
-                                    notJustFood = true;
-                                }
+                                if (master.type === "tank" || master.type === "miniboss") notJustFood = true;
                                 if (master.settings.getsNegativeScore) jackpot *= -1;
                                 master.skill.score += jackpot;
-                                if (this.type === "food") {
-                                    master.health.amount += jackpot * .03
-                                } else {
-                                    master.health.amount += jackpot * .005
-                                }
-                                if (!killers.includes(master)) {
-                                    killers.push(master);
-                                }
+                                if (this.type === "food") master.health.amount += jackpot * .03;
+                                else master.health.amount += jackpot * .005;
+                                if (!killers.includes(master)) killers.push(master);
                             } else if (o.settings.acceptsScore) {
                                 if (o.settings.getsNegativeScore) jackpot *= -1;
                                 o.skill.score += jackpot;
-                                if (this.type === "food") {
-                                    master.health.amount += jackpot * .03
-                                } else {
-                                    master.health.amount += jackpot * .005
-                                }
+                                if (this.type === "food") master.health.amount += jackpot * .03;
+                                else master.health.amount += jackpot * .005;
                             }
                             killTools.push(o);
                         }
@@ -10201,7 +10189,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     killText += " and ";
                                 }
                                 if (giveKillMessage) {
-                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire && this.variables.onfireBy === o) ? "scorched " : "killed ") + name + ".");
+                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire && o.doesTorch) ? "scorched " : "killed ") + name + ".");
                                 }
                             }
                             killText = killText.slice(0, -4);
@@ -12124,7 +12112,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                             else body.sendMessage(`You killed ${util.addArticle(o.label)}.`);
                                             //console.log(o);
                                             o.variables.onfire = false;
-                                            o.variables.onfireBy = null;
                                             o.kill();
                                         }
                                     });

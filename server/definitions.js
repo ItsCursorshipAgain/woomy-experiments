@@ -310,6 +310,7 @@ const g = {
     "splitter": [.65, 0, 1, 1.4, .5, .5, 1.5, .525, 1.05, .85, 1, 1, 1],
     "bit_more_spread": [1, 1, 1.15, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 1],
     "more_spread": [1, 1, 1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1.5, 1],
+    "big_spread": [1, 1, 1.5, 1, 1, 1, 1, 1, 1, 1, 1, 1.825, 1],
     "gatekeeper": [.875, 1, 1, 1.25, 1.1, 1.1, 1.05, 2, 3, .8, .1, 1, 1],
     "contagi": [1, .5, 1.5, 1, 1.23, .8, 2.5, 1.05, 1, 1, .9, .75, .7],
     "shellExplode": [1, 0, 0, 1, 3, .3, 5, 0, 0, .1, 3, 0, 3],
@@ -710,6 +711,7 @@ const poison = (me, them, multiplier, duration) => {
         timer(() => {
             if (them.variables.poisoned && them.health.amount > 10) {
                 them.health.amount -= multiplier * 0.5;
+                them.collisionArray.push(me);
                 if (them.onDamaged) them.onDamaged(them, me, multiplier * 0.5)
                 if (me.onDealtDamage) me.onDealtDamage(me, them.multiplier * 0.5)
                 if (me.onDealtDamageUniv) me.onDealtDamageUniv(me, them.multiplier * 0.5)
@@ -777,23 +779,15 @@ const lsd = (them, duration) => {
         }, duration * 1000);
     }
 };
-const firePoison = (me, them, multiplier, duration, fireSource = null) => {
+const firePoison = (me, them, multiplier, duration) => {
     if (!them) return;
     if (!them.immuneToAbilities && !them.invuln && !them.passive && !them.godmode && !them.variables.onfire) {
         them.variables.onfire = true;
-        them.variables.onfireBy = fireSource;
-        if (fireSource == null) {
-            let myMaster = me;
-            while (myMaster.master !== myMaster) myMaster = myMaster.master;
-            them.variables.onfireBy = myMaster;
-        }
-        setTimeout(() => {
-            them.variables.onfire = false;
-            them.variables.onfireBy = null;
-        }, 2 * duration * 1000);
+        setTimeout(() => them.variables.onfire = false, 2 * duration * 1000);
         timer(() => {
             if (them.variables.onfire) {
                 them.health.amount -= multiplier * 0.5;
+                them.collisionArray.push(me);
                 if (them.onDamaged) them.onDamaged(them, me, multiplier * 0.5)
                 if (me.onDealtDamage) me.onDealtDamage(me, them.multiplier * 0.5)
                 if (me.onDealtDamageUniv) me.onDealtDamageUniv(me, them.multiplier * 0.5)
@@ -804,9 +798,8 @@ const firePoison = (me, them, multiplier, duration, fireSource = null) => {
 const torch = (me, them, multiplier, duration, team) => {
     if (!them) return;
     if (!them.immuneToAbilities && !them.invuln && !them.passive && !them.godmode && !them.doesTorch && them.team !== team && !them.variables.onfire) {
-        let oddu = them.onDealtDamageUniv || (() => { });
-        if (them.variables.onfireBy != null) firePoison(me, them, multiplier, duration, them.variables.onfireBy);
-        else firePoison(me, them, multiplier, duration);
+        let oddu = them.onDealtDamageUniv || (() => {});
+        firePoison(me, them, multiplier, duration);
         if (them.onTorched) them.onTorched(them, me);
         them.onDealtDamageUniv = (me2, them2) => {
             if (me2 && them2) {
@@ -107692,15 +107685,17 @@ defExports.descenderBullet = { // Had poison
     LABEL: 'Bullet',
     TYPE: 'bullet',
     ACCEPTS_SCORE: false,
-    BODY: {
-        PENETRATION: .9,
-        SPEED: 3.75,
-        RANGE: 90,
+        BODY: {
+        PENETRATION: 2.25,
+        SPEED: 4.25,
+        RANGE: 120,
         DENSITY: base.DENSITY * 64,
-        HEALTH: .25,
-        DAMAGE: 6,
+        HEALTH: .5,
+        DAMAGE: 6.75,
         PUSHABILITY: .3
     },
+    DIES_BY_OBSTACLES: false,
+    BOUNCE_ON_OBSTACLES: true,
     FACING_TYPE: 'smoothWithMotion',
     CAN_GO_OUTSIDE_ROOM: true,
     HITS_OWN_TYPE: 'never',
@@ -141832,10 +141827,19 @@ defExports.butaneGas = {
     MOTION_TYPE: 'glide',
     BODY: {
         HEALTH: 1000,
-        SPEED: .1,
-        RANGE: 500,
-        DAMAGE: 0
+        SPEED: 1,
+        ACCEL: .02,
+        RANGE: 250,
+        DAMAGE: 0.0175,
+        RESIST: 10,
+        PENETRATION: 100,
+        SHIELD: 1000,
+        REGEN: 10,
+        DENSITY: .01,
+        PUSHABILITY: 0
     },
+    DIES_BY_OBSTACLES: false,
+    BOUNCE_ON_OBSTACLES: true,
     INVISIBLE: [0, 1, 0.2],
     ON_COLLIDE: (me, them) => {
         if (!them.doesTorch || me.variables.doneCollide) return;
@@ -141858,10 +141862,19 @@ defExports.butaneGas = {
 };
 defExports.butaneExplosion = {
     PARENT: [defExports.bullet],
-    MOTION_TYPE: 'crockett',
+    MOTION_TYPE: 'bigcrockett',
     LABEL: 'Explosion',
     BODY: {
-        RANGE: 50,
+        HEALTH: 5,
+        SPEED: 0,
+        ACCEL: 0,
+        DAMAGE: 1.1,
+        PENETRATION: 1.875,
+        SHIELD: 0,
+        REGEN: 0,
+        DENSITY: .35,
+        PUSHABILITY: 0,
+        RANGE: 30
     },
     HITS_OWN_TYPE: "never",
     PERSISTS_AFTER_DEATH: true,
@@ -141898,7 +141911,7 @@ defExports.butane = {
     }, {
         POSITION: [25, 12, 1.6, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.less_recoil, g.less_recoil, g.more_reload, g.more_reload, g.more_reload, g.more_reload, g.bigger, g.bigger, g.bigger, g.bigger]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_recoil, g.less_recoil, g.double_reload, g.big_spread, g.bigger, g.bigger, g.bigger, g.bigger]),
             TYPE: defExports.butaneGas
         }
     }],
@@ -153560,6 +153573,17 @@ defExports.shredderBullet = {
     PARENT: [defExports.heatBullet],
     LABEL: 'Skilsaw',
     SHAPE: 277,
+    BODY: {
+        PENETRATION: 3,
+        SPEED: 5,
+        RANGE: 110,
+        DENSITY: 11.2, // about half ascender bullet
+        HEALTH: .85,
+        DAMAGE: 3,
+        PUSHABILITY: .2
+    },
+    DIES_BY_OBSTACLES: false,
+    BOUNCE_ON_OBSTACLES: true,
 	AI: {
 		FOV: 0.14,
 		IGNORE_SHAPES: true,
@@ -181165,6 +181189,26 @@ defExports.afterimage = {
             }
         }
     }
+};
+defExports.warfrontLine = {
+    LABEL: 'Warfront',
+    SHAPE: 192,
+    BODY: {
+        HEALTH: 1000,
+        SPEED: .1,
+        RANGE: 500,
+        DAMAGE: 0
+    },
+    FACING_TYPE: "vertical",
+    TYPE: 'food',
+    MISC_IDENTIFIER: "appearOnMinimap",
+    PASSIVE: true,
+    SIZE: 800,
+    DIES_TO_TEAM_BASE: false,
+    GO_THRU_OBSTACLES: true,
+    CAN_GO_OUTSIDE_ROOM: true,
+    CAN_BE_ON_LEADERBOARD: false,
+    DANGER: 0
 };
 defExports.laserTest1 = {
     PARENT: [defExports.genericTank],
