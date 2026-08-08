@@ -2584,7 +2584,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     sancs: 0
                 };
                 this.bossTimer = 0;
-                this.bossRush = config.serverName === "Boss Rush" || config.ISSIEGE || config.IS_BOSS_RUSH;
+                this.bossRush = config.serverName === "Boss Rush" || config.IS_BOSS_RUSH;
                 this.bossRushOver = false;
                 this.bossRushWave = 0;
                 this.bossRushMaxIncrement = 0;
@@ -3584,8 +3584,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         while (dirtyCheck(loc, 50) && i--);
                     }
                 } else if (c.PLAYER_SPAWN_TILES) {
-                    i = 10
-                    let tile = ran.choose(c.PLAYER_SPAWN_TILES)
+                    i = 10;
+                    let tile = ran.choose(c.PLAYER_SPAWN_TILES);
                     do loc = room.randomType(tile);
                     while (dirtyCheck(loc, 50) && i--);
                 } else {
@@ -3596,10 +3596,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             let o = new Entity(loc);
             if (room.gameMode === "tdm") {
                 o.team = -team;
-                o.color = team === 20 ? 17 : [10, 12, 11, 15, 3, 35, 36, 0][team - 1];
-            } else {
-                o.color = 12;
-            }
+                o.color = team === 20 ? 17 : teamBodyColors[team - 1];
+            } else if (room.randomColors) o.color = ran.randomHexColor(); 
+            else o.color = 'FFA_RED';
             // Reload, Pen, Bullet Health, Bullet Damage, Bullet Speed, Capacity, Body Damage, Max Health, Regen, Speed
             let tank = c.serverName === "Infiltration" ? Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])] : ran.choose(botTanks),
                 botType = (tank.IS_HEALER) ? "healerBot" : (tank.IS_SMASHER || tank.IS_LANCER) ? "bot2" : "bot",
@@ -3873,7 +3872,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
                             // Set dominator team
                             dominator.team = killTeam || -100;
-                            dominator.color = [13, 10, 12, 11, 15, 3, 35, 36, 0][-killTeam];
+                            dominator.color = [13, ...teamBodyColors][-killTeam];
 
                             // If all dominators are taken by the same team, close the arena
                             if (this.takenDominators.includes(this.amountOfDominators) && killTeam && room.canClose && !room.arenaClosed) {
@@ -3891,11 +3890,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
                             // Get the people who murdered the dominator
                             let killers = [];
-                            for (let instance of dominator.collisionArray) {
-                                if (instance.team > 0) {
-                                    killers.push(instance.master.master.source);
-                                }
-                            }
+                            for (let instance of dominator.collisionArray)
+                                if (instance.team > 0) killers.push(instance.master.master.source);
 
                             let killPlayer = killers.length ? ran.choose(killers) : null,
                                 name = (killPlayer != null) ? (!killPlayer.name.length) ? "An unnamed player" : killPlayer.name : null;
@@ -3918,7 +3914,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             // Set dominator team
                             dominator.team = killPlayer != null ? killPlayer.team : -100;
                             dominator.color = killPlayer != null ? killPlayer.color : 13;
-                            dominator.name = name != null ? `${name}` + `${(/[sS]/.test(name.slice(-1))) ? "' " : "'s "} Dominator` : "Dominator";
+                            dominator.name = name != null ? `${name}` + `${util.addBelonging(name)} Dominator` : "Dominator";
                             dominator.nameColor = killPlayer != null ? killPlayer.nameColor : "#FFFFFF";
                         };
                     };
@@ -9919,24 +9915,18 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }*/
                     let force = c.BORDER_FORCE;
 
-                    if (myCell === "edge") {
+                    if (myCell === "edge" && !c.PORTALS.ENABLED) {
                         const cellLoc = room.isAt(loc);
                         const diffX = Math.abs(loc.x - cellLoc.x);
                         const diffY = Math.abs(loc.y - cellLoc.y);
 
                         // Only move on the axis with the greater distance to avoid drifting
                         if (diffX >= diffY) {
-                            if (loc.x < cellLoc.x) {
-                                this.accel.x -= this.realSize * force / room.speed;
-                            } else if (loc.x > cellLoc.x) {
-                                this.accel.x += this.realSize * force / room.speed;
-                            }
+                            if (loc.x < cellLoc.x) this.accel.x -= this.realSize * force / room.speed;
+                            else if (loc.x > cellLoc.x) this.accel.x += this.realSize * force / room.speed;
                         } else {
-                            if (loc.y < cellLoc.y) {
-                                this.accel.y -= this.realSize * force / room.speed;
-                            } else if (loc.y > cellLoc.y) {
-                                this.accel.y += this.realSize * force / room.speed;
-                            }
+                            if (loc.y < cellLoc.y) this.accel.y -= this.realSize * force / room.speed;
+                            else if (loc.y > cellLoc.y) this.accel.y += this.realSize * force / room.speed;
                         }
                     }
 

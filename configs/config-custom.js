@@ -190,7 +190,7 @@ let developer = (options = {}) => {
         return .5 - Math.random();
     });
     return {
-        "displayName": "Fuzzy's FFA World",
+        "displayName": "FFA World",
         "displayDesc": "FFA, but it takes places in a massive arena with extra nests to go around! To help you travel, portals are present as well.",
         "X_GRID": 49,
         "Y_GRID": 49,
@@ -539,11 +539,11 @@ let developer = (options = {}) => {
             "ENABLED": true,
             "cellSize": 13500/49,
             "stepOneSpacing": 2,
-            "fillChance": 0.35,
-            "sparedChance": 0.65,
+            "fillChance": .35,
+            "sparedChance": .65,
             "margin": [14, 14, 0, 28],
             "posMulti": 1/21,
-            "LOCS_TO_AVOID": ['nest', 'port']
+            "LOCS_TO_AVOID": ['nest', 'port', 'edge']
         },
         "ROOM_SETUP": [                                     /*C*/
             ["E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E E"],
@@ -607,9 +607,9 @@ let developer = (options = {}) => {
             }
         })),
         "OUTSIDE_ROOM_DAMAGE": .5,
-        "MAX_FOOD": 504, // 288
-        "MAX_COMBINED_NEST_FOOD": 63, // 36
-        "MAX_CRASHERS": 72, // 36
+        "MAX_FOOD": 403, // 288
+        "MAX_COMBINED_NEST_FOOD": 57, // 36
+        "MAX_CRASHERS": 65, // 36
         "PLAYER_SPAWN_TILES": ['norm', 'nest', 'roid', 'rock']
     }
 },
@@ -1063,4 +1063,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(minibossRush);
+select(minibossRush());

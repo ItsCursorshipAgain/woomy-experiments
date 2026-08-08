@@ -5955,6 +5955,7 @@ defExports.singularPentagon = {
 defExports.eggSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Egg Sanctuary',
+    DANGER: 3,
     SIZE: 32,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6013,6 +6014,7 @@ defExports.eggSanctuary = {
 defExports.snowballSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Snowball Sanctuary',
+    DANGER: 3,
     SIZE: 32,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6067,6 +6069,7 @@ defExports.snowballSanctuary = {
 defExports.burntSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Golden Sanctuary',
+    DANGER: 3,
     SIZE: 24,
     DRAW_HEALTH: true,
     BODY: {
@@ -6116,6 +6119,7 @@ defExports.burntSanctuary = {
 defExports.squareSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Square Sanctuary',
+    DANGER: 3,
     SIZE: 32,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6208,6 +6212,7 @@ defExports.squareSanctuary = {
 defExports.triSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Triangle Sanctuary',
+    DANGER: 3,
     SIZE: 32,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6293,6 +6298,7 @@ defExports.triSanctuary = {
 defExports.pentaSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Pentagon Sanctuary',
+    DANGER: 3,
     SIZE: 32,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6393,6 +6399,7 @@ defExports.pentaSanctuary = {
 defExports.megaSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Mega Sanctuary',
+    DANGER: 3,
     SIZE: 40,
     VALUE: 180000,
     DRAW_HEALTH: true,
@@ -6480,11 +6487,11 @@ defExports.megaSanctuary = {
 defExports.eggColony = {
     PARENT: [defExports.food],
     LABEL: 'Egg Colony',
-    VALUE: 6e4,
+    DANGER: 3,
     SHAPE: 0,
-    LAYER: 11,
-    SIZE: 24,
     COLOR: 6,
+    SIZE: 24,
+    LAYER: 11,
     BODY: {
         DAMAGE: 2,
         DENSITY: 20,
@@ -6493,6 +6500,7 @@ defExports.eggColony = {
         SHIELD: 10,
         REGEN: 1
     },
+    VALUE: 6e4,
     GIVE_KILL_MESSAGE: true,
     DRAW_HEALTH: true,
     GUNS: [{
@@ -6526,11 +6534,11 @@ defExports.eggColony = {
 defExports.squareColony = {
     PARENT: [defExports.food],
     LABEL: 'Square Colony',
-    VALUE: 1e5,
+    DANGER: 3,
     SHAPE: 4,
+    COLOR: 13,
     SIZE: 28,
     LAYER: 11,
-    COLOR: 13,
     BODY: {
         DAMAGE: 4,
         DENSITY: 30,
@@ -6539,6 +6547,7 @@ defExports.squareColony = {
         SHIELD: 20,
         REGEN: 1
     },
+    VALUE: 1e5,
     GIVE_KILL_MESSAGE: true,
     DRAW_HEALTH: true,
     GUNS: [{
@@ -6579,11 +6588,11 @@ defExports.squareColony = {
 defExports.triangleColony = {
     PARENT: [defExports.food],
     LABEL: 'Triangle Colony',
-    VALUE: 2e5,
+    DANGER: 3,
     SHAPE: 3,
-    LAYER: 11,
-    SIZE: 32,
     COLOR: 2,
+    SIZE: 32,
+    LAYER: 11,
     BODY: {
         DAMAGE: 4.5,
         DENSITY: 40,
@@ -6592,6 +6601,7 @@ defExports.triangleColony = {
         SHIELD: 30,
         REGEN: .5,
     },
+    VALUE: 2e5,
     GIVE_KILL_MESSAGE: true,
     DRAW_HEALTH: true,
     GUNS: [{
@@ -6651,11 +6661,11 @@ defExports.triangleColony = {
 defExports.pentagonColony = {
     PARENT: [defExports.food],
     LABEL: 'Pentagon Colony',
-    VALUE: 4e5,
+    DANGER: 3,
     SHAPE: 5,
-    LAYER: 11,
-    SIZE: 36,
     COLOR: 14,
+    SIZE: 36,
+    LAYER: 11,
     BODY: {
         DAMAGE: 5,
         DENSITY: 40,
@@ -6664,6 +6674,7 @@ defExports.pentagonColony = {
         SHIELD: 40,
         REGEN: .25
     },
+    VALUE: 4e5,
     GIVE_KILL_MESSAGE: true,
     DRAW_HEALTH: true,
     GUNS: [{
@@ -15661,20 +15672,21 @@ defExports.seerCrasher = {
 defExports.crasherSanctuary = {
     PARENT: [defExports.food],
     LABEL: 'Crasher Sanctuary',
+    DANGER: 3,
+    SHAPE: 3,
+    COLOR: 5,
     SIZE: 32,
-    VALUE: 180000,
-    DRAW_HEALTH: true,
     BODY: {
         DAMAGE: 2,
         DENSITY: 80,
         HEALTH: 1500,
-        RESIST: 1.25,//Math.pow(1.25, 3),
+        RESIST: 1.25,
         SHIELD: 80,
         REGEN: .4,
         ACCELERATION: .00125
     },
-    SHAPE: 3,
-    COLOR: 5,
+    VALUE: 180000,
+    DRAW_HEALTH: true,
     MAX_CHILDREN: 24,
     GUNS: [{
         POSITION: [4, 12, 1.2, 8, 0, 60, 0],
@@ -15760,14 +15772,9 @@ defExports.alphaCrasher = {
 };
 defExports.crasherColonySpawner = {
     PARENT: [defExports.food],
-    BODY: {
-        ACCELERATION: 1
-    },
     ALPHA: 0,
-	ON_DEFINED: function(self){
-		self.kill()
-	},
-	ON_DEAD: function ({ sockets, ran, Entity }) {
+	DIES_INSTANTLY: true,
+	ON_DEAD: function({ sockets, ran, Entity }) {
 		let x = this.x,
 			y = this.y;
 		for (let i = 0; i < 30; i++) {
@@ -15925,20 +15932,20 @@ defExports.crasherColonySpawner = {
 defExports.crasherColony = {
     PARENT: [defExports.crasher],
     LABEL: 'Crasher Colony',
-    VALUE: 5e5,
     DANGER: 8,
     SHAPE: 3,
-    LAYER: 11,
-    SIZE: 46,
     COLOR: 5,
+    SIZE: 46,
+    LAYER: 11,
     BODY: {
         DAMAGE: 6.5,
         DENSITY: 50,
         HEALTH: 1000,
         SHIELD: 10,
-        REGEN: 0.025,
-        SPEED: 1,
+        REGEN: .025,
+        SPEED: 1
     },
+    VALUE: 5e5,
     GIVE_KILL_MESSAGE: true,
     DRAW_HEALTH: true,
     GUNS: [{
@@ -15947,54 +15954,54 @@ defExports.crasherColony = {
             SHOOT_SETTINGS: combineStats([g.shoot_once]),
             TYPE: defExports.crasherColonySpawner,
             AUTOFIRE: true,
-            SKIN: 15,
-            SHOOT_ONCE: true
-        },
+            SHOOT_ONCE: true,
+            SKIN: 15
+        }
     }],
     PROPS: [{
         POSITION: [1.3, 0, 0, 180, 0],
         SHAPE: 3,
-        COLOR: 17,
+        COLOR: 17
     }, {
         POSITION: [1.35, 0, 0, 120, 0],
         SHAPE: -3,
-        COLOR: 17,
+        COLOR: 17
     }, {
         POSITION: [1.2, 0, 0, 120, 0],
-        SHAPE: -3,
+        SHAPE: -3
     }, {
-        POSITION: [0.8, 0, 0, 180, 1],
-        SHAPE: 3,
+        POSITION: [.8, 0, 0, 180, 1],
+        SHAPE: 3
     }, {
-        POSITION: [0.6, 0, 0, 180, 1],
+        POSITION: [.6, 0, 0, 180, 1],
         SHAPE: 3,
-        COLOR: 17,
+        COLOR: 17
     }, {
         POSITION: [1.1, 0, 0, 180, 0],
+        SHAPE: 3
+    }, {
+        POSITION: [.6, 0, 0, 120, 1],
+        SHAPE: -3
+    }, {
+        POSITION: [.4, 0, 0, 0, 1],
+        SHAPE: 3
+    }, {
+        POSITION: [.5, 0, 0, 120, 1],
+        SHAPE: 3
+    }, {
+        POSITION: [.45, 0, 0, 120, 1],
         SHAPE: 3,
+        COLOR: 17
     }, {
-        POSITION: [0.6, 0, 0, 120, 1],
-        SHAPE: -3,
+        POSITION: [.4, 0, 0, 120, 1],
+        SHAPE: 3
     }, {
-        POSITION: [0.4, 0, 0, 0, 1],
-        SHAPE: 3,
+        POSITION: [.25, 0, 0, 120, 1],
+        SHAPE: -3
     }, {
-        POSITION: [0.5, 0, 0, 120, 1],
-        SHAPE: 3,
-    }, {
-        POSITION: [0.45, 0, 0, 120, 1],
-        SHAPE: 3,
-        COLOR: 17,
-    }, {
-        POSITION: [0.4, 0, 0, 120, 1],
-        SHAPE: 3,
-    }, {
-        POSITION: [0.25, 0, 0, 120, 1],
-        SHAPE: -3,
-    }, {
-        POSITION: [0.25, 0, 0, 180, 1],
-        SHAPE: -3,
-    },],
+        POSITION: [.25, 0, 0, 180, 1],
+        SHAPE: -3
+    }]
 };
 defExports.sentrySwarmAI = makeSentryAI(defExports.sentrySwarm, {
     evolutions: [
@@ -16588,12 +16595,7 @@ defExports.autoTurret3 = {
     }]
 };
 defExports.basicAutoBullet = makeAuto(defExports.bullet, { type: defExports.autoTurret3 });
-defExports.interceptBasicGun = {
-    COLOR: 16,
-    GUNS: [{
-        POSITION: [22, 8.25, 1, 0, 0, 0, 0],
-    }]
-};
+defExports.interceptBasicGun = { GUNS: [{ POSITION: [22, 8.25, 1, 0, 0, 0, 0] }] };
 defExports.vulcan = {
     PARENT: [defExports.genericTank],
     LABEL: 'Vulcan',
@@ -17011,28 +17013,28 @@ defExports.rotoMissile = {
         POSITION: [14, 6, 1, 0, 0, 0, 0],
         PROPERTIES: {
             AUTOFIRE: true,
-            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.double_reload, g.low_power, g.more_damage, g.more_speed, g.more_speed, g.less_range]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
             TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }]
         }
     }, {
         POSITION: [14, 6, 1, 0, 0, 90, 0],
         PROPERTIES: {
             AUTOFIRE: true,
-            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.double_reload, g.low_power, g.more_damage, g.more_speed, g.more_speed, g.less_range]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
             TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }]
         }
     }, {
         POSITION: [14, 6, 1, 0, 0, 180, 0],
         PROPERTIES: {
             AUTOFIRE: true,
-            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.double_reload, g.low_power, g.more_damage, g.more_speed, g.more_speed, g.less_range]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
             TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }]
         }
     }, {
         POSITION: [14, 6, 1, 0, 0, 270, 0],
         PROPERTIES: {
             AUTOFIRE: true,
-            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.double_reload, g.low_power, g.more_damage, g.more_speed, g.more_speed, g.less_range]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
             TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }]
         }
     }]
@@ -32185,9 +32187,7 @@ defExports.spinMissile = {
         PROPERTIES: {
             AUTOFIRE: true,
             SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
-            TYPE: [defExports.bullet, {
-                PERSISTS_AFTER_DEATH: true
-            }],
+            TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }],
             STAT_CALCULATOR: gunCalcNames.thruster
         }
     }, {
@@ -32195,9 +32195,7 @@ defExports.spinMissile = {
         PROPERTIES: {
             AUTOFIRE: true,
             SHOOT_SETTINGS: combineStats([g.basic, g.skim, g.twist_missile]),
-            TYPE: [defExports.bullet, {
-                PERSISTS_AFTER_DEATH: true
-            }],
+            TYPE: [defExports.bullet, { PERSISTS_AFTER_DEATH: true }],
             STAT_CALCULATOR: gunCalcNames.thruster
         }
     }]
@@ -83722,7 +83720,6 @@ defExports.boompentagon = {
     },
     DRAW_HEALTH: true,
     INTANGIBLE: false,
-    EVOLUTIONS: [],
     SKILL: setSkill(0, 0, 9, 9, 9, 9, 0, 0, 0, 0),
     GUNS: [{
         POSITION: [2, 20, 1, 0, 0, 0, Infinity],
@@ -200990,12 +200987,14 @@ defExports.skippingStoner = {
         return out;
     }()
 };
-defExports.pyrolithA = deepCopy(defExports.pebbler),
-    defExports.pyrolithA.DANGER = 8,
-    defExports.pyrolithA.UPGRADE_CREDIT = 'This tank was named by Misfit.';
-defExports.pyrolithB = deepCopy(defExports.flamegunTank),
-    defExports.pyrolithB.DANGER = 8,
-    defExports.pyrolithB.UPGRADE_CREDIT = 'This tank was named by Misfit.';
+defExports.pyrolithA = cloneWithSettings(defExports.pebbler, {
+    DANGER: 8,
+    UPGRADE_CREDIT: 'This tank was named by Misfit.'
+});
+defExports.pyrolithB = deepCopy(defExports.flamegunTank, {
+    DANGER: 8,
+    UPGRADE_CREDIT: 'This tank was named by Misfit.'
+});
 makeAnimTankBest("pyrolith", "Pyrolith", [
     defExports.pyrolithA,
     defExports.pyrolithB
@@ -203476,15 +203475,13 @@ for (let i = 1, j = 31; i < j; i++) defExports[`hzLite${i}`] = {
         ACCELERATION: lerp(base.ACCEL * .5, 0, i/j),
         SPEED: lerp(base.SPEED * .5, 0, i/j)
     },
-    GUNS: [{
-        POSITION: [15, 8, 1, lerp(0, -6, i/j), 0, 0, 0]
-    }],
+    GUNS: [{ POSITION: [15, 8, 1, lerp(0, -6, i/j), 0, 0, 0] }],
     PROPS: [{
         POSITION: [1.375, 0, -.55 * (1 - i / j), 0, 1],
         SHAPE: [
             [0, 1.2],
-            [-1, 0.6],
-            [-1, -0.6],
+            [-1, .6],
+            [-1, -.6],
             [0, -1.2]
         ],
         COLOR: 239
@@ -203492,8 +203489,8 @@ for (let i = 1, j = 31; i < j; i++) defExports[`hzLite${i}`] = {
         POSITION: [1.375, 0, .55 * (1 - i / j), 0, 1],
         SHAPE: [
             [0, 1.2],
-            [1, 0.6],
-            [1, -0.6],
+            [1, .6],
+            [1, -.6],
             [0, -1.2]
         ],
         COLOR: 239
@@ -203559,18 +203556,18 @@ defExports.hzLite31 = {
         POSITION: [1.375, 0, 0, 0, 1],
         SHAPE: [
             [0, 1.2],
-            [1, 0.6],
-            [1, -0.6],
+            [1, .6],
+            [1, -.6],
             [0, -1.2],
-            [-1, -0.6],
-            [-1, 0.6],
+            [-1, -.6],
+            [-1, .6]
         ],
         COLOR: 239
     }, {
         POSITION: [1, 0, 0, 0, 1],
         SHAPE: [
             [0, -1.65],
-            [0, 1.65],
+            [0, 1.65]
         ],
         COLOR: 239,
         FILL: false,
