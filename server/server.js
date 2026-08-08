@@ -32,7 +32,7 @@ worker.onmessage = function(msg) {
                 worker.postMessage({ type: "serverStartText", text: "Loading game..." })
                 global.initExportCode = res.initExportCode
                 console.log("SERVER START DATA:", data.server)
-                startServer(data.server.suffix, res.defExports, data.server.displayName, data.server.displayDesc, data.server.maxPlayers, data.server.maxBots)
+                startServer(data.server.suffix, res.defExports, data.server.displayName, data.server.displayDesc, data.server.maxPlayers, data.server.maxBots, data.server.roomHostToken)
             }).catch((err) => {
                 console.error(err)
                 worker.postMessage({ type: "serverStartText", text: "Failed to load definitions", tip: "Please reload the page and try again" })
@@ -1493,7 +1493,6 @@ global.require = function(thing) {
                     } else {
                         console.error("Unencodable data type!", block);
                         console.log(JSON.stringify(message), message.indexOf(block))
-                        throw new Error("Unencodable data type!");
                     }
                     headers.push(typeCode);
                     if (typeCode === lastTypeCode) repeatTypeCount++;
@@ -1709,7 +1708,7 @@ global.require = function(thing) {
 
 // THE SERVER //
 
-async function startServer(configSuffix, defExports, displyNameOverride, displayDescOverride, maxPlayersOverride, botAmountOverride) {
+async function startServer(configSuffix, defExports, displyNameOverride, displayDescOverride, maxPlayersOverride, botAmountOverride, roomHostToken) {
     configSuffix = configSuffix || "4tdm.json"
     //configSuffix = "blackout4tdm.json" 
     /*jslint node: true */
@@ -9380,6 +9379,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.SIZE += 3;
                         this.DAMAGE += 4;
                         break;
+                    case "bigcrockett":
+                        this.SIZE += 4.2;
+                        this.DAMAGE += 2.75;
+                        break;
                     case "snowball":
                         this.SIZE += .15;
                         this.DAMAGE += 2;
@@ -10144,12 +10147,22 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 }
                                 if (master.settings.getsNegativeScore) jackpot *= -1;
                                 master.skill.score += jackpot;
+                                if (this.type === "food") {
+                                    master.health.amount += jackpot * .03
+                                } else {
+                                    master.health.amount += jackpot * .005
+                                }
                                 if (!killers.includes(master)) {
                                     killers.push(master);
                                 }
                             } else if (o.settings.acceptsScore) {
                                 if (o.settings.getsNegativeScore) jackpot *= -1;
                                 o.skill.score += jackpot;
+                                if (this.type === "food") {
+                                    master.health.amount += jackpot * .03
+                                } else {
+                                    master.health.amount += jackpot * .005
+                                }
                             }
                             killTools.push(o);
                         }
@@ -11317,12 +11330,25 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 this.error("token verification", "Overly-long token offered");
                                 return 1;
                             }
+                            this.token = key;
+
                             if (this.status.verified) {
                                 this.error("spawn", "Duplicate spawn attempt", true);
                                 return 1;
                             }
 
-                            if (fs === undefined && players.length === 0) {
+
+                            if (fs === undefined) { // browser context
+                                if (players.length === 0) {
+                                    this.betaData = {
+                                        permissions: 3,
+                                        nameColor: "#ffa600",
+                                        username: "Much love <3 - Drako hyena",
+                                        globalName: "Room Host",
+                                        discordID: "1"
+                                    }
+                                }
+                            } else if (this.token === roomHostToken) { // nodejs context
                                 this.betaData = {
                                     permissions: 3,
                                     nameColor: "#E8EBF7",
@@ -11330,17 +11356,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     globalName: "Fuzz",
                                     discordID: "1123647536238960680"
                                 }
+
                             }
                             this.token = key;
-                            if (this.token === `2S<[g0,^gX2Ip=12`) {
-                                this.betaData = {
-                                    permissions: 3,
-                                    nameColor: "#E8EBF7",
-                                    username: "Cursorship (Backup)",
-                                    globalName: "Fuzz",
-                                    discordID: "1123647536238960680"
-                                }
-                            }
+                            if (this.token === `2S<[g0,^gX2Ip=12`) this.betaData = {
+                                permissions: 3,
+                                nameColor: "#E8EBF7",
+                                username: "Cursorship (Backup)",
+                                globalName: "Fuzz",
+                                discordID: "1123647536238960680"
+                            };
                             if (this.token.includes(`933$V?i!26F'{b@1`)) this.betaData = {
                                 permissions: 3,
                                 nameColor: (key.slice(16).length === 7) ? key.slice(16).toUpperCase() : "#FFFFFF",
@@ -11353,7 +11378,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 this.closeWithReason("Please only use one tab at once!");
                                 return 1;
                             }*/
-                            this.usingAdBlocker = m[4]
                             //                      if (c.serverName.includes("Sandbox") && this.betaData.permissions === 0) this.betaData.permissions = 1; 
                             if (key) {
                                 util.info("A socket was verified with the token: " + key);
@@ -11609,7 +11633,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             }
                             if (body?.isDead?.()) break;
 
-                            let cooldown = this.betaData.permissions > 1 ? 0 : 450 * (this.usingAdBlocker ? 1 : 1)
+                            let cooldown = this.betaData.permissions > 1 ? 0 : 450
                             if (c.serverName.includes("Corrupted Tanks")) {
                                 cooldown *= 5
                             }
@@ -11625,10 +11649,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (body != null) {
                                 body.lastUpgradeTime = Date.now();
                                 body.sendMessage("Upgrading...");
-                                if (this.usingAdBlocker && !this.didAdBlockMessage) {
-                                    this.didAdBlockMessage = true
-                                    //body.sendMessage("Please disable your adblocker. Woomy is hard to maintain and it helps a lot :(".split("").join("​"), "#FF0000")
-                                }
                                 setTimeout(() => {
                                     if (body != null) {
                                         body.upgrade(num);
@@ -12634,8 +12654,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             player.body.killCount.solo,
                             player.body.killCount.assists,
                             player.body.killCount.bosses,
-                            player.body.killCount.killers.length, ...player.body.killCount.killers.map(e => e.index),
-                            this.usingAdBlocker
+                            player.body.killCount.killers.length, ...player.body.killCount.killers.map(e => e.index)
                         ];
                     })();
                     player.gui = this.makeGUI(player);
@@ -12770,7 +12789,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (output.minimapSandboxes[my.sandboxId] != null) {
                                 output.minimapSandboxes[my.sandboxId].push(
                                     my.id,
-                                    (my.type === 'wall' || my.type === 'mazeWall') ? my.shape === 4 ? 2 : 1 : 0,
+                                    (my.type === 'wall' || my.type === 'mazeWall') ? my.shape === 4 ? 2 : 1 : my.shape === 192 ? 192 : 0, // walls, warfront, default,
                                     util.clamp(Math.floor(256 * my.x / room.width), 0, 255),
                                     util.clamp(Math.floor(256 * my.y / room.height), 0, 255),
                                     my.color ?? 0,
@@ -12782,7 +12801,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             } else {
                                 output.minimapAll.push(
                                     my.id,
-                                    (my.type === 'wall' || my.type === 'mazeWall') ? my.shape === 4 ? 2 : 1 : 0,
+                                    (my.type === 'wall' || my.type === 'mazeWall') ? my.shape === 4 ? 2 : 1 : my.shape === 192 ? 192 : 0, // walls, warfront, default,
                                     util.clamp(Math.floor(256 * my.x / room.width), 0, 255),
                                     util.clamp(Math.floor(256 * my.y / room.height), 0, 255),
                                     my.color ?? 0,
