@@ -145,8 +145,8 @@ let developer = (options = {}) => {
                        (randomColors) ? "Everyone for themselves with unique colors, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
                        (lottery) ? "Everyone for themselves with randomized tanks, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
                        "Everyone for themselves, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room.",
-        "WIDTH": 5500,
-        "HEIGHT": 5500,
+        "WIDTH": 5250,
+        "HEIGHT": 5250,
         "ROOM_SETUP": [
             ["R N N N G N N N R R N N N G N N N R"],
             ["N N N N N N N N N N N N N N N N N N"],
@@ -181,7 +181,7 @@ let developer = (options = {}) => {
         "BOSS_SPAWN_TIMER": 0,
         "EVOLVE_TIME": 60_000,
         "EVOLVE_TIME_RAN_ADDER": 120_000,
-        "EVOLVE_HALT_CHANCE": .4,
+        "EVOLVE_HALT_CHANCE": .3,
         "tabLimit": 1
     }
 },
@@ -340,14 +340,13 @@ let developer = (options = {}) => {
     }
 })(),
     maze = (options = {}) => {
-    let elimination = options.elimination ?? false,
-        blackout = options.blackout ?? false;
+    let blackout = options.blackout ?? false;
     return {
         "ELIMINATION_MODE": elimination,
         "BLACKOUT": blackout,
         "MAZE": {
             "ENABLED": true,
-            "cellSize": elimination ? 5500/31 : 10000/31,
+            "cellSize": elimination ? 5250/31 : 10000/31,
             "stepOneSpacing": 3,
             "fillChance": 0.35,
             "sparedChance": 0.65,
@@ -356,12 +355,11 @@ let developer = (options = {}) => {
         "displayName": (elimination) ? "Fuzzy's Maze Elimination" :
                        (blackout) ? "Fuzzy's Blackout Maze" :
                        "Fuzzy's Maze",
-        "displayDesc": (elimination) ? "Everyone for themselves in a maze, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing." :
-                       "Self-explanatory.",
+        "displayDesc": "Self-explanatory.",
         "X_GRID": 31,
         "Y_GRID": 31,
-        "WIDTH": elimination ? 5500 : 10000,
-        "HEIGHT": elimination ? 5500 : 10000,
+        "WIDTH": 10000,
+        "HEIGHT": 10000,
         "ROOM_SETUP": [                   /*C*/
             ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
             ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
@@ -402,15 +400,81 @@ let developer = (options = {}) => {
                 default: throw new TypeError(cell + " is not a valid cell type!");
             }
         })),
-        "MAX_FOOD": elimination ? 336 : 625, // 961
-        "MAX_COMBINED_NEST_FOOD": elimination ? 36 : 49, // 49
-        "MAX_CRASHERS": elimination ? 0 : 58, // 98
+        "MAX_FOOD": 625, // 961
+        "MAX_COMBINED_NEST_FOOD": 49, // 49
+        "MAX_CRASHERS": 58, // 98
         "MAX_SANCS": 1,
         "EVOLVE_TIME_RAN_ADDER": 240000,
-        "EVOLVE_HALT_CHANCE": elimination ? .25 : .4,
-        "BORDER_FORCE": 0.075,
-        "tabLimit": elimination ? 1 : 2
+        "EVOLVE_HALT_CHANCE": .4,
+        "BORDER_FORCE": 0.075
     }
+},
+    mazeElimination = {
+    "MAZE": {
+        "ENABLED": true,
+        "cellSize": 5250/31,
+        "stepOneSpacing": 3,
+        "fillChance": 0.35,
+        "sparedChance": 0.65,
+        "margin": .25
+    },
+    "ELIMINATION_MODE": true,
+    "displayName": "Fuzzy's Maze Elimination",
+    "displayDesc": "Everyone for themselves in a maze, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this mode.",
+    "X_GRID": 31,
+    "Y_GRID": 31,
+    "WIDTH": 5250,
+    "HEIGHT": 5250,
+    "ROOM_SETUP": [                   /*C*/
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"], /*C*/
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
+        ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"]
+    ].map(row => row[0].split(" ").map(cell => {
+        switch (cell) {
+            case "N": return "norm";
+            case "P": return "nest";
+            case "R": return "rock";
+            default: throw new TypeError(cell + " is not a valid cell type!");
+        }
+    })),
+    "MAX_FOOD": 336, // 961
+    "MAX_COMBINED_NEST_FOOD": 36, // 49
+    "MAX_CRASHERS": 0, // 98
+    "MAX_SANCS": 1,
+    "BOSS_SPAWN_TIMER": 0,
+    "EVOLVE_TIME": 60_000,
+    "EVOLVE_TIME_RAN_ADDER": 120_000,
+    "EVOLVE_HALT_CHANCE": .3,
+    "BORDER_FORCE": 0.075,
+    "tabLimit": 1
 },
     minibossRush = {
     "MODE": "tdm",
@@ -1063,4 +1127,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(minibossRush());
+select(mazeElimination, { lifespan: 3600 });

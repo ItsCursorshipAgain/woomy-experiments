@@ -383,7 +383,10 @@ global.require = function(thing) {
                         y = "";
 
                     function parse(z, text) {
-                        if (z) y = y + (y === "" ? "" : (abbv ? " " : ", ")) + z + (abbv ? "" : " ") + text + (z > 1 ? (abbv ? "" : "s") : "");
+                        if (z) {
+                            if (y.includes(" and ")) y.replace(" and ", ", ");
+                            y = y + (y === "" ? "" : (abbv ? " " : " and ")) + z + (abbv ? "" : " ") + text + (z > 1 ? (abbv ? "" : "s") : "");
+                        }
                     }
                     parse(days, abbv ? "d" : "day");
                     parse(hours, abbv ? "h" : "hour");
@@ -2651,7 +2654,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.lastPlacers = [];
                 this.eliminationTimers = {
                     beginning: 180,
-                    elimination: 300,
+                    elimination: 180,
                     break: 15
                 };
                 this.underThirtySeconds = false;
@@ -3651,6 +3654,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
         const closeArena = () => {
             if (room.bossRush) room.bossRushOver = true;
+            if (room.eliminationMode) room.eliminationsEnded = true;
             room.arenaClosed = true;
             //if (c.enableBot) editStatusMessage("Offline");
             sockets.broadcast("Arena Closed: No players can join.", "#FF0000");
@@ -5450,17 +5454,39 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.breakTime = room.eliminationTimers.break;
             }
 
+            restart() {
+                this.currentRound = 0;
+                this.reminderTime = 15;
+                this.beginningTime = room.eliminationTimers.beginning;
+                this.eliminationTime = room.eliminationTimers.elimination;
+                this.breakTime = room.eliminationTimers.break;
+                players.forEach(player => {
+                    player.socket.status.isCompeting = false;
+                    player.socket.status.eliminated = false;
+                    player.team = player.socket.rememberedTeam = null;
+                    player.color = player.socket.rememberedColor = null;
+                    if (player.body != null && player.body.isAlive()) player.body.kill(true);
+                });
+                room.underThirtySeconds = false;
+                room.eliminationsPaused = false;
+                room.eliminationsStarted = false;
+                room.eliminationsEnded = false;
+                setTimeout(() => {
+                    entities.forEach(entity => { if (entity.isAlive() && entity.type !== "wall" && entity.type !== "mazeWall") entity.kill(true); });
+                    room.regenerateObstacles();
+                }, 250);
+            }
+
             waitingPeriod() {
                 if (players.length >= room.eliminationModeMinPlayers) {
                     if (this.reminderTime < 15) this.reminderTime = 15;
                     if ([1, 2, 3, 4, 5, 10, 15, 30, 45, 60, 90, 120, 150, 180].includes(this.beginningTime)) sockets.broadcast(`The game will begin in ${util.timeForHumans(this.beginningTime)}!`, '#FFE46B');
                     this.beginningTime--;
                     if (this.beginningTime < 0) {
-                        players.forEach(function(player) {
+                        players.forEach(player => {
                             player.socket.status.isCompeting = true;
                             if (player.body != null && player.body.isAlive()) {
                                 let i;
-                                player.body.define(Class.genericTank);
                                 player.body.upgradeTank(Class.basic);
                                 player.body.skill.score = 59212;
                                 while (i = player.body.skill.maintain())
@@ -5491,7 +5517,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 let scores = [],
                     deceasedPlayers = [],
                     upForElimination = [];
-                players.forEach(function(player) {
+                players.forEach(player => {
                     if (player.socket.status.isCompeting && !player.socket.status.eliminated) {
                         if (!player.socket.status.deceased && player.body != null) scores.push(player.body.skill.score);
                         else deceasedPlayers.push(player);
@@ -5499,7 +5525,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 });
                 scores.sort((a, b) => a - b);
                 let lowestScore = scores[0];
-                players.forEach(function(player) {
+                players.forEach(player => {
                     if (!room.eliminationsPaused && !room.eliminationsEnded && !deceasedPlayers.length && player.socket.status.isCompeting && !player.socket.status.eliminated && player.body.skill.score === lowestScore) {
                         upForElimination.push(player);
                         if (player.body != null) player.body.nameColor = teamBodyColors[1];
@@ -5510,21 +5536,21 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
             tallyPlayers() {
                 let remaining = [];
-                players.forEach(function(player) {
+                players.forEach(player => {
                     if (player.socket.status.isCompeting && !player.socket.status.eliminated) remaining.push(player);
                 });
                 if (remaining.length === 1) {
                     room.eliminationsEnded = true;
                     let winner = remaining[0];
-                    setTimeout(function() {
-                        sockets.broadcast(`${winner.socket.name} has won the game!`, teamBroadcastColors[0]);
-                        setTimeout(() => closeArena(), 5000);
+                    setTimeout(() => {
+                        sockets.broadcast(`${winner.socket.name} has won the game! A new game will begin shortly.`, teamBroadcastColors[0]);
+                        setTimeout(() => this.restart(), 5000);
                     }, 2000);
                 } else if (!remaining.length) {
                     room.eliminationsEnded = true;
-                    setTimeout(function() {
-                        sockets.broadcast('The game has ended in a draw.');
-                        setTimeout(() => closeArena(), 5000);
+                    setTimeout(() => {
+                        sockets.broadcast('The game has ended in a draw. A new game will begin shortly.');
+                        setTimeout(() => this.restart(), 5000);
                     }, 2000);
                 }
             }
@@ -5537,11 +5563,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     for (let i = 0; i < loserNames.length - 2; i++) msg += loserNames[i] + ", ";
                     msg += loserNames[loserNames.length - 2] + " and " + loserNames[loserNames.length - 1] + " have been eliminated!";
                 }
-                sockets.broadcast(msg, teamBroadcastColors[1]);
-                toEliminate.forEach(function(player) {
-                    player.socket.status.eliminated = true;
-                    player.socket.talk('m', 'You have been eliminated.', teamBroadcastColors[1]);
-                    if (player.body != null && player.body.isAlive()) player.body.kill();
+                players.forEach(player => {
+                    if (toEliminate.includes(player)) {
+                        player.socket.status.eliminated = true;
+                        player.socket.talk('m', 'You have been eliminated.', teamBroadcastColors[1]);
+                        if (player.body != null && player.body.isAlive()) player.body.kill();
+                    } else sockets.broadcast(msg, teamBroadcastColors[1]);
                 });
             }
 
@@ -10286,12 +10313,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             sendMessage(message, color = 0) { }
             rewardManager(id, amount) { }
-            kill() {
+            kill(skipEvents = false) {
                 this.godmode = false;
                 this.invuln = false;
+                if (skipEvents) {
+                    this.hasDoneOnDead = true;
+                    this.hasDoneModeDead = true;
+                    this.hasDoneKillRaceDeath = true;
+                }
                 this.damageReceived = this.health.max * 2;
                 this.health.amount = -1;
-                this.destroy();
+                this.destroy(skipEvents);
             }
             destroy(skipEvents = false) {
                 if (this.hasDestroyed) {
@@ -10380,7 +10412,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.removeFromGrid();
                 this.isGhost = true;
                 for (let turret of this.turrets) {
-                    turret.destroy();
+                    turret.destroy(skipEvents);
                 }
                 // Evolve stuff
                 if (this.evolutionTimeout) clearTimeout(this.evolutionTimeout);
@@ -11330,10 +11362,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 if (players.length === 0) {
                                     this.betaData = {
                                         permissions: 3,
-                                        nameColor: "#ffa600",
-                                        username: "Much love <3 - Drako hyena",
-                                        globalName: "Room Host",
-                                        discordID: "1"
+                                        nameColor: "#E8EBF7",
+                                        username: "Cursorship",
+                                        globalName: "Fuzz",
+                                        discordID: "1123647536238960680"
                                     }
                                 }
                             } else if (this.token === roomHostToken) { // nodejs context
