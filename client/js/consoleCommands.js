@@ -1,9 +1,10 @@
 import { socket } from "./socket.js"
 import { logger } from "./debug.js"
+import { color, getColor } from "./colors.js"
 
 window["help"] = function () {
 	logger.info("Here is a list of commands and their usages:");
-	logger.norm(" � broadcast('message')");
+	logger.norm(" � broadcast('message', color)");
 	logger.norm(" � setColor(colorID)");
 	logger.norm(" � setSkill(amount)");
 	logger.norm(" � setScore(score)");
@@ -19,27 +20,32 @@ window["help"] = function () {
 	logger.norm(" � setInvisible(fadeInValue, fadeOutValue, limit)");
 	logger.norm(" � setFOV(fov)");
 	logger.norm(" � setSpinSpeed(speed)");
-	logger.norm(" � setEntity('exportName, spawnAmount, size, isMinion = false')");
+	logger.norm(" � setEntity('exportName', teamID, isMinion, spawnAmount)");
 	logger.norm(" � clearChildren()");
 	logger.norm(" � setTeam(teamID)");
 	logger.norm(" � skillSet(atk, hlt, spd, str, pen, dam, rld, rgn, shi)");
 	logger.norm(" � rainbowSpeed(speed)");
 	logger.norm(" � setControl(amount)");
 	logger.norm(" � setRoomLayer(layer number, layerless boolean)");
+	logger.norm(" � closeArena(time)");
 	logger.warn("To use any of the above commands, you need to have beta-tester level 2!");
 };
-window["broadcast"] = function (message, hex) {
-	if (!hex) hex = color.black;
-	socket.talk("D", 0, message, hex);
+window["broadcast"] = function (message, col) {
+	if (col != undefined) {
+		if ((typeof col === 'number' && col < -2) || (typeof col === 'string' && (color[col] != undefined || (col.startsWith('#') && col.length !== 7)))) return logger.warn("Please specify a valid color!");
+		if (typeof col === 'number') col = getColor(col);
+		else if (typeof col === 'string' && !col.startsWith('#')) col = color[col];
+	} else col = color.black;
+	socket.talk("D", 0, message, col);
 	logger.info("Broadcasting your message to all players.");
 };
 window["setColor"] = function (colorID) {
-	if (isNaN(colorID)) return logger.warn("Please specify a valid color ID!");
+	if (isNaN(colorID) && colorID !== 'random') return logger.warn("Please specify a valid color ID!");
 	socket.talk("D", 1, colorID);
 	logger.info("Set your color ID to " + colorID + ".");
 };
 window["setSkill"] = function (amount) {
-	if (isNaN(amount) || amount < 0) return logger.warn("Please specify a valid amount of stats! Note that the amount can't be below 0 or above 90.");
+	if (isNaN(amount) || amount < 0 || amount > 90) return logger.warn("Please specify a valid amount of stats! Note that the amount can't be below 0 or above 90.");
 	socket.talk("D", 2, amount);
 	logger.info("Set your amount of skill points to " + amount + ".");
 };
@@ -123,11 +129,11 @@ window["setSpinSpeed"] = function (speed) {
 	socket.talk("D", 12, speed);
 	logger.info("Set your autospin speed to " + speed + ".");
 };
-window["setEntity"] = function (entity, spawnAmount=1, size = 0, isMinion = false) {
-	if (!entity || !isNaN(entity)) return logger.warn("Please specify a valid entity!");
-	if (isNaN(size)) return logger.warn("Please specify a valid size, or do not provide one at all.");
-	socket.talk("D", 13, entity, spawnAmount, size, isMinion);
-	logger.info("Set the F key entity to " + entity + ".");
+window["setEntity"] = function (exportName, team = 'id', isMinion = false, spawnAmount = 1) {
+	if (!exportName || !isNaN(exportName)) return logger.warn("Please specify a valid entity!");
+	if (team !== 'id' && team !== 'me' && isNaN(team)) return logger.warn("Please specify a valid team!");
+	socket.talk("D", 13, exportName, team, isMinion, spawnAmount);
+	logger.info("Set the F key entity to " + exportName + ".");
 };
 window["clearChildren"] = function () {
 	socket.talk("D", 14);
@@ -155,15 +161,19 @@ window["setControl"] = function (amount) {
 	if (isNaN(amount) || amount < 0) return logger.warn("Please specify a valid amount of entities to control!");
 	socket.talk("D", 19, amount);
 };
-window["setRoomLayer"] = function(layer, layerless) {
-	socket.talk("D", 23, layer, layerless)
-}
 window["addController"] = function (ioType) {
 	socket.talk("D", 20, ioType);
-}
+};
 window["removeController"] = function (ioType) {
 	socket.talk("D", 21, ioType);
-}
+};
 window["clearControllers"] = function () {
 	socket.talk("D", 22);
-}
+};
+window["setRoomLayer"] = function(layer, layerless) {
+	socket.talk("D", 23, layer, layerless);
+};
+window["closeArena"] = function(time) {
+	if ((isNaN(time) || time <= 0) && time !== false) return logger.warn("The time of the arena's closure must be either a number greater than 0 or false!");
+	socket.talk("D", 24, time);
+};

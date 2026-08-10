@@ -586,10 +586,51 @@ let themes = {
 		"border": 0.5
 	},
 	"amethyst": {
-		"teal": "#467b7c", "lgreen": "#79a05a", "orange": "#8a5b42", "yellow": "#FDF380", "lavender": "#B58EFD", "pink": "#a66e8e", "vlgrey": "#888891", "lgrey": "#AA9F9E", "guiwhite": "#a48ec2", "black": "#000000", "blue": "#254b74", "green": "#417e2a", "red": "#7e2525", "gold": "#8e862e", "purple": "#5c4186", "magenta": "#3d1764", "grey": "#58575b", "dgrey": "#726F6F", "white": "#665a87", "guiblack": "#000000", "paletteSize": 10, "border": 0.5
+		"teal": "#467b7c",
+		"lgreen": "#79a05a",
+		"orange": "#8a5b42",
+		"yellow": "#FDF380",
+		"lavender": "#B58EFD",
+		"pink": "#a66e8e",
+		"vlgrey": "#888891",
+		"lgrey": "#AA9F9E",
+		"guiwhite": "#a48ec2",
+		"black": "#000000",
+		"blue": "#254b74",
+		"green": "#417e2a",
+		"red": "#7e2525",
+		"gold": "#8e862e",
+		"purple": "#5c4186",
+		"magenta": "#3d1764",
+		"grey": "#58575b",
+		"dgrey": "#726F6F",
+		"white": "#665a87",
+		"guiblack": "#000000",
+		"paletteSize": 10,
+		"border": 0.5
 	},
 	"fantasy": {
-		"teal": "#e43939", "lgreen": "#77ec6c", "orange": "#ed657a", "yellow": "#fdf380", "lavender": "#8c00ff", "pink": "#ff8bff", "vlgrey": "#f2f4fd", "lgrey": "#000000", "guiwhite": "#ffffff", "black": "#191919", "blue": "#3e67f4", "green": "#02cf05", "red": "#ca0020", "gold": "#fdef75", "purple": "#7a8bf4", "magenta": "#d952ff", "grey": "#4e4d50", "dgrey": "#353535", "white": "#646262", "guiblack": "#000000", "border": 0.5
+		"teal": "#e43939",
+		"lgreen": "#77ec6c",
+		"orange": "#ed657a",
+		"yellow": "#fdf380",
+		"lavender": "#8c00ff",
+		"pink": "#ff8bff",
+		"vlgrey": "#f2f4fd",
+		"lgrey": "#000000",
+		"guiwhite": "#ffffff",
+		"black": "#191919",
+		"blue": "#3e67f4",
+		"green": "#02cf05",
+		"red": "#ca0020",
+		"gold": "#fdef75",
+		"purple": "#7a8bf4",
+		"magenta": "#d952ff",
+		"grey": "#4e4d50",
+		"dgrey": "#353535",
+		"white": "#646262",
+		"guiblack": "#000000",
+		"border": 0.5
 	}
 };
 
@@ -1239,7 +1280,7 @@ function getColor(colorID) {
 		default:
 			if (typeof colorID == "string") {
 				if (colorID.length !== 7) {
-					return "#F00000"//else it would break undefined colorID entities
+					return "#F00000"; //else it would break undefined colorID entities
 					throw new Error("Colors should be a 6 number hexcode (i.e. #000000), got:\"" + colorID + "\"")
 				}
 				return colorID
@@ -1269,6 +1310,7 @@ function getZoneColor(cell, real, seed = 1) {
 				return mixColors(color.pink, color.guiwhite, 1 / 3);
 		}
 	}
+	if (cell.includes("domP")) return (+cell.slice(4) === global.player?.team) ? color.blue : color.red;
 	switch (cell) {
 		case "n_b1":
 		case "bas1":

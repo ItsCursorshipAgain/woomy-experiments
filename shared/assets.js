@@ -10,7 +10,7 @@ function loadAsset(magic, id){
 }
 
 function getAsset(id){
-	return assets[id];
+	return assets[id].info.color?assets[id].data:assets[id];
 }
 
 async function setAsset(key, data, info={}){
@@ -19,6 +19,7 @@ async function setAsset(key, data, info={}){
 		id: info.id||id,
 		data: data,
 		info: {
+			color: !!info.color,
 			path2d: !!info.path2d,
 			path2dDiv: info.path2dDiv||1,
 			image: !!info.image,

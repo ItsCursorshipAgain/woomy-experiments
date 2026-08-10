@@ -1,4 +1,5 @@
 import { setAsset } from "../shared/assets.js";
+import { mixColors } from "../shared/mix_colors.js";
 
 // Here's some examples, they work in their intended places.
 // These can be used for any data
@@ -20,5 +21,92 @@ setAsset("ranImage", "https://picsum.photos/100", {
 })
 
 // For COLOR
-setAsset("pumpkinOrange", "#FF7518");
+setAsset("pumpkinOrange", "#FF7518", { color: true });
 */
+
+setAsset('parallelogram', "m 182.187,-128.336 -66.071,256.672 -298.303,-0 66.505,-257.028 z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('flower', "m 162.913,-66.381 c 78.383,35.473 78.383,97.484 0,132.957 -20.181,9.134 -39.609,11.292 -58.848,9.141 7.937,17.585 11.854,36.674 9.412,58.617 -9.515,85.508 -68.491,104.671 -126.45,41.086 -14.922,-16.371 -22.979,-34.181 -26.878,-53.142 -14.271,12.982 -31.215,22.606 -52.838,27.064 -84.264,17.374 -120.713,-32.793 -78.151,-107.564 10.958,-19.252 25.408,-32.417 42.235,-41.986 -16.757,-9.56 -31.146,-22.701 -42.069,-41.889 -42.562,-74.77 -6.113,-124.939 78.151,-107.565 21.696,4.473 38.681,14.146 52.982,27.194 3.913,-18.891 11.965,-36.637 26.839,-52.955 57.958,-63.584 116.934,-44.421 126.45,41.086 2.45,22.016 -1.5,41.16 -9.491,58.792 19.176,-2.115 38.542,0.059 58.656,9.162 z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('trueStar', "M 256,6.75374e-8 103.55417,75.236508 79.108351,243.47047 -39.554173,121.73523 -207.10835,150.47302 -127.99999,1.5943611e-7 -207.10835,-150.47302 -39.554173,-121.73523 79.108351,-243.47047 103.55417,-75.236508 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('roundStar', "M 182,6.75374e-8 C 182,16.623389 105.4777,56.086393 95.706713,69.534997 85.93573,82.983601 72.050876,167.95538 56.241093,173.09229 40.431311,178.2292 -20.746929,117.6469 -36.556711,112.50999 -52.366494,107.37308 -137.47011,120.42552 -147.24109,106.97692 -157.01208,93.528312 -118.3,16.623389 -118.3,1.5247192e-7 -118.3,-16.623389 -157.01208,-93.528312 -147.24109,-106.97692 c 9.77098,-13.4486 94.874596,-0.39616 110.684379,-5.53307 15.809782,-5.13691 76.988022,-65.71921 92.797804,-60.5823 15.809782,5.13691 29.694637,90.108689 39.46562,103.557293 C 105.4777,-56.086393 182,-16.623389 182,6.75374e-8 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('puffyStar', "M 169,6.75374e-8 C 169,25.257452 110.55267,49.10129 95.706713,69.534997 80.860755,89.968705 76.245136,152.92357 52.223872,160.72855 28.202608,168.53353 -12.535447,120.31497 -36.556711,112.50999 -60.577975,104.70501 -121.87791,119.76942 -136.72387,99.335708 -151.56983,78.902 -118.3,25.257452 -118.3,1.5247192e-7 -118.3,-25.257451 -151.56983,-78.902 -136.72387,-99.335708 c 14.84596,-20.433712 76.145895,-5.369302 100.167159,-13.174282 24.021264,-7.80498 64.759319,-56.02354 88.780583,-48.21856 24.021264,7.80498 28.636883,70.759845 43.482841,91.193553 C 110.55267,-49.10129 169,-25.257452 169,6.75374e-8 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('icePalisadeTeal', '#20C3D0', { color: true });
+setAsset('icePalisadeLightTeal', '#3FD0D4', { color: true });
+setAsset('icePalisadeBrightTeal', '#86D6D8', { color: true });
+setAsset('icePalisadeWhite', '#B9E8EA', { color: true });
+setAsset('minesweeperCrushColor', '#C4A484', { color: true });
+setAsset('gaisenblasterYellow', '#EABE39', { color: true });
+setAsset('gaisenblasterLightRed', '#C0001A', { color: true });
+setAsset('gaisenblasterLightYellow', '#EFD171', { color: true });
+setAsset('gaisenblasterRed', '#A30011', { color: true });
+setAsset('youkaiPurple', '#511D78', { color: true });
+setAsset('youkaiRed', '#D8333F', { color: true });
+setAsset('youkaiLavender', '#AB7EC1', { color: true });
+setAsset('moonRabbitWhite', '#FEF5F5', { color: true });
+setAsset('moonRabbitPink', '#E99093', { color: true });
+setAsset('sassasadeColor', mixColors('#EAB57A', '#666666', .5), { color: true });
+setAsset('terminatorColor', '#D78E7E', { color: true });
+setAsset('dealerColor', mixColors('#7ADBBC', '#B8B8B8', .3), { color: true });
+setAsset('invertedPurple', '#729520', { color: true });
+setAsset('invertedOrange', '#187692', { color: true });
+setAsset('invertedGold', '#1038B4', { color: true });
+setAsset('glomoColor', mixColors('#CB6F3C', '#B8B8B8', .3), { color: true });
+setAsset('boxerColor', mixColors('#FDA54D', '#B8B8B8', .3), { color: true });
+setAsset('lipstickColor', mixColors('#A177FC', '#B8B8B8', .3), { color: true });
+setAsset('colaColor', mixColors('#65F0EC', '#B8B8B8', .3), { color: true });
+setAsset('parallelogramColor', '#A6E22D', { color: true });
+setAsset('disrupter', "M -127.6, -152.3145 94.6925, -114.276 136.4225, 0 94.6925, 114.276 -127.6, 152.3145 -31.4605, 59.385 V -59.385 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('disrupterColor', '#EBB925', { color: true });
+setAsset('twinkle', "M 270, 0 C 270, 10.157383 93.095834, 78.731125 85.91348, 85.913479 78.731125, 93.095834 10.157383, 270 0, 270 -10.157383, 270 -78.731125, 93.095834 -85.913479, 85.91348 -93.095834, 78.731125 -270, 10.157383 -270, 0 -270, -10.157383 -93.095834, -78.731125 -85.91348, -85.913479 -78.731125, -93.095834 -10.157383, -270 0, -270 10.157383, -270 78.731125, -93.095834 85.913479, -85.91348 93.095834, -78.731125 270, -10.157383 270, 0 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('fatStar', "M 171, 0 C 171, 25.414 114.544, 51.807 99.606, 72.368 84.668, 92.929 77.012, 154.777 52.842, 162.631 28.671, 170.484 -13.876, 124.948 -38.046, 117.094 -62.217, 109.241 -123.404, 121.072 -138.342, 100.511 -153.28, 79.951 -123.12, 25.414 -123.12, 0 -123.12, -25.414 -153.28, -79.951 -138.342, -100.511 c 14.938, -20.561 76.125, -8.729 100.296, -16.583 24.17, -7.853 66.718, -53.39 90.888, -45.537 24.17, 7.853 31.826, 69.702 46.764, 90.263 C 114.544, -51.807 171, -25.414 171, 0 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('wadafaColor', '#D0E3F2', { color: true });
+setAsset('halfCircle', "M 13.38, -127.3 A 128, 128 0 0 1 128, 0 128, 128 0 0 1 13.38, 127.3 Z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('umbraShape', "M -128.6, 73.100322 V -73.1 l -69.875, -157.4875 132.225, 81.1625 282.725, 91.375 v 116.1 l -282.725, 91.375 -132.225, 81.1625 z", {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('ccaRed', '#DD0024', { color: true });
+setAsset('ccaBlack', '#444444', { color: true });
+setAsset('spritementGreen', '#43FF3A', { color: true });
+setAsset('spritementBlue', '#0E38FC', { color: true });
+setAsset('spritementYellow', '#FFFE32', { color: true });
+setAsset('battleSpiderMandible', 'M 56, 0 A 56, 128 0 0 1 0, 128 56, 128 0 0 1 -56, 0 56, 128 0 0 1 0, -128 56,128 0 0 1 56, 0 Z', {
+	path2d: true,
+	path2dDiv: 128
+});
+setAsset('battleSpiderBlack', '#2E2B2E', { color: true });
+setAsset('battleSpiderRed', '#F80014', { color: true });
+setAsset('battlezoidYellow', '#FAFE31', { color: true });
+setAsset('hnossGray', '#828293', { color: true });
+setAsset('hnossLightGreen', '#E9FFCE', { color: true });
+setAsset('hnossDarkGreen', '#8FB75C', { color: true });
+setAsset('6PointedStar', "m -1.2745055,-0.73559036 .8496635,-1.54e-5 L -5.9657109e-7,-1.4711814 .42484199,-0.73560576 1.2745055,-0.73559036 .84968469,-1.7597132e-6 1.2745055,0.73558804 .42484199,0.73560224 -5.9657109e-7,1.4711779 -0.424842,0.73559964 -1.2745055,0.73558804 -0.8496847,-1.7597132e-6 Z", {
+	path2d: true,
+	path2dDiv: 1
+});
