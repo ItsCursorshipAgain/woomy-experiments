@@ -2814,11 +2814,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             regenerateObstacles() {
                 entities.forEach(entity => (entity.type === "wall" || entity.type === "mazeWall") && entity.kill());
-                if (c.MAZE.ENABLED) {
-                    global.generateMaze(c.MAZE);
-                } else {
-                    global.placeObstacles();
-                }
+                if (c.MAZE.ENABLED) global.generateMaze(c.MAZE);
+                global.placeObstacles();
             }
             init() {
                 if (c.ROOM_SETUP.length !== c.Y_GRID) {
@@ -5568,7 +5565,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         player.socket.status.eliminated = true;
                         player.socket.talk('m', 'You have been eliminated.', teamBroadcastColors[1]);
                         if (player.body != null && player.body.isAlive()) player.body.kill();
-                    } else sockets.broadcast(msg, teamBroadcastColors[1]);
+                    } else player.socket.talk('m', msg, teamBroadcastColors[1]);
                 });
             }
 
@@ -8361,9 +8358,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         control.alt = faucet.alt;
                     }
                 }
-                if (this.settings.attentionCraver && !faucet.main && this.range > 1) {
-                    this.range--;
-                }
+                if (this.settings.attentionCraver && !faucet.main && this.range > 1) this.range--;
                 for (let i = 0, l = this.controllers.length; i < l; i++) {
                     let output = this.controllers[i].think(control);
                     if (!output) {
@@ -8432,9 +8427,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
                 }
                 for (let i = 0, l = this.guns.length; i < l; i++) {
-                    if (this.guns[i]) { // This if statement shouldn't be here. This is purely here because Meijijingu would be broken without it.
-                        this.guns[i].liveButBetter();
-                    }
+                    // This if statement shouldn't be here. This is purely here because Meijijingu would be broken without it.
+                    if (this.guns[i]) this.guns[i].liveButBetter();
                 }
                 if (this.skill.maintain()) this.refreshBodyAttributes();
                 if (this.isRogue && !this.isOrphan && room.gameMode === 'ffa' && this.team !== -20) {
@@ -8459,19 +8453,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         if (this.control.fire || this.control.main) this.alpha = Math.min(1, this.alpha + this.invisible[0]);
                     } else if (!this.velocity.isShorterThan(.15)) this.alpha = Math.min(1, this.alpha + this.invisible[0]);
                 }
-                if (this.control.main && this.onMain) {
-                    this.onMain(this, entities);
-                }
-                if (!this.control.main && this.onNotMain) {
-                    this.onNotMain(this, entities);
-                }
-                if (this.control.alt && this.onAlt) {
-                    this.onAlt(this, entities);
-                }
-                if (!this.control.alt && this.onNotAlt) {
-                    this.onNotAlt(this, entities);
-                }
+                if (this.control.main && this.onMain) this.onMain(this, entities);
+                if (!this.control.main && this.onNotMain) this.onNotMain(this, entities);
+                if (this.control.alt && this.onAlt) this.onAlt(this, entities);
+                if (!this.control.alt && this.onNotAlt) this.onNotAlt(this, entities);
                 if (this.onTick) this.onTick(this, entities);
+                players.forEach(player => {
+                    if (player.socket.betaData.permissions < 3) {
+                        if (player.socket.inactivityTimeout == null && (player.socket.status.deceased || !player.command.right && !player.command.left && !player.command.up && !player.command.down && !player.command.lmb && !player.command.rmb)) player.socket.beginTimeout();
+                        else if (player.socket.inactivityTimeout != null && (player.command.right || player.command.left || player.command.up || player.command.down || player.command.lmb || player.command.rmb)) player.socket.endTimeout();
+                    }
+                });
             }
             addController(newIO) {
                 if (Array.isArray(newIO)) this.controllers = newIO.concat(this.controllers);
@@ -10320,6 +10312,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.hasDoneOnDead = true;
                     this.hasDoneModeDead = true;
                     this.hasDoneKillRaceDeath = true;
+                    this.childrenMap.forEach(c => {
+                        c.hasDoneOnDead = true;
+                        c.hasDoneModeDead = true;
+                        c.hasDoneKillRaceDeath = true;
+                    });
                 }
                 this.damageReceived = this.health.max * 2;
                 this.health.amount = -1;
@@ -11092,14 +11089,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.name = undefined;
                     this.inactivityTimeout = null;
                     this.beginTimeout = () => {
+                        if (this.betaData.permissions === 3) return;
                         this.inactivityTimeout = setTimeout(() => {
-                            if (this.betaData.globalName !== "Fuzz") {
-                                this.talk("P", "You were disconnected for inactivity.");
-                                this.kick("Kicked for inactivity!");
-                            }
-                        }, (c.INACTIVITY_TIMEOUT || 360) * 1000);
+                            this.talk("P", "You were disconnected for inactivity.");
+                            this.kick("Kicked for inactivity!");
+                        }, 120_000);
                     };
-                    this.endTimeout = () => clearTimeout(this.inactivityTimeout);
+                    this.endTimeout = () => {
+                        clearTimeout(this.inactivityTimeout);
+                        this.inactivityTimeout = null;
+                    };
                     this.backlogData = new BacklogData(this.id, this.ip);
                     this.animationsInterval = setInterval(this.animationsUpdate.bind(this), 1000 / 5);// 5 fps animations
                     clients.push(this);
@@ -11164,13 +11163,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
                 kick(reason = "Unspecified.") {
                     util.warn(this.readableID + "has been kicked. Reason: " + reason);
-                    this.talk("P", "You have been kicked: " + reason)
-                    this.close()
+                    this.talk("P", "You have been kicked: " + reason);
+                    this.close();
                 }
                 ban(reason) {
-                    if (this.isBanned) {
-                        return;
-                    }
+                    if (this.isBanned) return;
                     this.isBanned = true;
                     util.warn(this.readableID + "has been banned. Reason: " + reason);
                     bans.push({
@@ -11178,7 +11175,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         reason: reason
                     });
                     this.talk("P", "You have been banned: " + reason)
-                    this.talk("closeSocket")
+                    this.talk("closeSocket");
                 }
                 close(isBanned) {
                     this.talk("closeSocket");
@@ -11508,7 +11505,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             }
                             this.spawnCount += 1;
                             this.name = trimName(name);
-                            if (this.inactivityTimeout != null) this.endTimeout();
                             // Namecolor
                             let body = this.player.body;
                             body.skill.score += Math.pow(this.status.previousScore, .7);
@@ -14076,7 +14072,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
         const maintainLoop = (() => {
             global.placeObstacles = () => {
-                if (room.modelMode) return;
+                if (room.modelMode || c.MAZE.ENABLED) return;
                 if (c.ARENA_TYPE === 1) {
                     let o = new Entity({
                         x: room.width / 2,
@@ -15964,10 +15960,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 timeAlive: util.formatTime(records[1] * 1000),
                             });
                         }
-                        if (body.miscIdentifier !== "No Death Log") {
-                            util.info(trimName(body.name) + " has died. Final Score: " + body.skill.score + ". Tank Used: " + body.label + ". Players: " + clients.length + "."); // Assuming util.info and trimName are defined elsewhere
-                        }
-                        socket.beginTimeout();
+                        if (body.miscIdentifier !== "No Death Log") util.info(trimName(body.name) + " has died. Final Score: " + body.skill.score + ". Tank Used: " + body.label + ". Players: " + clients.length + "."); // Assuming util.info and trimName are defined elsewhere
                     }
                     //player.body = null; // Dereference the dead body
                 }

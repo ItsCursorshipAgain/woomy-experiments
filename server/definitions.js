@@ -42098,6 +42098,7 @@ defExports.teraTrapper = {
 defExports.malefictDrone = {
     PARENT: [defExports.sunchip],
     INVISIBLE: [.06, .02, .03],
+    REMOVE_CURRENT_CONTROLLERS: ['hangOutNearMaster'],
     CAN_NECROMIZE: defaultSquareNecros,
     ON_DEALT_DAMAGE: (me, them) => necroDrone(me, them)
 };
@@ -134580,7 +134581,7 @@ defExports.autoSunchipTurret = {
     GUNS: [{
         POSITION: [21.5, 10, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.auto_turret, g.less_reload, g.less_reload, g.half_damage, g.less_damage, g.less_damage]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.auto_turret, g.half_reload, g.half_damage]),
             TYPE: [defExports.bulletLayer6, { PERSISTS_AFTER_DEATH: true }]
         }
     }]
@@ -134589,8 +134590,6 @@ defExports.autoSunchip = makeAuto(defExports.sunchip, {
     type: defExports.autoSunchipTurret,
     size: 11
 });
-defExports.autoSunchip.CAN_NECROMIZE = defaultSquareNecros;
-defExports.autoSunchip.ON_DEALT_DAMAGE = (me, them) => necroDrone(me, them);
 defExports.underseerOverdrive = {
     PARENT: [defExports.genericTank],
     LABEL: 'Underdrive',
@@ -134667,12 +134666,9 @@ defExports.autoSquareDroneTurret = {
     SHAPE: 4
 };
 defExports.autoSquareDrone = makeAuto(defExports.squareDrone, {
-    label: 'Auto-Sunchip',
     type: defExports.autoSquareDroneTurret,
     size: 11
 });
-defExports.autoSquareDrone.CAN_NECROMIZE = defaultSquareNecros;
-defExports.autoSquareDrone.ON_DEALT_DAMAGE = (me, them) => necroDrone(me, them, ['Square', 'Sanctuary Square']);
 defExports.turretAssistedSummoner = {
     PARENT: [defExports.genericTank],
     LABEL: 'TAS2_56',
@@ -150535,7 +150531,7 @@ defExports.donutBlaster = {
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [5, 5, 1, 12, 0, 0, 0],
+        POSITION: [3.5, 3.5, 1, 12, 0, 0, 0],
         PROPERTIES: {
             COLOR: 1,
             SKIN: 3
@@ -153303,11 +153299,10 @@ defExports.updraft = {
         });
         return out;
     })(),
-    TURRETS: [{
-        POSITION: [10, 0, 0, 0, 0, 1],
-        TYPE: [defExports.eggBossCircleProp, {
-            COLOR: 238
-        }]
+    PROPS: [{
+        POSITION: [.5, 0, 0, 0, 1],
+        SHAPE: 0,
+        COLOR: 238
     }]
 };
 defExports.spreadstorm = {
@@ -157498,18 +157493,11 @@ defExports.assBackwards = {
     }, {
         POSITION: [9, 10, 1.6, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast, g.no_recoil]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast, _rcl(-1)]),
             TYPE: defExports.bullet
         }
     }, {
-        POSITION: [9, 10, 1.6, -8, 0, 180, 0],
-        PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast, [1, 1, 1, 0.00001, 0.0001, 1, 1, 0.0001, 0.0001, 0, 1, 1, 1]]),
-            TYPE: defExports.bullet,
-            SKIN: 15
-        }
-    }, {
-        POSITION: [5, 5, 1, 12, 0, 0, 0],
+        POSITION: [3.5, 3.5, 1, 12, 0, 0, 0],
         PROPERTIES: {
             COLOR: 1,
             SKIN: 3
@@ -158910,7 +158898,7 @@ defExports.blastceptioner = {
     }, {
         POSITION: [9, 10, 1.6, 8, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast, g.intercept]),
             TYPE: defExports.basicAutoBullet
         }
     }]
@@ -162426,7 +162414,7 @@ defExports.mesocyclone = {
         return out;
     }(),
     PROPS: [{
-        POSITION: [1, 0, 0, 0, 1],
+        POSITION: [.5, 0, 0, 0, 1],
         SHAPE: 0,
         COLOR: 238
     }]
@@ -203626,6 +203614,294 @@ defExports.hzLite31 = {
 defExports.messengerLiteAI = makeSentryAI(defExports.messengerLite, { value: 35000 });
 defExports.blitzkriegLiteAI = makeSentryAI(defExports.blitzkriegLite);
 defExports.ultraPuntLiteAI = makeSentryAI(defExports.ultraPuntLite);
+defExports.invisibleTortilla = {
+    PARENT: [defExports.pentaSunchip],
+    INVISIBLE: [.06, .02, .03],
+    REMOVE_CURRENT_CONTROLLERS: ['hangOutNearMaster'],
+    CAN_NECROMIZE: defaultPentagonNecros,
+    ON_DEALT_DAMAGE: (me, them) => necroDrone(me, them)
+};
+defExports.bigTortilla = {
+    PARENT: [defExports.pentaSunchip],
+    CAN_NECROMIZE: ['Pentagon', 'Beta Pentagon', 'Sanctuary Pentagon'],
+    ON_DEALT_DAMAGE: (me, them) => necroDrone(me, them, me.gunIndex, { sizeMult: 1.35 })
+};
+defExports.autoTortilla = makeAuto(defExports.pentaSunchip, {
+    type: defExports.autoSunchipTurret,
+    size: 11
+});
+defExports.pentaseer = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Pentaseer",
+    DANGER: 7,
+    SHAPE: 5,
+    BODY: {
+        ACCELERATION: base.ACCEL * .6,
+        SPEED: base.SPEED * .85,
+        FOV: base.FOV * 1.1
+    },
+    STAT_NAMES: statNames.necro,
+    MAX_CHILDREN: 10,
+    CAN_NECROMIZE: defaultPentagonNecros,
+    GUNS: [{
+        POSITION: [4, 11, 1.2, 8, 0, 36, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla]),
+            TYPE: defExports.pentaSunchip,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }, {
+        POSITION: [4, 11, 1.2, 8, 0, 324, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla]),
+            TYPE: defExports.pentaSunchip,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0)
+};
+defExports.autoPentaseer = makeAuto(defExports.pentaseer);
+defExports.witch = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Witch",
+    DANGER: 8,
+    SHAPE: 5,
+    BODY: {
+        ACCELERATION: base.ACCEL * .6,
+        SPEED: base.SPEED * .75,
+        FOV: base.FOV * 1.1
+    },
+    STAT_NAMES: statNames.necro,
+    MAX_CHILDREN: 10,
+    CAN_NECROMIZE: defaultPentagonNecros,
+    GUNS: [{
+        POSITION: [4, 11, 1.2, 8, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla, g.malefict]),
+            TYPE: defExports.invisibleTortilla,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0)
+};
+defExports.bigPentaseer = {
+    PARENT: [defExports.genericTank],
+    LABEL: "",
+    DANGER: 8,
+    SHAPE: 5,
+    BODY: {
+        ACCELERATION: base.ACCEL * .6,
+        SPEED: base.SPEED * .85,
+        FOV: base.FOV * 1.1
+    },
+    STAT_NAMES: statNames.necro,
+    MAX_CHILDREN: 8,
+    CAN_NECROMIZE: ['Pentagon', 'Beta Pentagon', 'Sanctuary Pentagon'],
+    GUNS: [{
+        POSITION: [4.5, 12.5, 1.2, 8, 0, 36, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla, g.pound, _siz(1.2)]),
+            TYPE: defExports.bigTortilla,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }, {
+        POSITION: [4.5, 12.5, 1.2, 8, 0, 324, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla, g.pound, _siz(1.2)]),
+            TYPE: defExports.bigTortilla,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0, { sizeMult: 1.35 })
+};
+defExports.pentadrive = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Pentadrive",
+    DANGER: 8,
+    SHAPE: 5,
+    BODY: {
+        ACCELERATION: base.ACCEL * .55,
+        SPEED: base.SPEED * .75,
+        FOV: base.FOV * 1.1
+    },
+    STAT_NAMES: statNames.necro,
+    MAX_CHILDREN: 8,
+    CAN_NECROMIZE: defaultPentagonNecros,
+    GUNS: [{
+        POSITION: [4, 11, 1.2, 8, 0, 36, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla]),
+            TYPE: defExports.autoTortilla,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }, {
+        POSITION: [4, 11, 1.2, 8, 0, 324, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.tortilla]),
+            TYPE: defExports.autoTortilla,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    PROPS: [{
+        POSITION: [.5, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0)
+};
+defExports.napalmceptioner = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Napalmceptioner",
+    DANGER: 8,
+    BODY: {
+        SPEED: base.SPEED * .9,
+        ACCELERATION: base.ACCEL * .7
+    },
+    GUNS: [{
+        POSITION: [23.5, 3.625, 1, 0, 6.3, 0, 0]
+    }, {
+        POSITION: [8, 8, 1, 11.5, 6.3, 0, 0],
+        PROPERTIES: { SKIN: 3 }
+    }, {
+        POSITION: [23.5, 3.625, 1, 0, -6.3, 0, 0]
+    }, {
+        POSITION: [8, 8, 1, 11.5, -6.3, 0, 0],
+        PROPERTIES: { SKIN: 3 }
+    }, {
+        POSITION: [16, 7, 1.6, 1, 6.3, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.mach, g.blast, g.bigger, g.bit_bigger, g.intercept]),
+            TYPE: defExports.basicAutoBullet
+        }
+    }, {
+        POSITION: [16, 7, 1.6, 1, -6.3, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.mach, g.blast, g.bigger, g.bit_bigger, g.intercept]),
+            TYPE: defExports.basicAutoBullet
+        }
+    }]
+};
+defExports.brawlceptioner = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Brawlceptioner",
+    DANGER: 8,
+    BODY: {
+        SPEED: base.SPEED * .9,
+        ACCELERATION: base.ACCEL * .7
+    },
+    GUNS: [{
+        POSITION: [24, 3.625, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [8, 8, 1, 12, 0, 0, 0],
+        PROPERTIES: { SKIN: 3 }
+    }, {
+        POSITION: [9, 10, 1.6, 8, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.mach, g.blast, g.intercept, _rcl(-1)]),
+            TYPE: defExports.basicAutoBullet
+        }
+    }, {
+        POSITION: [3.5, 3.5, 1, 12, 0, 0, 0],
+        PROPERTIES: {
+            COLOR: 1,
+            SKIN: 3
+        }
+    }]
+};
+defExports.bigCheeseball = {
+    PARENT: [defExports.eggSunchip],
+    CAN_NECROMIZE: defaultEggNecros,
+    ON_DEALT_DAMAGE: (me, them) => necroDrone(me, them, me.gunIndex, { sizeMult: 1.35 })
+};
+defExports.autoCheeseball = makeAuto(defExports.eggSunchip, {
+    type: defExports.autoSunchipTurret,
+    size: 11
+});
+defExports.bigEggseer = {
+    PARENT: [defExports.genericTank],
+    LABEL: "",
+    DANGER: 8,
+    BODY: {
+        ACCELERATION: base.ACCEL * .7,
+        SPEED: base.SPEED * .8,
+        FOV: base.FOV * 1.15
+    },
+    MAX_CHILDREN: 18,
+    STAT_NAMES: statNames.necro,
+    CAN_NECROMIZE: defaultEggNecros,
+    GUNS: [{
+        POSITION: [5, 14, 1.2, 8, 0, 45, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.pound, g.even_smaller, g.less_power, g.less_range]),
+            TYPE: defExports.bigCheeseball,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }, {
+        POSITION: [5, 14, 1.2, 8, 0, 315, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.pound, g.even_smaller, g.less_power, g.less_range]),
+            TYPE: defExports.bigCheeseball,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0, { sizeMult: 1.35 })
+};
+defExports.eggdrive = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Eggdrive",
+    DANGER: 8,
+    BODY: {
+        ACCELERATION: base.ACCEL * .65,
+        SPEED: base.SPEED * .75,
+        FOV: base.FOV * 1.15
+    },
+    MAX_CHILDREN: 18,
+    STAT_NAMES: statNames.necro,
+    CAN_NECROMIZE: defaultEggNecros,
+    GUNS: [{
+        POSITION: [5, 12, 1.2, 8, 0, 45, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.stronger, g.less_range, g.half_size, g.less_power]),
+            TYPE: defExports.autoCheeseball,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }, {
+        POSITION: [5, 12, 1.2, 8, 0, 315, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.stronger, g.less_range, g.half_size, g.less_power]),
+            TYPE: defExports.autoCheeseball,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            STAT_CALCULATOR: gunCalcNames.necro
+        }
+    }],
+    PROPS: [{
+        POSITION: [.55, 0, 0, 0, 1],
+        SHAPE: 4,
+        COLOR: 16
+    }],
+    ON_DEALT_DAMAGE: (me, them) => necroRam(me, them, 0)
+};
 // NEW EVOLUTIONS
 // Sentries
 defExports.sentryToIndustry = makeEvolution('alphaSentryAI', {
@@ -203984,7 +204260,7 @@ defExports.computer.UPGRADES_TIER_4 = [defExports.overload];
 branch("testbed_sentry", "Sentries", [
     defExports.sentry, defExports.sentrySwarm, defExports.scorcherSentry, defExports.sentryGun, defExports.sentryTrap, defExports.sentryRanger, defExports.splitSummonerCore, defExports.superSplitSummonerCore, defExports.morningstarLite, defExports.flashSentry, defExports.flashGunnerSentry, defExports.semiCrushSentry, defExports.crushSentry, defExports.bladeSentry, defExports.varp,
     defExports.squareGunSentry, defExports.skimSentry, defExports.greenSentrySwarm, defExports.tealSentrySwarm, defExports.lavenderSentrySwarm, defExports.cranberrySentrySwarm, defExports.blackSentrySwarm, defExports.crimsonSentrySwarm, defExports.awp39Sentry, defExports.squareSwarmer, defExports.summonerLite, defExports.crusaderCrash, defExports.twinkleSentry, defExports.palisadeLite,
-    defExports.confidentialLite, defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzriegLite, defExports.ultraPuntLite, defExports.hzLite0
+    defExports.confidentialLite, defExports.cometLite, defExports.brownCometLite, defExports.messengerLite, defExports.blitzkriegLite, defExports.ultraPuntLite, defExports.hzLite0
 ]);
 
 // Overdone Tanks
@@ -204081,9 +204357,9 @@ branch("dreadnoughts", "Dreadnoughts", [
 
 // Featured Tanks
 branch("featured_tanks", "Featured Tanks", [
-    defExports.expedient, defExports.ionizer, defExports.recycler, defExports.pebbler, defExports.detCruiser, defExports.motionMachine, defExports.packageBomb, defExports.gunnerPound, defExports.hellraiser, defExports.spraygun,
-    defExports.pelletMiniSwarm, defExports.nicotine, defExports.iceHurricane, defExports.gatlingTrapper, defExports.shotgun, defExports.inject0, defExports.arthritis, defExports.phosphorous, defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword, defExports.zeppelin,
-    defExports.bulwark, defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.underseer, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
+    defExports.blastceptioner, defExports.underseer, defExports.expedient, defExports.ionizer, defExports.recycler, defExports.pebbler, defExports.detCruiser, defExports.motionMachine, defExports.packageBomb, defExports.gunnerPound, defExports.hellraiser, defExports.spraygun,
+    defExports.pelletMiniSwarm, defExports.nicotine, defExports.iceHurricane, defExports.gatlingTrapper, defExports.shotgun, defExports.inject0, defExports.arthritis, defExports.phosphorous, defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword,
+    defExports.zeppelin, defExports.bulwark, defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
     defExports.tankRandomizer, defExports.basic
 ], "testbed_parent");
 
@@ -204210,7 +204486,7 @@ defExports.poundShooter.UPGRADES_TIER_4 = [defExports.fatFactory, defExports.lau
 defExports.hexaBasicIntercept.UPGRADES_TIER_4 = [defExports.octoBasicIntercept];
 defExports.machineShooter.UPGRADES_TIER_4 = [defExports.blastceptionist];
 defExports.flankceptionist.UPGRADES_TIER_4 = [defExports.flankceptionist2];
-defExports.blastceptioner.UPGRADES_TIER_4 = [defExports.blastceptionist, defExports.megaArsenal];
+defExports.blastceptioner.UPGRADES_TIER_4 = [defExports.blastceptionist, defExports.napalmceptioner, defExports.machEngineer2, defExports.machMegaArsenal, defExports.brawlceptioner];
 // TWIN
 defExports.twin.UPGRADES_TIER_2 = [defExports.double, defExports.bent, defExports.hexa, defExports.boxer, defExports.zoomTwinSingle, defExports.autoTwin, defExports.twinSniper, defExports.twinTrapper, defExports.heavyTwin, defExports.gunner, defExports.cruiser, defExports.twinMachine, defExports.hewnTwin, defExports.twinPropeller, defExports.hybridTwin, defExports.twinLittleHunter, defExports.miniHurricane, defExports.twinMiniGrower, defExports.homingTwin];
 defExports.homingTwin.UPGRADES_TIER_3 = [defExports.homingTwinbrid, defExports.autoHomingTwin, defExports.homingGunner, defExports.homingAutoPounder];
@@ -204394,7 +204670,7 @@ defExports.triMachine.UPGRADES_TIER_3 = [defExports.hexaMachine, defExports.triS
 defExports.newAssult.UPGRADES_TIER_3 = [defExports.invisiMini];
 defExports.machineMinishot.UPGRADES_TIER_3 = [defExports.autoMachineMinishot, defExports.bentMachine, defExports.howitzer, defExports.hewnGunner, defExports.machInsect, defExports.machinistMultishot, defExports.deadeye, defExports.minimach, defExports.machineHarasser];
 defExports.machineMinishot.UPGRADES_TIER_4 = [defExports.fireMachineMinishot];
-defExports.donutBlaster.UPGRADES_TIER_4 = [defExports.assBackwards];
+defExports.donutBlaster.UPGRADES_TIER_4 = [defExports.assBackwards, defExports.brawlceptioner];
 defExports.coingun.UPGRADES_TIER_4 = [defExports.megaInferno, defExports.dimegun];
 defExports.autoMachineMinishot.UPGRADES_TIER_4 = [defExports.magmachception, defExports.trainee];
 defExports.foamGun.UPGRADES_TIER_4 = [defExports.smolFoamGun, defExports.randomizer];
@@ -204418,7 +204694,7 @@ defExports.bubbleGun.UPGRADES_TIER_4 = [defExports.corroder, defExports.rpgRocke
 defExports.spraygun.UPGRADES_TIER_4 = [defExports.foamSpraygun, defExports.xSpraygun, defExports.disperser, defExports.autoSpraygun];
 defExports.pyro.UPGRADES_TIER_4 = [defExports.pyroContagion];
 defExports.twinGatling.UPGRADES_TIER_4 = [defExports.bentGatling, defExports.twinFastGatling, defExports.doubleGatling, defExports.twinSearcher, defExports.gatlingMachGunner, defExports.twinFlooder, defExports.hexaGatling, defExports.half2, defExports.enhancer];
-defExports.twinBlaster.UPGRADES_TIER_4 = [defExports.bentBlasterHybrid, defExports.doubleBlaster, defExports.twinHotshot, defExports.blasterMachGunner, defExports.hexaBlaster, defExports.half2, defExports.heavymecha, defExports.cocktail, defExports.blastTrencher];
+defExports.twinBlaster.UPGRADES_TIER_4 = [defExports.bentBlasterHybrid, defExports.doubleBlaster, defExports.twinHotshot, defExports.blasterMachGunner, defExports.hexaBlaster, defExports.half2, defExports.heavymecha, defExports.cocktail, defExports.blastTrencher, defExports.napalmceptioner];
 defExports.hexaMachine.UPGRADES_TIER_4 = [defExports.octoMachine, defExports.hexaSubMach, defExports.hexaGatling, defExports.hexaBlaster, defExports.blitz, defExports.hexaSpray, defExports.machine5, defExports.binoculars, defExports.hexaNaturalist, defExports.warcry];
 defExports.gatlingTrapper.UPGRADES_TIER_4 = [defExports.growingRoadblock, defExports.detour, defExports.flooderBarricade, defExports.shackler, defExports.machProducer, defExports.traffic];
 defExports.triMachine.UPGRADES_TIER_4 = [defExports.tripleTwinMach];
@@ -204471,7 +204747,7 @@ defExports.twinBackShield.UPGRADES_TIER_4 = [defExports.steelstring];
 defExports.director.UPGRADES_TIER_2 = [defExports.overseer, defExports.cruiser, defExports.underseer, defExports.littleFactory, defExports.directorContagion, defExports.heavyDirector, defExports.heatseeker, defExports.navyist, defExports.autoDirector, defExports.colony, defExports.directdrive, defExports.miniLightning, defExports.director2];
 defExports.overseer.UPGRADES_TIER_3 = [defExports.overlord, defExports.overtrap, defExports.battleship, defExports.overgunner, defExports.autoOverseer, defExports.master, defExports.dreadnought, defExports.lightning, defExports.overdrive, defExports.manager, defExports.heavyOverseer, defExports.contagionOverseer, defExports.paratrooper, defExports.megaColony, defExports.banshee, defExports.fractionalizer, defExports.detonation];
 defExports.cruiser.UPGRADES_TIER_3 = [defExports.carrier, defExports.battleship, defExports.fortress, defExports.autoCruiser, defExports.fatCruiser, defExports.dreadnought, defExports.sounder, defExports.beehive, defExports.gunCruiser, defExports.swarmArtillery, defExports.submarine, defExports.cruisedrive, defExports.piston, defExports.clockwork, defExports.hybridCruiser, defExports.gunShipTank, defExports.invariant, defExports.battlepod, defExports.cruiserShip, defExports.productionist, defExports.vestalance, defExports.swarmShotgun, defExports.tempest, defExports.detCruiser];
-defExports.underseer.UPGRADES_TIER_3 = [defExports.necromancer, defExports.autoUnderseer, defExports.maleficitor, defExports.undergunner, defExports.undertrap, defExports.underPounder, defExports.elamficitor, defExports.eggmancer, defExports.underSniper, defExports.bigUnderseer, defExports.contagionUnderseer, defExports.multiplier, defExports.underseerOverdrive];
+defExports.underseer.UPGRADES_TIER_3 = [defExports.necromancer, defExports.autoUnderseer, defExports.maleficitor, defExports.undergunner, defExports.undertrap, defExports.underPounder, defExports.elamficitor, defExports.eggmancer, defExports.pentaseer, defExports.underSniper, defExports.bigUnderseer, defExports.contagionUnderseer, defExports.multiplier, defExports.underseerOverdrive];
 defExports.littleFactory.UPGRADES_TIER_3 = [defExports.factory, defExports.sniperFactory, defExports.machineFactory, defExports.trapperFactory, defExports.twinFactory, defExports.invisispawner, defExports.autoSpawner, defExports.spawnerContagion, defExports.spawnerOverdrive, defExports.aShip, defExports.polygun, defExports.flankSpawner, defExports.productionist, defExports.hoinfodaSpawner, defExports.crowd];
 defExports.crowd.UPGRADES_TIER_4 = [defExports.mob]
 defExports.directorContagion.UPGRADES_TIER_3 = [defExports.contagionOverseer, defExports.spawnerContagion, defExports.xDirectorContagion, defExports.probationerContagion, defExports.lancerDirector, defExports.droneTrapper, defExports.contagionUnderseer];
@@ -204502,10 +204778,10 @@ defExports.invisispawner.UPGRADES_TIER_4 = [defExports.reaperOverdrive, defExpor
 defExports.machineFactory.UPGRADES_TIER_4 = [defExports.flankMachineFactory, defExports.blastFactory, defExports.exMachina, defExports.fatMachineFactory];
 defExports.flankSpawner.UPGRADES_TIER_4 = [defExports.flankMachineFactory, defExports.airport, defExports.flankFactory];
 defExports.aShip.UPGRADES_TIER_4 = [defExports.giffard, defExports.airport, defExports.hangar, defExports.fightship, defExports.presenter, defExports.spyship, defExports.aeroship, defExports.squadron, defExports.ufo];
-defExports.maleficitor.UPGRADES_TIER_4 = [defExports.ficitor];
+defExports.maleficitor.UPGRADES_TIER_4 = [defExports.ficitor, defExports.witch];
 defExports.gunShipTank.UPGRADES_TIER_4 = [defExports.droneShipTank, defExports.autoShipTank, defExports.invariantShip, defExports.dreadShip];
 defExports.elamficitor.UPGRADES_TIER_4 = [defExports.ficitor, defExports.invisNecro];
-defExports.bigUnderseer.UPGRADES_TIER_4 = [defExports.autoGoldola, defExports.pergola, defExports.factorial, defExports.bigUnderseerOverdrive, defExports.biggerUnderseer];
+defExports.bigUnderseer.UPGRADES_TIER_4 = [defExports.autoGoldola, defExports.pergola, defExports.factorial, defExports.bigUnderseerOverdrive, defExports.biggerUnderseer, defExports.bigEggseer, defExports.bigPentaseer];
 defExports.overdrive.UPGRADES_TIER_4 = [defExports.overwork, defExports.trapdrive, defExports.gundrive, defExports.harddrive, defExports.hyperdrive, defExports.drivenaught, defExports.overdriveMaster, defExports.bansheeOverdrive, defExports.machOverdrive, defExports.twinOverdrive, defExports.overOverdrive, defExports.battledrive, defExports.overdriver, defExports.opiate, defExports.homingdrive, defExports.revitalist, defExports.esquire];
 defExports.overlord.UPGRADES_TIER_4 = [defExports.overwork, defExports.heavyOverlord, defExports.juggernaut, defExports.autoOverlord, defExports.contagionOverlord, defExports.guerrilla, defExports.cartographer, defExports.megaStovepipe, defExports.hoinfodaman, defExports.tidepod, defExports.overmaster, defExports.newOverluxe, defExports.overlordTrapper, defExports.divisor, defExports.megaLightning, defExports.overlordMoneko, defExports.guidedOverlord, defExports.miniGuardian];
 defExports.trapperFactory.UPGRADES_TIER_4 = [defExports.builderFactory, defExports.traprangFactory, defExports.portaFortess, defExports.contagiory, defExports.entrencher, defExports.fatTrapperFactory, defExports.arsenalFactory];
@@ -204518,7 +204794,7 @@ defExports.dreadnought.UPGRADES_TIER_4 = [defExports.juggernaut, defExports.drea
 defExports.factory.UPGRADES_TIER_4 = [defExports.fatFactory, defExports.factoryContagion, defExports.denominator, defExports.miniDemolisher, defExports.militia, defExports.aeroship, defExports.shieldweaver, defExports.fatSniperFactory, defExports.fatMachineFactory, defExports.fatTrapperFactory, defExports.fatTwinFactory, defExports.invisifactory, defExports.autoFactory, defExports.factoryOverdrive, defExports.flankFactory, defExports.manufacture, defExports.mob];
 defExports.necromancer.UPGRADES_TIER_4 = [defExports.pentamancer, defExports.trimancer, defExports.moreEggmancer, defExports.hymn, defExports.necrogunner, defExports.hewnNecromancer, defExports.invisNecro, defExports.autoNecro, defExports.pergola, defExports.dividend, defExports.infestor, defExports.minisummoner, defExports.necromancerOverdrive];
 defExports.undergunner.UPGRADES_TIER_4 = [defExports.necrogunner, defExports.gunderseer, defExports.underBorer];
-defExports.eggmancer.UPGRADES_TIER_4 = [defExports.infestor, defExports.eggQueenZero, defExports.groupmancer, defExports.omnimancer, defExports.moreEggmancer, defExports.sorcerTrap, defExports.sorcerPounder, defExports.sorcerSniper];
+defExports.eggmancer.UPGRADES_TIER_4 = [defExports.infestor, defExports.eggQueenZero, defExports.groupmancer, defExports.omnimancer, defExports.moreEggmancer, defExports.sorcerTrap, defExports.sorcerPounder, defExports.sorcerSniper, defExports.bigEggseer, defExports.eggdrive];
 defExports.master.UPGRADES_TIER_4 = [defExports.overdriveMaster, defExports.overmaster, defExports.invisimaster, defExports.masterBanshee, defExports.trueMaster, defExports.masterLightning, defExports.cartographer, defExports.megaStovepipe, defExports.overlordTrapper];
 defExports.battleship.UPGRADES_TIER_4 = [defExports.battlenaught, defExports.triCruiser, defExports.fatBattleship, defExports.invisibattleship, defExports.cruiserSurfer, defExports.swarmNavyist, defExports.sounderBattle, defExports.sandstm, defExports.battledrive, defExports.apiary, defExports.battletrapper, defExports.arsenalBattleship, defExports.battlepodShip, defExports.clockship, defExports.beeship, defExports.potensic, defExports.acute, defExports.deceptivist, defExports.battlecarrier, defExports.newBartizan, defExports.detbattleship, defExports.battleFactory, defExports.biggerBattlepod];
 defExports.fatCruiser.UPGRADES_TIER_4 = [defExports.fatBattleship, defExports.fatCarrier, defExports.fortressFrigate, defExports.fatSurfer, defExports.pentaFrigate, defExports.pendulum, defExports.apiary, defExports.megaSounder, defExports.fatterCruiser, defExports.sparrerDirector, defExports.m51];
@@ -204559,11 +204835,12 @@ defExports.lancerDirector.UPGRADES_TIER_4 = [defExports.lancerOverseer, defExpor
 defExports.hybridTwin.UPGRADES_TIER_4 = [defExports.doubleSwarm];
 defExports.fractionalizer.UPGRADES_TIER_4 = [defExports.divisor, defExports.numerator, defExports.mixedNumber, defExports.denominator, defExports.notation, defExports.antiderivative, defExports.tensorProduct, defExports.obtuse, defExports.multiplication, defExports.acute, defExports.angle, defExports.complexNumber, defExports.crossProduct];
 defExports.playableBisectorBullet.UPGRADES_TIER_4 = [defExports.bisector];
-defExports.underseerOverdrive.UPGRADES_TIER_4 = [defExports.necromancerOverdrive, defExports.bigUnderseerOverdrive];
+defExports.underseerOverdrive.UPGRADES_TIER_4 = [defExports.necromancerOverdrive, defExports.bigUnderseerOverdrive, defExports.eggdrive, defExports.pentadrive];
 defExports.cruisePound.UPGRADES_TIER_4 = [defExports.marauder];
 defExports.heavierDirector.UPGRADES_TIER_4 = [defExports.overload, defExports.heavierOverseer, defExports.fatterCruiser, defExports.fatFactory, defExports.heavierNavyist, defExports.biggerUnderseer, defExports.heavyProbationerContagion, defExports.destroyHeatseeker, defExports.heavierMotor, defExports.destroyMiniLightning, defExports.autoHeavierDirector, defExports.directorHybrid, defExports.donutDirector, defExports.xTerminatorDirector, defExports.directorConqueror, defExports.heavierDirector2, defExports.sparrerDirector, defExports.directorGuardianLauncher];
 defExports.miniLightning.UPGRADES_TIER_4 = [defExports.destroyMiniLightning];
 defExports.firestarter.UPGRADES_TIER_4 = [defExports.hellraiser];
+defExports.pentaseer.UPGRADES_TIER_4 = [defExports.pentamancer, defExports.autoPentaseer, defExports.witch, defExports.exortTrap, defExports.exortPounder, defExports.exortSniper, defExports.bigPentaseer, defExports.pentadrive];
 // POUNDER
 defExports.pounder.UPGRADES_TIER_2 = [defExports.destroyer, defExports.hybridPound, defExports.builder, defExports.artillery, defExports.flankPound, defExports.spreadling, defExports.autoPounder, defExports.littleSkimmer, defExports.singlePound, defExports.obliterator, defExports.multishot, defExports.heavyTwin, defExports.kinetic, defExports.boxer, defExports.miniHiveShooter, defExports.megaTrapper, defExports.gunnerPound, defExports.poundIntercept, defExports.blaster, defExports.waraxe, defExports.pounder2, defExports.heavyDirector, defExports.grower, defExports.securityPounder, defExports.kev0];
 defExports.pounder.UPGRADES_TIER_3 = [defExports.armoredTank, defExports.ejectionSeat0];
@@ -205038,7 +205315,7 @@ defExports.autoHewnPellet.UPGRADES_TIER_4 = [defExports.hewnPelletception, defEx
 defExports.autoSpray.UPGRADES_TIER_4 = [defExports.sprayerception, defExports.autoStacker, defExports.autoSpraygun];
 defExports.autoMachTwin.UPGRADES_TIER_4 = [defExports.autoDoubleMach, defExports.mechaMachTwin, defExports.autoTwinferno, defExports.enhancer];
 defExports.mechaTwin.UPGRADES_TIER_4 = [defExports.mechaMachTwin, defExports.gunnerception, defExports.aphexTwin, defExports.equanimity];
-defExports.autoUnderseer.UPGRADES_TIER_4 = [defExports.autoGoldola, defExports.hewnNecromancer, defExports.autoNecro, defExports.necroRectangle, defExports.tart];
+defExports.autoUnderseer.UPGRADES_TIER_4 = [defExports.autoGoldola, defExports.hewnNecromancer, defExports.autoNecro, defExports.necroRectangle, defExports.tart, defExports.autoPentaseer];
 defExports.zeppelin.UPGRADES_TIER_4 = [defExports.giffard, defExports.hindenburg, defExports.heinrichArntzen, defExports.zeppelinShip, defExports.ledZeppelin0, defExports.boomZeppeli, defExports.zomg, defExports.aerostat, defExports.zeppelin2];
 defExports.autoLittleCannon.UPGRADES_TIER_4 = [defExports.littleCannonception, defExports.autoTriplet, defExports.soldier, defExports.autoScaler];
 defExports.autoDirector.UPGRADES_TIER_4 = [defExports.autoHeavierDirector];

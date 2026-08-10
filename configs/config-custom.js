@@ -465,9 +465,9 @@ let developer = (options = {}) => {
             default: throw new TypeError(cell + " is not a valid cell type!");
         }
     })),
-    "MAX_FOOD": 336, // 961
-    "MAX_COMBINED_NEST_FOOD": 36, // 49
-    "MAX_CRASHERS": 0, // 98
+    "MAX_FOOD": 350, // 961
+    "MAX_COMBINED_NEST_FOOD": 51, // 49
+    "MAX_CRASHERS": 59, // 98
     "MAX_SANCS": 1,
     "BOSS_SPAWN_TIMER": 0,
     "EVOLVE_TIME": 60_000,
@@ -1127,4 +1127,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(mazeElimination, { lifespan: 3600 });
+select(ffaElimination(), { lifespan: 3600 });
