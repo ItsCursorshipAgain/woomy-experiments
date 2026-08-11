@@ -45,10 +45,10 @@ const g = {
     "blank": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 
     // Base Stats
-    "basic": [20, 1.4, .1, 1, 1.85, .2, 1, 5, 1, 1, 1, 15, 1],
+    "basic": [20, 1.4, .1, 1, 1.85, .2, 1, 5, 1.5, 1, 1, 15, 1],
     "bunker": [46.215, 2, .025, .9, 16.667, 0, 16.667, 7.23, 2.475, 10, 1.1, 5, 4.5],
     "dem_factory": [175, 0, .25, .315, .5, .5, .5, 2.45, 1, 1, 1, .5, 1],
-    "drone": [60, .25, .1, .6, 4, .35, 1.1, 2, 1, 1, 1, .1, .9],
+    "drone": [60, .25, .1, .6, 4, .35, 1.5, 2, 1, 1, 1, .1, .9],
     "dropship": [45, 1, 0, 1, 2.25, .95, 1.35, 4.25, 0, 1, 1, 0, 1.1],
     "factory": [72, 1, .1, .7, 1.6, .425, 1, 3, 1, 1, 1, .1, 1],
     "lance": [6, 0, .1, 1, .5, 1.2, 1.6, .67, 1, .08, 1, 180, 1],
@@ -59,7 +59,7 @@ const g = {
     "strange": [220, .175, .135, 1.2, 1000, 1e-5, 1e-5, 4, 6, 1, 1.5, 30, 1.2],
     "swarm": [27, .25, .05, .4, .9, .235, .85, 3.5, 1, 1, .8, 5, 1.25],
     "swarmlet": [36, .25, .05, .4, 1.2, .2, 1, 3.5, 1, 1, 1.25, 5, 1.25],
-	"trap": [48, 1, .25, .65, 0.3, .7, 1.08, 4.9, 1, 1.25, 1, 15, 1.15],
+	"trap": [33, 1, .25, .9, 8, .08, .8, 3, 2, 2.35, 2, 12.5, 1.15],
     "trireme": [10.725, 1.512, .16, .9, 1.35, .09, 1.4, 2.852, .634, 1.3, 1, 7.5, .77],
 
     // Tier 1
@@ -82,6 +82,7 @@ const g = {
     "double_health": [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1],
     "serpenttail": [0.5, 0, 1, 1, 75, 3, 0.75, 0, 0, 5959, 1, 1, 1],
     "sparkle": [.85, 1, 1, 1, 1.35, 1.15, 1.35, 1.2, 1.2, 1, 1, 1, 1],
+    "baller": [1, 1, 1, 1, 1, 1, 1, 1.5, 1, 1, 1, 1, 1],
     "explosion": [1, 0, .1, 50, 50, .125, 100, 0, 0, 1.75, 5, 1, 2],
     "command": [3, 1.5, .1, 1.25, 1, .75, .85, 1.5, 1.5, 1, 1, 1, 1],
     "spam": [1.1, 1, 1, 1, 1, 1.12, 1, .9, .785, 1, 1, 1, 1],
@@ -232,7 +233,7 @@ const g = {
     "closer_drone": [1.5, 1, 1, 1, 1000, 1000, 1000, 2.5, 2.25, 1, 4, .25, 1],
     "closer_ai": [.625, 1, 1, 1, 100000, 100000, 100000, 5, 4.85, 1.5, 10, .25, 10],
     "closer_ai_drone": [.75, 1, 1, 1, 100000, 100000, 100000, 5.5, 5, 1, 10, .25, 10],
-    "protect_swarm": [3.5, 0, 1, 1.6, 200, 1.5, 1, 1, .95, 1, 5, 1, 5],
+    "protect_swarm": [3.5, 0, 1, 1.6, 200, 2.5, 1, 1, .95, 1, 5, 1, 5],
     "protectordrone": [.5, 0, 1, 1, 75000, .4, .125, 1, 1, 1, 10, .1, 10],
     "dread": [.855, .25, .75, .95, 1.2, 1.05, 1.05, 1, .9, 1, 1, 1.25, 1],
     "dread_trap": [1.15, .5, .25, .975, 1.05, 1.05, 1.05, 1.1, 1, 1, 1, 1, 3],
@@ -314,7 +315,7 @@ const g = {
     "gatekeeper": [.875, 1, 1, 1.25, 1.1, 1.1, 1.05, 2, 3, .8, .1, 1, 1],
     "contagi": [1, .5, 1.5, 1, 1.23, .8, 2.5, 1.05, 1, 1, .9, .75, .7],
     "shellExplode": [1, 0, 0, 1, 3, .3, 5, 0, 0, .1, 3, 0, 3],
-    "c4": [1000, 0, 0, 1, 3, 6, 3, 0, 0, .1, 2, 0, 1],
+    "c4": [1000, 0, 1, 1, 2.5, 3, .01, 0, 0, 0.1, .01, 1, 1],
     "detSwarm": [1, 0, 0, .5, 3, .2, 2, 0, 0, .1, 2, 0, 1],
     "trap_fragment": [1000, 0, .75, .7, 2, 1.45, 1.3, 1.15, 1, .4, 1.5, .5, 1.1],
     "sock": [.85, 0, 1, .8, .63, .9, .725, .825, .785, .3, .5, 1, .7],
@@ -379,7 +380,7 @@ const g = {
     "leviathan": [43, 0, .05, .28, 1.8, .18, .65, 2.45, .7, 1.8, .3125, 5, .3125],
     "smoke_spawner": [1, 1, 25, 14, 1, 1, 1, 10, .05, 5, 1, 50, 1],
     "bomb": [1.4, 1, 1, 1, .5, .45, .9, .8, .8, 1, 1, 1, 1],
-    "musketeer": [.85, 1, 1, 1, 1.05, 1, 1, 1, .95, .85, .1, 1, 1],
+    "musketeer": [.85, 1, 1, 1, .9, .8, .8, .8, .95, .75, .1, 1, 1],
     "matchlock": [1.21, 1, 1, 1, 1, 1, 1, 1, 1, .725, 1, 1, 1],
     "planter": [.55, .8, 1.7, .75, .75, .8, 1, 1, .8, .735, 1, 5, 1],
     "barber": [.4, 1, 2.125, .785, .55, .8, .6, 1.275, .575, .525, .5, 10, .8],
@@ -427,11 +428,11 @@ const g = {
     "harp_dart": [4, 1, .0001, 16, 1, 1.75, 1.4, 1, 1, 1, 1, .001, 1],
     "surgeon": [2, 1, 1, 1, .9, .85, 1, 1, 1, 1, 1, 1, 1],
     "orbitalstrike": [1, 1, 1, 1, 25, 1.1, 1, 0, 1, 1, 1, 1, 1],
-    "orbitalstrikeInsignia": [2, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
-    "shrapnel": [2.5, 1, 1, 1, 1.05, 1.1, 1, .9, .85, 1.05, 1, 1, 1],
-    "shrapnelExplosion": [4.5, 3.2375, 0.5, 0.3, 40, 0.5, 1.32, 0, 0, 1, 2.56, 1, 3.45],
+    "orbitalstrikeInsignia": [1.65, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+    "shrapnel": [4, 1, 1, 1, 1.05, 1.1, 1, .75, 1, 1.05, 1, 1, 1],
+    "shrapnelExplosion": [4.5, 3.2375, .5, .3, 15, .25, 100, 0, 0, 1, 0.01, 1, 3.45],
     "oppenheimer": [4.5, 3.2375, 0.5, 0.3, 50, 0.7, 1.32, 0, 0, 1.6, 2.56, 1, 3.45],
-    "engineer": [1, 1, 1, 1, 1.05, 1.05, 1, 1.1, 1, 1, 1, 1, 1],
+    "engineer": [1.05, 1, 1, 1, 1.05, .9, .8, 1.1, 1, 1, 1, 1, 1],
     "heal": [.85, 1, 1, 1, 1, 1.65, 1, 1, 1, 1, 0, 1, 1],
     "sanctuary_heal": [.5, 1, 1, .875, 1, 3.5, 1, 1, 1, .15, 0, 1, 1],
     "bb1d": [1, 1, 1, 1, 1.1, 1.1, 1.1, 1, 1, 1, 1, 1, 1],
@@ -12175,7 +12176,7 @@ defExports.builder = {
 const engiGunInfo = (options = {}) => {
     options.stats = options.stats || [g.blank];
     return {
-        MAX_CHILDREN: options.maxChildren ?? 6,
+        MAX_CHILDREN: options.maxChildren ?? 12,
         DESTROY_OLDEST_CHILD: true,
         SHOOT_SETTINGS: combineStats([g.trap, g.block, g.engineer, ...options.stats]),
         TYPE: options.pillbox || defExports.pillbox,
@@ -21892,7 +21893,7 @@ defExports.foghorn = {
     }, {
         POSITION: [4, 8, 1.7, 13, 0, 0, 0],
         PROPERTIES: {
-            MAX_CHILDREN: 8,
+            MAX_CHILDREN: 16,
             DESTROY_OLDEST_CHILD: true,
             SHOOT_SETTINGS: combineStats([g.trap, g.stronger]),
             TYPE: defExports.fogtrap,
@@ -21966,7 +21967,7 @@ defExports.flute = {
     }, {
         POSITION: [4, 8, 1.7, 14, 0, 0, 0],
         PROPERTIES: {
-            MAX_CHILDREN: 6,
+            MAX_CHILDREN: 12,
             DESTROY_OLDEST_CHILD: true,
             SHOOT_SETTINGS: combineStats([g.trap, g.stronger]),
             TYPE: defExports.flutetrap,
@@ -22070,7 +22071,7 @@ defExports.piccolo = {
     }, {
         POSITION: [4, 8, 1.7, 14, 0, 0, 0],
         PROPERTIES: {
-            MAX_CHILDREN: 6,
+            MAX_CHILDREN: 12,
             DESTROY_OLDEST_CHILD: true,
             SHOOT_SETTINGS: combineStats([g.trap, g.less_spread, g.less_reload]),
             TYPE: defExports.pictrap,
@@ -22176,7 +22177,7 @@ defExports.oboe = {
     }, {
         POSITION: [4, 8, 1.7, 14, 0, 0, 0],
         PROPERTIES: {
-            MAX_CHILDREN: 4,
+            MAX_CHILDREN: 8,
             DESTROY_OLDEST_CHILD: true,
             SHOOT_SETTINGS: combineStats([g.trap, g.stronger]),
             TYPE: defExports.hexaFlutetrap,
@@ -22218,7 +22219,7 @@ defExports.fogseer = {
     }, {
         POSITION: [4, 8, 1.7, 13, 0, 0, 0],
         PROPERTIES: {
-            MAX_CHILDREN: 8,
+            MAX_CHILDREN: 16,
             DESTROY_OLDEST_CHILD: true,
             SHOOT_SETTINGS: combineStats([g.trap, g.stronger]),
             TYPE: defExports.necroFogtrap,
@@ -39013,7 +39014,7 @@ defExports.trapDweller = {
         POSITION: [0, 8, 1.2, 8, 0, 25, 0],
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.factory]),
-            TYPE: defExports.trapminion,
+            TYPE: defExports.trapion,
             AUTOFIRE: true,
             SYNCS_SKILLS: true,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -45784,7 +45785,7 @@ defExports.operator = {
         POSITION: [2, 14, 1.3, 18, 0, 0, 0],
         PROPERTIES: engiGunInfo({
             pillbox: defExports.trapCircle,
-            maxChildren: 4
+            maxChildren: 8
         })
     }, {
         POSITION: [4, 14, 1, 8, 0, 0, 0]
@@ -46288,7 +46289,7 @@ defExports.boomerEngineer = {
         PROPERTIES: engiGunInfo({
             pillbox: defExports.boomerangPillbox,
             stats: [g.boomerang],
-            maxChildren: 8
+            maxChildren: 16
         })
     }]
 };
@@ -58018,7 +58019,7 @@ defExports.machEngineer2 = {
         POSITION: [2, 18.2, 1.25, 18, 0, 0, 0],
         PROPERTIES: engiGunInfo({
             stats: [g.planter],
-            maxChildren: 7
+            maxChildren: 14
         })
     }, {
         POSITION: [5, 14, 1.3, 7, 0, 0, 0]
@@ -74856,7 +74857,7 @@ defExports.triEngineer = {
     }, {
         POSITION: [2, 14, 1.3, 18, 0, 0, 0],
         PROPERTIES: engiGunInfo({
-            maxChildren: 3
+            maxChildren: 6
         })
     }, {
         POSITION: [5, 14, 1, 7, 0, 0, 0]
@@ -74867,7 +74868,7 @@ defExports.triEngineer = {
     }, {
         POSITION: [2, 14, 1.3, 18, 0, 120, 0],
         PROPERTIES: engiGunInfo({
-            maxChildren: 3
+            maxChildren: 6
         })
     }, {
         POSITION: [5, 14, 1, 7, 0, 120, 0]
@@ -74878,7 +74879,7 @@ defExports.triEngineer = {
     }, {
         POSITION: [2, 14, 1.3, 18, 0, 240, 0],
         PROPERTIES: engiGunInfo({
-            maxChildren: 3
+            maxChildren: 6
         })
     }, {
         POSITION: [5, 14, 1, 7, 0, 240, 0]
@@ -81337,7 +81338,7 @@ defExports.baller = {
     GUNS: [{
         POSITION: [15, 20, 1.1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.factory, g.less_health, g.less_reload, g.less_reload, g.less_reload, g.less_reload]),
+            SHOOT_SETTINGS: combineStats([g.factory, g.baller, g.less_health, g.less_reload, g.less_reload, g.less_reload, g.less_reload]),
             TYPE: defExports.ballerMinionProps,
 			MAX_CHILDREN: 1,
             STAT_CALCULATOR: gunCalcNames.drone,
@@ -118466,7 +118467,7 @@ defExports.fogEngineer = {
         POSITION: [2, 14, 1.3, 18, 0, 0, 0],
         PROPERTIES: engiGunInfo({
             pillbox: defExports.fogbox,
-            maxChildren: 5
+            maxChildren: 10
         })
     }, {
         POSITION: [5, 14, 1, 7, 0, 0, 0]
@@ -128318,27 +128319,30 @@ defExports.guidedShieldMinion = {
     LABEL: 'Guided Shield Minion',
     TYPE: 'minion',
     DAMAGE_CLASS: 0,
-    HITS_OWN_TYPE: 'hardWithBuffer',
+    HITS_OWN_TYPE: 'hard',
     FACING_TYPE: 'smoothToTarget',
     BODY: {
         FOV: .6,
         SPEED: 1.75,
         ACCELERATION: .4,
-        HEALTH: 5,
-        SHIELD: 0,
+        HEALTH: 80,
+        SHIELD: 40,
         DAMAGE: 0.1,
         RESIST: 1,
         PENETRATION: 0.1,
         DENSITY: .4,
         RANGE: 800,
-        REGEN: 0.03
+        REGEN: 1.1
     },
     DRAW_HEALTH: true,
     CLEAR_ON_MASTER_UPGRADE: true,
     GIVE_KILL_MESSAGE: false,
     CONTROLLERS: ['nearestDifferentMaster', 'mapTargetToGoal', 'canRepel', 'hangOutNearMaster', "guided"],
     TURRETS: [{
-        POSITION: [26, 26, 0, 0, 0, 1],
+        POSITION: [35, 26, 0, 0, 0, 1],
+        TYPE: defExports.backShieldTurret
+    }, {
+        POSITION: [35, 26, 0, 180, 0, 1],
         TYPE: defExports.backShieldTurret
     }],
     ALWAYS_ACTIVE: true
@@ -128353,13 +128357,13 @@ defExports.shieldweaver = {
         SPEED: base.SPEED * .8,
         FOV: base.FOV * 1.1
     },
-    MAX_CHILDREN: 6,
+    MAX_CHILDREN: 8,
     GUNS: [{
         POSITION: [4.5, 10, 1, 10.5, 0, 0, 0]
     }, {
         POSITION: [1, 12, 1, 15, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory, g.slow, g.less_health, g.less_reload, g.bigger, g.bit_slow]),
+            SHOOT_SETTINGS: combineStats([g.factory, g.baby_factory, g.slow, g.less_health, g.less_reload, g.bigger, g.bit_slow, g.more_reload]),
             TYPE: [defExports.guidedShieldMinion],
             STAT_CALCULATOR: gunCalcNames.drone,
             SYNCS_SKILLS: true,
@@ -141849,6 +141853,10 @@ defExports.butaneGas = {
         for (const c of gun.childrenMap.values()) {
             child = c;
         }
+        if (!child) {
+            gun.canShoot = ogCanShoot;
+            return;
+        }
         child.velocity.x = me.velocity.x * .75;
         child.velocity.y = me.velocity.y * .75;
         child.x = them.x
@@ -141868,7 +141876,7 @@ defExports.butaneExplosion = {
         PENETRATION: 1.875,
         SHIELD: 0,
         REGEN: 0,
-        DENSITY: .35,
+        DENSITY: .295,
         PUSHABILITY: 0,
         RANGE: 30
     },
@@ -162248,6 +162256,7 @@ defExports.caliver = {
         }
     }]
 };
+g.flakGun = shootSettingsToGStat(combineStats([_hlt(.0625), g.less_damage, g.less_damage, g.less_damage, g.less_damage, g.less_pen, g.more_speed, g.big_spread]));
 defExports.flakGun = {
     PARENT: [defExports.genericTank],
     LABEL: 'Flak Gun',
@@ -162255,37 +162264,37 @@ defExports.flakGun = {
     GUNS: [{
         POSITION: [18, 2, 1, 0, 3, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
         POSITION: [18, 2, 1, 0, -3, 0, 1/6],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
         POSITION: [16, 2, 1, 0, 3, 0, 1/3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
         POSITION: [16, 2, 1, 0, -3, 0, .5],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
         POSITION: [14, 2, 1, 0, 3, 0, 2/3],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
         POSITION: [14, 2, 1, 0, -3, 0, 5/6],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.bn4d, g.less_reload, g.meta]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.twin, g.pure_gunner, g.faster, g.pellet, g.punt, g.flakGun]),
             TYPE: defExports.explodingBullet
         }
     }, {
@@ -167639,22 +167648,24 @@ defExports.cloneStrikeMinion = {
     PERSISTS_AFTER_DEATH: true,
     DAMAGE_CLASS: 0,
     HITS_OWN_TYPE: 'hardWithBuffer',
-    FACING_TYPE: 'smoothTargetOrSmoothMotion',
+    FACING_TYPE: 'smoothToTarget',
     BODY: {
         FOV: 1,
         SPEED: 1.75,
         ACCELERATION: 1,
-        HEALTH: .5,
-        SHIELD: 0,
-        DAMAGE: .25,
+        HEALTH: 20,
+        SHIELD: 10,
+        REGEN: 0.5,
+        DAMAGE: .15,
         RESIST: 1,
-        PENETRATION: .5,
-        DENSITY: .4,
-        RANGE: 350
+        PENETRATION: .25,
+        DENSITY: .25,
+        RANGE: 300
     },
     DIE_AT_RANGE: true,
     DRAW_HEALTH: false,
     GIVE_KILL_MESSAGE: false,
+    INDEPENDENT: true,
     CONTROLLERS: ['nearestDifferentMaster', "mapTargetToGoal"],
     GUNS: [{
         POSITION: [17, 9, 1, 0, 0, 0, 0],
@@ -167684,15 +167695,16 @@ defExports.cloneStrikeShellHalf = {
     DIE_AT_RANGE: true,
     SHAPE: 145,
     BODY: {
-        HEALTH: .4,
+        HEALTH: .8,
+        SHIELD: .4,
         DAMAGE: .4,
+        REGEN: .01,
         RANGE: 575,
         DENSITY: 1.5,
         RESIST: 1.5,
         SPEED: 0,
         ACCELERATION: .005
     },
-    // size, x, y, angle (deg), turn range, layer
     TURRETS: [{
         POSITION: [16, 0, 0, 0, 0, 1],
         TYPE: [defExports.cloneStrikeShellProp]
@@ -167710,15 +167722,16 @@ defExports.cloneStrikeShell = {
     DRAW_HEALTH: true,
     DIE_AT_RANGE: true,
     BODY: {
-        RANGE: 80,
-        HEALTH: .8,
+        RANGE: 200,
+        HEALTH: 1.6,
+        SHIELD: .8,
+        REGEN: .01,
         DAMAGE: .8,
         DENSITY: 1.5,
         RESIST: 1.5,
         SPEED: 0,
         ACCELERATION: .01
     },
-    // size, x, y, angle (deg), turn range, layer
     TURRETS: [{
         POSITION: [16, 0, 0, -90, 0, 1],
         TYPE: [defExports.cloneStrikeShellProp]
@@ -167744,7 +167757,7 @@ defExports.cloneStrikeShell = {
         },
     },],
 }
-for (let i = 0; i < 1; i += 1 / /*minion amount*/ 5) {
+for (let i = 0; i < 1; i += 1 / /*minion amount*/ 6) {
     defExports.cloneStrikeShell.GUNS.push({
         POSITION: [0, 5, 1, 0, 0, 360 * i, Infinity],
         PROPERTIES: {
@@ -167804,7 +167817,7 @@ defExports.cloneStrike = {
     }, {
         POSITION: [2, 12, 1.2, 18, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.bit_less_reload, g.double_size, g.bigger, g.half_reload, g.less_reload, g.more_range, g.bit_less_reload, g.orbitalstrikeInsignia]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.less_reload, g.double_size, g.bigger, g.half_reload, g.less_reload, g.more_range, g.orbitalstrikeInsignia]),
             TYPE: defExports.clonseStrikeInsignia,
             COLOR_OVERRIDE: 347,
         },
