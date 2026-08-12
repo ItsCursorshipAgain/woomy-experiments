@@ -9471,6 +9471,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.SIZE += 7;
                         this.DAMAGE += 20;
                         break;
+                    case "microGrower":
+                        this.SIZE += .06; // + .02 * Math.random();
+                        this.DAMAGE += 12.5;
+                        this.penetration += .005;
+                        if (this.velocity.x > 0) this.velocity.x -= .003;
+                        if (this.velocity.y > 0) this.velocity.y -= .003;
+                        break;
                     case "miniGrower":
                         this.SIZE += .1; // + .02 * Math.random();
                         this.DAMAGE += .15;
@@ -13965,6 +13972,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         } break;
                         // Never collide
                         case (instance.settings.hitsOwnType === "never" || other.settings.hitsOwnType === "never"): { } break;
+                        case (!isSameTeam && (instance.settings.hitsOwnType === "teamNever" || other.settings.hitsOwnType === "teamNever")): { } break;
                         // Standard collision
                         case (instance.settings.hitsOwnType === other.settings.hitsOwnType && !instance.multibox.enabled && !other.multibox.enabled): {
                             switch (instance.settings.hitsOwnType) {
