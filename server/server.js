@@ -8985,7 +8985,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.isArenaCloser = set.IS_ARENA_CLOSER;
                         if (this.isArenaCloser) this.immuneToAbilities = true;
                     }
+                    if (this.onVarsCleared) this.onVarsCleared(this);
                     this.variables = set.VARIABLES ? JSON.parse(JSON.stringify(set.VARIABLES)) : {};
+                    this.onVarsCleared = set.ON_VARIABLES_CLEARED || false;
                     this.animations = [];
                     this.setEvolution(set.EVOLUTIONS ?? []);
                     this.mainWeaponColor = set.WEAPON_COLOR;
@@ -9055,7 +9057,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             get size() {
                 //if (this.bond == null) return (this.coreSize || this.SIZE) * (1 + this.skill.level / 60);
-                if (this.bond == null) return this.SIZE * ((this.settings.sizeWithLevel) ? (1 + ((this.skill.level > c.SKILL_CAP) ? c.SKILL_CAP : this.skill.level) / 60) : 1);
+                if (this.bond == null || this.bond.bond === this) return this.SIZE * ((this.settings.sizeWithLevel) ? (1 + ((this.skill.level > c.SKILL_CAP) ? c.SKILL_CAP : this.skill.level) / 60) : 1);
                 return this.bond.size * this.bound.size;
             }
             get mass() {
