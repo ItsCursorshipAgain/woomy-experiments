@@ -45,10 +45,10 @@ const g = {
     "blank": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 
     // Base Stats
-    "basic": [20, 1.4, .1, 1, 2.25, .2, 1, 5, 1.5, 1, 1, 15, 1],
+    "basic": [20, 1.4, .1, 1, 2.25, .2, 1.2, 5, 1.5, 1, 1, 15, 1],
     "bunker": [46.215, 2, .025, .9, 16.667, 0, 16.667, 7.23, 2.475, 10, 1.1, 5, 4.5],
     "dem_factory": [175, 0, .25, .315, .5, .5, .5, 2.45, 1, 1, 1, .5, 1],
-    "drone": [60, .25, .1, .6, 4, .35, 1.5, 2, 1, 1, 1, .1, .9],
+    "drone": [80, .25, .1, .7, 14.8, .3, 2.5, 2.45, 1, 1, 3.5, .1, 1.5],
     "dropship": [45, 1, 0, 1, 2.25, .95, 1.35, 4.25, 0, 1, 1, 0, 1.1],
     "factory": [72, 1, .1, .7, 1.6, .425, 1, 3, 1, 1, 1, .1, 1],
     "lance": [6, 0, .1, 1, .5, 1.2, 1.6, .67, 1, .08, 1, 180, 1],
@@ -57,10 +57,10 @@ const g = {
     "spiteshot": [181.5, .224, .187, 1.5, 1.5, .0664, .725, 7.2, .492, 1, 1.2, 45, 1],
     "splatter": [220, 0, 0, 1.2, 2.5, .05, 1.25, 4, .65, 1, 1.5, 0, 1.25],
     "strange": [220, .175, .135, 1.2, 1000, 1e-5, 1e-5, 4, 6, 1, 1.5, 30, 1.2],
-    "swarm": [27, .25, .05, .4, .9, .235, .85, 3.5, 1, 1, .8, 5, 1.25],
-    "swarmlet": [36, .25, .05, .4, 1.2, .2, 1, 3.5, 1, 1, 1.25, 5, 1.25],
-	"trap": [33, 1, .25, .75, 8, .08, .8, 3, 2, 1.85, 2, 12.5, 1.15],
-    "trireme": [10.725, 1.512, .16, .9, 1.35, .09, 1.4, 2.852, .634, 1.3, 1, 7.5, .77],
+    "swarm": [37, .25, .05, .6, 6.8, .2, 1.8, 4.5, 1, 1, .8, 5, 1.25],
+    "swarmlet": [46, .25, .06, .5, 9, .2, 2, 4.5, 1, 1, 1.25, 5, 1.25],
+	"trap": [31.5, 1, .25, .9, 8, .08, .8, 3, 2, 1.725, 2.15, 12.5, 1.3],
+    "trireme": [1.725, 1.512, .16, .9, 1.35, .09, 1.4, 2.852, .634, 1.3, 1, 7.5, .77],
 
     // Tier 1
     "twin": [1.125, .6, .9, 1, .9, .95, .95, 1, 1, 1, 1, 1.2, 1],
@@ -80,13 +80,13 @@ const g = {
     "intercept": [1.375, 1, 1, 1, 1, .975, 1, 1, 1, .925, 1, 1, 1],
 
     "double_health": [1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1],
-    "serpenttail": [0.5, 0, 1, 1, 75, 3, 0.75, 0, 0, 5959, 1, 1, 1],
+    "serpenttail": [.5, 0, 1, 1, 75, 3, .75, 0, 0, 5959, 1, 1, 1],
     "sparkle": [.85, 1, 1, 1, 1.35, 1.15, 1.35, 1.2, 1.2, 1, 1, 1, 1],
     "baller": [1, 1, 1, 1, 1, 1, 1, 1.5, 1, 1, 1, 1, 1],
     "explosion": [1, 0, .1, 50, 50, .125, 100, 0, 0, 1.75, 5, 1, 2],
     "command": [3, 1.5, .1, 1.25, 1, .75, .85, 1.5, 1.5, 1, 1, 1, 1],
     "spam": [1.1, 1, 1, 1, 1, 1.12, 1, .9, .785, 1, 1, 1, 1],
-    "minion": [1, 1, 2, 1, .4, .8, 1.5, 1, 1, .75, 1, 2, 1],
+    "minion": [1, 1, 2, 1, .4, .8, 1.5, 1, 1, .75, 2, 2, 1],
     "single": [1.05, 1, 1, 1, 1.075, 1.075, 1, 1.05, 1, 1, 1, 1, 1],
     "assassin": [1.5, 1, .25, 1, 1.2, 1.325, 1.1, 1.1, 1.1, 1, 1.05, .5, 1.025],
     "ranger": [1.1, 1.1, .5, 1, .7, 1.5, 1, 1.3, 1.3, 1.05, 1, .5, 1],
@@ -118,8 +118,8 @@ const g = {
     "auto_turret": [1.1, .3, .9, 1.125, .95, .95, .95, 1.6, 1.2, 1, .3, .75, 1.75],
     "super_auto": [3.5, 0, .65, .9, .85, .75, 1.15, 1.1, 1.1, .875, 1.3, 1.1, 1.25],
     "defend_auto": [1.25, 1, 1.1, 1, 1, 1, 1, 1.2, 1, 1.1, 1, 1.1, 1],
-    "legacyclose": [1.2, 0.2, 0.5, 1, 5.5, 0.55, 2.25, 2, 3, 1, 1.6, 0.5, 1.15],
-    "sans": [1, 1, 1, 1, 50, 0.1, 4, 1, 1, 1, 1.6, 0.5, 1.15],
+    "legacyclose": [1.2, .2, .5, 1, 5.5, .55, 2.25, 2, 3, 1, 1.6, .5, 1.15],
+    "sans": [1, 1, 1, 1, 50, .1, 4, 1, 1, 1, 1.6, .5, 1.15],
     "destroy": [2.25, 1.85, .5, 1, 1.72, 1.7, 1.2, .75, .85, 1, 1.6, 1, 3],
     "anni": [1, 1.2, 1, 1, 1.6, 1.45, 1, 1, 1, 1, 1, 1, 1.075],
     "rainbowMegaTrap": [1, 1.75, 1, 2.5, 1.1, 1.65, 1.05, .675, .725, 1, 1.6, 1, 1.15],
@@ -138,7 +138,7 @@ const g = {
     "spread1": [1.75, .45, .125, 1.1, .85, 1.6, 1.15, 1.05, .75, 1, 1.5, .25, 1.15],
     "spread2": [1, .1, .345, 1.1, .9, .7, 1.25, .825, .775, 1, .9, .5, 1],
     "skim": [1.25, .8, .8, .9, 1.75, 1.35, 2.75, .45, .45, 1.325, 1, 1, 1.35],
-    "dustbowlDust": [0.95, 1, 1, 1, 1.1, 0.95, 1.5, 1, 1, 1, 1, 1, 2],
+    "dustbowlDust": [.95, 1, 1, 1, 1.1, .95, 1.5, 1, 1, 1, 1, 1, 2],
     "bent": [1, 1, .8, 1, .9, 1, .95, 1, 1, 1, .8, .5, 1],
     "triplet": [1.125, 2/3, .9, 1, .925, 1, 1, 1.1, 1.1, 1, 1.1, .9, .95],
     "quint": [1, 2/3, 1, 1, .95, .95, .95, 1, .975, 1, 1, .9, .9],
@@ -158,7 +158,7 @@ const g = {
     "turret": [1, 1, 1, .85, .6, .6, .6, .9, .85, 1, .1, 1, 1],
     "bees": [1.45, 1, 1, 1.5, 1.35, 1.25, .85, 3, 1.75, 1, .25, 1, 1.15],
     "battle": [1, 1, 1, 1, 1.2, 1.1, 1, .8, 1.15, 1, 1, 1, 1.1],
-    "tempest": [.26, 1, 1, 1, 4, .2, 0.5, .01, 1.25, 1, 10, 1, 5],
+    "tempest": [.26, 1, 1, 1, 4, .2, .5, .01, 1.25, 1, 10, 1, 5],
     "carrier": [1.1, 1, 1, 1, 1.2, 1.1, 1, 1.2, 1.2, 1.1, 1, 1, 1.15],
     "hexatrap": [1.25, 1, 1.2, 1, 1, 1, 1, .8, 1, .575, 1, 1, 1],
     "octog": [1.25, 0, .25, 1.45, 1, 1, 1, .6, 1, 1.1, 1, 1, 1],
@@ -175,11 +175,11 @@ const g = {
     "tortilla": [1.2, 1, 1, 1, 1.2, 1.1, 1, .9, .9, 1, 1.2, 1, 1.15],
     "dorito": [1, 1, 1, .75, 1, 1.2, 1, .95, .95, 1, 1.1, 1, 1],
     "malefict": [1, 1, 1, 1.05, 1.1, 1.1, 1.1, .8, .8, 1, 1.15, 1, 1],
-    "enchantress": [.425, 1, 1, 0.835, .6, .75, .75, 0.9, 0.9, 1, .8, 1, 1],
-    "exorcist": [.675, 1, 1, 0.95, .85, .9, .95, 0.8, 0.8, 1, .8, 1, 1],
-    "sorcer": [.125, 1, 1, 0.85, .35, .4, .35, 1.3, 1.3, 1, .8, 1, 1],
-    "summon": [.3, 1, 1, 1.125, .45, .45, .55, 0.95, 0.95, 1, .8, 1, 1],
-    "baby_factory": [1.5, 1, 1, 1, 0.8, 1, 1, 1, 1.35, 1, 1, 1, 1],
+    "enchantress": [.425, 1, 1, .835, .6, .75, .75, .9, .9, 1, .8, 1, 1],
+    "exorcist": [.675, 1, 1, .95, .85, .9, .95, .8, .8, 1, .8, 1, 1],
+    "sorcer": [.125, 1, 1, .85, .35, .4, .35, 1.3, 1.3, 1, .8, 1, 1],
+    "summon": [.3, 1, 1, 1.125, .45, .45, .55, .95, .95, 1, .8, 1, 1],
+    "baby_factory": [1.5, 1, 1, 1, .8, 1, 1, 1, 1.35, 1, 1, 1, 1],
     "no_recoil": [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "half_recoil": [1, .5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     "less_recoil": [1, .65, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -288,7 +288,7 @@ const g = {
     "a_lotta_damage": [.8, 1, 1, 1.2, 1.5, 1.75, 1.25, 1, 1, 1, 1, 1, 1],
     "trap_minion": [1, 1, 1, 1.15, .7, .7, 1.15, 1, 1, .75, 1, 1.1, 1],
     "very_fast_launch": [1, 1, 1, 1, 1, 1, 1, 2.2, 1, 1, 1, 1, 1],
-    "slow_launch": [1, 1, 1, 1, 1, 1, 1, 0.6, 1, 1, 1, 1, 1],
+    "slow_launch": [1, 1, 1, 1, 1, 1, 1, .6, 1, 1, 1, 1, 1],
     "fast_launch": [1, 1, 1, 1, 1, 1, 1, 1.4, 1, 1, 1, 1, 1],
     "less_spread": [1, 1, .75, 1, 1, 1, 1, 1, 1, 1, 1, .75, 1],
     "click": [1.25, .275, .5, 1, .58, .6, .53, .98, .975, 1, .875, 2, .9],
@@ -315,7 +315,7 @@ const g = {
     "gatekeeper": [.875, 1, 1, 1.25, 1.1, 1.1, 1.05, 2, 3, .8, .1, 1, 1],
     "contagi": [1, .5, 1.5, 1, 1.23, .8, 2.5, 1.05, 1, 1, .9, .75, .7],
     "shellExplode": [1, 0, 0, 1, 3, .3, 5, 0, 0, .1, 3, 0, 3],
-    "c4": [1000, 0, 1, 1, 2.5, 3, .01, 0, 0, 0.1, .01, 1, 1],
+    "c4": [1000, 0, 1, 1, 2.5, 3, .01, 0, 0, .1, .01, 1, 1],
     "detSwarm": [1, 0, 0, .5, 3, .2, 2, 0, 0, .1, 2, 0, 1],
     "trap_fragment": [1000, 0, .75, .7, 2, 1.45, 1.3, 1.15, 1, .4, 1.5, .5, 1.1],
     "sock": [.85, 0, 1, .8, .63, .9, .725, .825, .785, .3, .5, 1, .7],
@@ -393,7 +393,7 @@ const g = {
     "kinesis": [1, 1, 1, 1, .7, .75, .75, .85, .825, 1, .75, 1, .75],
     "rocketeer": [1.25, .9, .8, .95, 1.4, 1.1, 2, .4, .385, 1.3, 1, 1, 1.25],
     "blackholeRocketeer": [1.25, .9, .8, 2, 9, .4, 2, .3, .385, 1.3, 1, 1, 1.1],
-    "riftWizardExplosion": [1.25, .9, .8, 2, 5, .2, 5, 0, 0, .1, 0.1, 1, 1.1],
+    "riftWizardExplosion": [1.25, .9, .8, 2, 5, .2, 5, 0, 0, .1, .1, 1, 1.1],
     "twister": [.975, 1, 1, 1, 1, 1, 1, 1.3, 1.3, 1.1, 1, 1, 1],
     "twist_missile": [.5, 1, 2, 1, .875, .95, .7, 1.69, 1.69, 1, 1, .5, .7],
     "skim_missile": [.55, 1.35, 2, 1, .5, .7, .7, 1.69, 1.69, 1, 1, .5, .7],
@@ -404,7 +404,7 @@ const g = {
     "kash_thrust": [.125, .25, 1, 2, .36, .25, 1, 1, 1, 1, .5, 1, .5],
     "kash": [1.333, 1, 1, 2, 1.1, .9, 1, .645, .5, 1, 1, 1, 1],
     "vibe": [.75, 1.25, 1.4, 1.2, 1.1, 1.15, 1.1, .775, .5, .8, .5, 1.5, .8],
-    "volley": [.55, 1, 1.15, .75, 1, 1, 1, 0.8, 0.8, .9, 1, 1.5, 1],
+    "volley": [.55, 1, 1.15, .75, 1, 1, 1, .8, .8, .9, 1, 1.5, 1],
     "bee_swarm": [1.31, .25, 1.5, 1.75, .875, .8, 1.3, .9, .8, 1, 1, 1.5, 1],
     "collect": [1.5, 1, 1, 1.5625, .855, .265, 1.25, .9, .8, 1, 1, 1, 1],
     "half_pen": [1, 1, 1, 1, 1, 1, .5, 1, 1, 1, 1, 1, 1],
@@ -417,7 +417,7 @@ const g = {
     "mecha": [1.925, .01, .01, 1, .625, .294, .845, 1.35, 1.1, 1, 1, 1.4, 1],
     "heavymecha": [2, .01, 1.2, 1.1, .85, .675, 1.06, 1.8, 1.1, 1.1, 1, 1.175, 1],
     "sixshot": [1, 1, 1.5, 1, 1, 2, 2, 1.3, 1.8, 1, .875, 1, 1],
-    "kamikazeCrasherExplosion": [1, 1, 1, 1, 10000, 2, 5, 0, 0, 0.25, 100, 1, 1],
+    "kamikazeCrasherExplosion": [1, 1, 1, 1, 10000, 2, 5, 0, 0, .25, 100, 1, 1],
     "kami": [4, 0, .5, 1.5, 3, 4.8, 5, .01, .01, .25, 1, .5, 1],
     "bigCrunch": [6.5, 0, .5, 1.5, 30, .7, 5, .01, .01, .45, 1, .5, 1],
     "bigBang": [6.5, 0, .5, 1.5, 20, 1.4, 5, .01, .01, .4, 1, .5, 1],
@@ -430,8 +430,8 @@ const g = {
     "orbitalstrike": [1, 1, 1, 1, 25, 1.1, 1, 0, 1, 1, 1, 1, 1],
     "orbitalstrikeInsignia": [1.65, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
     "shrapnel": [4, 1, 1, 1, 1.05, 1.1, 1, .75, 1, 1.05, 1, 1, 1],
-    "shrapnelExplosion": [4.5, 3.2375, .5, .3, 15, .25, 100, 0, 0, 1, 0.01, 1, 3.45],
-    "oppenheimer": [4.5, 3.2375, 0.5, 0.3, 50, 0.7, 1.32, 0, 0, 1.6, 2.56, 1, 3.45],
+    "shrapnelExplosion": [4.5, 3.2375, .5, .3, 15, .25, 100, 0, 0, 1, .01, 1, 3.45],
+    "oppenheimer": [4.5, 3.2375, .5, .3, 50, .7, 1.32, 0, 0, 1.6, 2.56, 1, 3.45],
     "engineer": [1.05, 1, 1, 1, 1.05, .9, .8, 1.1, 1, 1, 1, 1, 1],
     "heal": [.85, 1, 1, 1, 1, 1.65, 1, 1, 1, 1, 0, 1, 1],
     "sanctuary_heal": [.5, 1, 1, .875, 1, 3.5, 1, 1, 1, .15, 0, 1, 1],
@@ -445,22 +445,22 @@ const g = {
     "bb8d": [1, 1, 1, 1, 2.75, 4.45, 2.6, 1, 1, 1, 1, 1, 1],
     "bb9d": [1, 1, 1, 1, 4, 5, 2.75, 1, 1, 1, 1, 1, 1],
     "bb10d": [1, 1, 1, 1, 6, 6.5, 2.8, 1, 1, 1, 1, 1, 1],
-    "bn1d": [1, 1, 1, 1, 0.95, 0.95, 0.95, 1, 1, 1, 1, 1, 1],
-    "bn2d": [1, 1, 1, 1, 0.9, 0.875, 0.9, 1, 1, 1, 1, 1, 1],
-    "bn3d": [1, 1, 1, 1, 0.85, 0.7, 0.8, 1, 1, 1, 1, 1, 1],
-    "bn4d": [1, 1, 1, 1, 0.8, 0.5, 0.65, 1, 1, 1, 1, 1, 1],
-    "bn5d": [1, 1, 1, 1, 0.65, 0.25, 0.5, 1, 1, 1, 1, 1, 1],
-    "bb1a": [0.95, 1, 1, 1, 1.1, 1.1, 1.1, 1.05, 1.05, 1.05, 1.02, 1, 1.02],
-    "bb2a": [0.9, 1, 1, 1, 1.1, 1.225, 1.15, 1.1, 1.1, 1.075, 1.05, 1, 1.04],
-    "bb3a": [0.85, 1, 1, 1, 1.2, 1.5, 1.35, 1.15, 1.15, 1.1, 1.1, 1, 1.1],
-    "bb4a": [0.725, 1, 1, 1, 1.5, 1.85, 1.5, 1.225, 1.225, 1.2, 1.15, 1, 1.15],
-    "bb5a": [0.6, 1, 1, 1, 1.6, 2.5, 2, 1, 1, 1.35, 1.3, 1, 1.3],
-    "bn1a": [1.05, 1, 1, 1, 0.95, 0.95, 0.95, 0.95, 0.95, 0.975, 0.95, 1, 0.95],
-    "bn2a": [1.1, 1, 1, 1, 0.9, 0.875, 0.9, 0.9, 0.9, 0.925, 0.9, 1, 0.9],
-    "bn3a": [1.25, 1, 1, 1, 0.85, 0.7, 0.8, 0.85, 0.85, 0.85, 0.85, 1, 0.85],
-    "bn4a": [1.35, 1, 1, 1, 0.8, 0.5, 0.65, 0.75, 0.75, 0.8, 0.7, 1, 0.7],
-    "bn5a": [1.6, 1, 1, 1, 0.65, 0.25, 0.5, 0.5, 0.5, 0.65, 0.6, 1, 0.6],
-	"sonic": [0.56, 0.8, 1, .95, .72, 1, 1, .6, 1, .67, .9, 1, 1.3],
+    "bn1d": [1, 1, 1, 1, .95, .95, .95, 1, 1, 1, 1, 1, 1],
+    "bn2d": [1, 1, 1, 1, .9, .875, .9, 1, 1, 1, 1, 1, 1],
+    "bn3d": [1, 1, 1, 1, .85, .7, .8, 1, 1, 1, 1, 1, 1],
+    "bn4d": [1, 1, 1, 1, .8, .5, .65, 1, 1, 1, 1, 1, 1],
+    "bn5d": [1, 1, 1, 1, .65, .25, .5, 1, 1, 1, 1, 1, 1],
+    "bb1a": [.95, 1, 1, 1, 1.1, 1.1, 1.1, 1.05, 1.05, 1.05, 1.02, 1, 1.02],
+    "bb2a": [.9, 1, 1, 1, 1.1, 1.225, 1.15, 1.1, 1.1, 1.075, 1.05, 1, 1.04],
+    "bb3a": [.85, 1, 1, 1, 1.2, 1.5, 1.35, 1.15, 1.15, 1.1, 1.1, 1, 1.1],
+    "bb4a": [.725, 1, 1, 1, 1.5, 1.85, 1.5, 1.225, 1.225, 1.2, 1.15, 1, 1.15],
+    "bb5a": [.6, 1, 1, 1, 1.6, 2.5, 2, 1, 1, 1.35, 1.3, 1, 1.3],
+    "bn1a": [1.05, 1, 1, 1, .95, .95, .95, .95, .95, .975, .95, 1, .95],
+    "bn2a": [1.1, 1, 1, 1, .9, .875, .9, .9, .9, .925, .9, 1, .9],
+    "bn3a": [1.25, 1, 1, 1, .85, .7, .8, .85, .85, .85, .85, 1, .85],
+    "bn4a": [1.35, 1, 1, 1, .8, .5, .65, .75, .75, .8, .7, 1, .7],
+    "bn5a": [1.6, 1, 1, 1, .65, .25, .5, .5, .5, .65, .6, 1, .6],
+	"sonic": [.56, .8, 1, .95, .72, 1, 1, .6, 1, .67, .9, 1, 1.3],
 	"shredder": [1.1, 1, 1, .9, 10, .25, 1.4, .79, 1, 1, .9, 1, 2.2],
     "spray": [.925, 1, 1.75, .85, 1.15, 1.125, 1.075, 1, 1, 1, 1, .5, 1],
     "impure_pellet": [1.3, .325, .8, 1.325, 1.5, .65, 1.75, 1.45, .9, 1, 3, .8, 2]
@@ -537,7 +537,8 @@ const statNames = {
     lancer: 12,
     flail: 13,
     inject: 14,
-	laser: 15
+	laser: 15,
+    bulletless: 16
 };
 const gunCalcNames = {
     default: 0,
@@ -72095,7 +72096,7 @@ defExports.growingRoadblock = {
         PROPERTIES: {
             SHOOT_SETTINGS: combineStats([g.trap, g.mach, g.chain, g.volley]),
             TYPE: [defExports.trap, {
-                MOTION_TYPE: 'miniGrower',
+                MOTION_TYPE: 'microGrower',
                 HITS_OWN_TYPE: 'hard'
             }],
             STAT_CALCULATOR: gunCalcNames.trap
@@ -107333,6 +107334,7 @@ defExports.rummy = {
 defExports.bentBoomer4 = makeAutoN(defExports.bentBoomer, 4);
 defExports.heliPropA = {
     CONTROLLERS: ['reverseHeliSpin'],
+    INDEPENDENT: true,
     GUNS: [{
         POSITION: [66, 9, 1, 0, 0, 0, 0]
     }, {
@@ -110279,7 +110281,7 @@ defExports.text = {
     NAME: "If youre seeing this someone forgot to replace the name of a text entity.. let a dev know",
     SHAPE: 10020,
     SIZE: 15,
-    HITS_ONLY_TEAM: "never",
+    HITS_ONLY_TEAM: false,
     HITS_OWN_TYPE: "never",
     DIES_TO_TEAM_BASE: false,
     GO_THRU_OBSTACLES: true,
@@ -181212,6 +181214,189 @@ defExports.warfrontLine = {
     CAN_BE_ON_LEADERBOARD: false,
     DANGER: 0
 };
+function initalizePoint(point) {
+    point.variables = {
+        init: true,
+        attachedEntity: undefined,
+        ogSettings: undefined,
+        ogMotionType: undefined,
+        lastPickup: Date.now(),
+        pickupCooldown: 3000,
+        pickupMode: false,
+        moves: {},
+        breakFreeVal: 50 // about 1s with all 4 inputs
+    }
+}
+defExports.attachmentPoint = {
+    PARENT: [defExports.genericEntity],
+    LABEL: "Attachment Point",
+    GODMODE: true,
+    PASSIVE: true,
+    SHAPE: 10020,
+    SIZE: 15,
+    HITS_OWN_TEAM: true,
+    GO_THRU_OBSTACLES: true,
+    CAN_GO_OUTSIDE_ROOM: true,
+    CAN_BE_ON_LEADERBOARD: false,
+    GIVE_KILL_MESSAGE: false,
+    DRAW_HEALTH: false,
+    DANGER: 0,
+    LAYER: 0,
+    BODY: {
+        DAMAGE: 0,
+        PENETRATION: 100,
+        PUSHABILITY: 0,
+        DENSITY: 1e5
+    },
+    ON_DEFINED: (me) => { initalizePoint(me) },
+    ON_VARIABLES_CLEARED: (me) => {
+        if (me.variables.attachedEntity) {
+            unattachPoint(me);
+            me.master ? me.master.sendMessage("Entity dropped!") : me.sendMessage("Entity dropped!");
+        }
+    },
+    ON_DEAD: ({ me }) => {
+        if (me.variables.attachedEntity) {
+            unattachPoint(me);
+            me.master ? me.master.sendMessage("Entity dropped!") : me.sendMessage("Entity dropped!");
+        }
+    },
+    ON_TICK: (me) => {
+        if (me.variables.attachedEntity) {
+            if (me.variables.attachedEntity.socket) {
+                const cmd = me.variables.attachedEntity.socket.player.command
+                let val = cmd.up + cmd.down + cmd.left + cmd.right
+                console.log(val)
+                const cur = (me.variables.moves[me.variables.attachedEntity.id] || 0);
+                me.variables.moves[me.variables.attachedEntity.id] = cur + (val || -1)
+                if (cur > me.variables.breakFreeVal) {
+                    unattachPoint(me);
+                    me.master ? me.master.sendMessage("Entity ejected!") : me.sendMessage("Entity ejected!");
+                    return;
+                }
+            }
+
+            me.variables.attachedEntity.accel.null();
+            me.variables.attachedEntity.velocity.null();
+
+            if (me.variables.attachedEntity.isDead()) {
+                unattachPoint(me);
+                me.master ? me.master.sendMessage("Entity dead...") : me.sendMessage("Entity dead...");
+            } else if (me.variables.attachedEntity.motionType !== "bound") {
+                unattachPoint(me);
+                me.master ? me.master.sendMessage("Entity lost!") : me.sendMessage("Entity lost!");
+            }
+        }
+    }
+}
+function attachEntityToPoint(point, entity) {
+    if (!point.variables.init) initalizePoint(point);
+    if (Date.now() - point.variables.lastPickup < point.variables.pickupCooldown || point.variables.attachedEntity || point.variables.pickupMode === false || entity.bond) return;
+    for (let turret of entity.turrets) { if (turret.variables.pickupMode) return; }
+
+    point.variables.ogSettings = JSON.parse(JSON.stringify(entity.settings));
+    point.variables.attachedEntity = entity;
+    point.variables.lastPickup = Date.now();
+    point.variables.ogMotionType = entity.motionType;
+    point.master.sendMessage("Entity picked up!")
+    point.variables.lastPickup = Date.now();
+
+    entity.bond = point;
+    const bound = structuredClone(point.bound);
+    bound.offset = 0;
+    entity.bound = bound;
+    entity.motionType = "bound";
+    entity.settings.hitsOwnType = "teamNever";
+    entity.settings.goThruObstacle = true;
+    entity.move();
+    entity.master ? entity.master.sendMessage("Hold your movement to eject!") : entity.sendMessage("Hold your movement to eject!");
+}
+function unattachPoint(point) {
+    if (!point.variables.init) initalizePoint(point);
+    if (!point.variables.attachedEntity) return;
+
+    const entity = point.variables.attachedEntity;
+    if (!entity.isDead()) {
+        entity.bond = undefined;
+        entity.bound = undefined;
+        entity.motionType = point.variables.ogMotionType;
+        entity.settings = point.variables.ogSettings;
+        entity.move();
+    }
+
+    point.variables.lastPickup = Date.now();
+    point.variables.attachedEntity = undefined;
+    point.variables.ogSettings = undefined;
+    point.variables.ogMotionType = undefined;
+    point.variables.moves = {};
+}
+defExports.chinook = {
+    PARENT: [defExports.genericTank],
+    LABEL: "Chinook",
+    TOOLTIP: "Alt fire and bump into a teammate to pick them up! Doing so again will drop them!",
+    DANGER: 8,
+    LAYER: 13,
+    MOTION_TYPE: 'glideBall',
+    HITS_OWN_TYPE: "teamNever",
+    HAS_NO_RECOIL: true,
+    IS_HELICOPTER: true,
+    STAT_NAMES: statNames.bulletless,
+    SKILL_CAP: [0, 0, 0, 0, 0, 9, 9, 9, 9, 9],
+    BODY: {
+        FOV: base.FOV * 1.45,
+        HEALTH: base.HEALTH * .5,
+        SHIELD: base.SHIELD * 2,
+        SPEED: base.SPEED * .65,
+        DAMAGE: base.DAMAGE * .8,
+    },
+    TURRETS: [{
+        POSITION: [8, -44, 0, 0, 360, 1],
+        TYPE: defExports.heliPropB
+    }, {
+        POSITION: [10, -17, 17, 45, 360, 1],
+        TYPE: defExports.heliPropA,
+    }, {
+        POSITION: [18, -25, 0, 0, 360, 2],
+        TYPE: defExports.attachmentPoint
+    }, {
+        POSITION: [10, 0, 0, 0, 360, 1],
+        TYPE: defExports.heliPropA
+    }],
+    GUNS: [{
+        POSITION: [25, 3, 1, -25, -8.9, 0, 0]
+    }, {
+        POSITION: [25, 3, 1, -25, 8.9, 0, 0]
+    }, {
+        POSITION: [19, 4, 1, 19, -16.5, 200, 0]
+    }, {
+        POSITION: [19, 4, 1, 19, 16.5, -200, 0]
+    }, {
+        POSITION: [3, 22, 1, -25, 0, 0, 0]
+    }],
+    VARIABLES: { altDebounce: Date.now() },
+    ON_ALT: (me) => {
+        if (Date.now() - me.variables.altDebounce < 250) return;
+        me.variables.altDebounce = Date.now();
+
+        const point = me.turrets[2];
+        if (point.variables.attachedEntity) {
+            unattachPoint(point);
+            me.sendMessage("Entity dropped!");
+        } else if (point.variables.pickupMode === false && Date.now() - point.variables.lastPickup > point.variables.pickupCooldown) {
+            point.variables.pickupMode = true;
+            me.sendMessage("Bump into a teammate to pick them up!");
+        } else {
+            point.variables.pickupMode = false;
+            me.sendMessage(`You can pick up a new tank in ${Math.max(0, ((point.variables.pickupCooldown - (Date.now() - point.variables.lastPickup)) / 1000)).toFixed(2)}s`)
+        }
+    },
+    ON_COLLIDE: (me, them) => {
+        const point = me.turrets[2];
+        if (point.pickupMode === false || them.type !== "tank" || them.team !== me.team) return;
+        attachEntityToPoint(point, them);
+        point.variables.pickupMode = false;
+    }
+}
 defExports.laserTest3Gun = {
     LABEL: "Laser Test 3 Gun",
     BODY: { FOV: 3 },
@@ -205155,7 +205340,7 @@ branch("dreadnoughts", "Dreadnoughts", [
 
 // Featured Tanks
 branch("featured_tanks", "Featured Tanks", [
-    defExports.blastceptioner, defExports.underseer, defExports.expedient, defExports.ionizer, defExports.recycler, defExports.pebbler, defExports.detCruiser, defExports.motionMachine, defExports.packageBomb, defExports.gunnerPound, defExports.hellraiser, defExports.spraygun,
+    defExports.chinook, defExports.blastceptioner, defExports.underseer, defExports.expedient, defExports.ionizer, defExports.recycler, defExports.pebbler, defExports.detCruiser, defExports.motionMachine, defExports.packageBomb, defExports.gunnerPound, defExports.hellraiser, defExports.spraygun,
     defExports.pelletMiniSwarm, defExports.nicotine, defExports.iceHurricane, defExports.gatlingTrapper, defExports.shotgun, defExports.inject0, defExports.arthritis, defExports.phosphorous, defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword,
     defExports.zeppelin, defExports.bulwark, defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
     defExports.tankRandomizer, defExports.basic
@@ -206100,7 +206285,7 @@ defExports.basicception.UPGRADES_TIER_3 = [defExports.twinAutoTwin, defExports.s
 defExports.accelerauto.UPGRADES_TIER_4 = [defExports.accelery, defExports.autoBooster]
 defExports.autoLittleArtillery.UPGRADES_TIER_4 = [defExports.autopilot];
 defExports.basicception.UPGRADES_TIER_4 = [defExports.recursion];
-defExports.helicoptor.UPGRADES_TIER_4 = [defExports.smashcoptor, defExports.whirlyRanger, defExports.auto22Heli, defExports.zoomDirigible, defExports.airway, defExports.potensic, defExports.stratofortress, defExports.mosquito, defExports.rocketCopter, defExports.rtx];
+defExports.helicoptor.UPGRADES_TIER_4 = [defExports.smashcoptor, defExports.whirlyRanger, defExports.auto22Heli, defExports.zoomDirigible, defExports.airway, defExports.potensic, defExports.stratofortress, defExports.mosquito, defExports.rocketCopter, defExports.rtx, defExports.chinook];
 //defExports.recursion.UPGRADES_TIER_4 = [defExports.recursion];
 defExports.autoMultishot.UPGRADES_TIER_4 = [defExports.multishotception, defExports.autoShotgun];
 defExports.minishotception.UPGRADES_TIER_4 = [defExports.artilleryception, defExports.bentception, defExports.harasserception, defExports.miniSpreadception, defExports.littleCannonception, defExports.basicInsectception, defExports.hewnPelletception, defExports.dropception, defExports.miniAsteroid];
