@@ -1127,4 +1127,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(ffaElimination(), { lifespan: 3600 });
+select(minibossRush);

@@ -45,7 +45,7 @@ const g = {
     "blank": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 
     // Base Stats
-    "basic": [20, 1.4, .1, 1, 1.85, .2, 1, 5, 1.5, 1, 1, 15, 1],
+    "basic": [20, 1.4, .1, 1, 2.25, .2, 1, 5, 1.5, 1, 1, 15, 1],
     "bunker": [46.215, 2, .025, .9, 16.667, 0, 16.667, 7.23, 2.475, 10, 1.1, 5, 4.5],
     "dem_factory": [175, 0, .25, .315, .5, .5, .5, 2.45, 1, 1, 1, .5, 1],
     "drone": [60, .25, .1, .6, 4, .35, 1.5, 2, 1, 1, 1, .1, .9],
@@ -59,7 +59,7 @@ const g = {
     "strange": [220, .175, .135, 1.2, 1000, 1e-5, 1e-5, 4, 6, 1, 1.5, 30, 1.2],
     "swarm": [27, .25, .05, .4, .9, .235, .85, 3.5, 1, 1, .8, 5, 1.25],
     "swarmlet": [36, .25, .05, .4, 1.2, .2, 1, 3.5, 1, 1, 1.25, 5, 1.25],
-	"trap": [33, 1, .25, .9, 8, .08, .8, 3, 2, 2.35, 2, 12.5, 1.15],
+	"trap": [33, 1, .25, .75, 8, .08, .8, 3, 2, 1.85, 2, 12.5, 1.15],
     "trireme": [10.725, 1.512, .16, .9, 1.35, .09, 1.4, 2.852, .634, 1.3, 1, 7.5, .77],
 
     // Tier 1
@@ -1275,6 +1275,7 @@ const createTurret = (type, options = {}) => {
     output.INDEPENDENT = options.independent ?? false;
     output.SYNC_TURRET_SKILLS = options.syncsSkills ?? true;
     output.HAS_NO_RECOIL = options.hasNoRecoil ?? false;
+    if (options.weaponColor != null) output.WEAPON_COLOR = options.weaponColor;
     applyStats(output.GUNS, options.stats ?? [g.turret]);
     return output;
 };
@@ -30138,7 +30139,7 @@ defExports.eggQueenTier4 = {
         POSITION: [2, 10, -1.5, (360 / 12) * 10, 10, 0],
         TYPE: defExports.EQ4EMPTrapper
     }],
-    ON_Q: me => me.upgradeTank(Class.eggQueenTier1)
+    ON_Q: me => me.upgradeTank(Class.eggQueenTier5)
 };
 defExports.eggBossTier1 = {
     PARENT: [defExports.genericTank],
@@ -154705,13 +154706,13 @@ defExports.ow = {
     })()]
 };
 defExports.corpsTurret = {
-    PARENT: [defExports.auto3gun],
+    PARENT: [defExports.turretParent],
     LABEL: 'Corps',
     INDEPENDENT: true,
     GUNS: [{
         POSITION: [14.5, 12, 1, 0, 0, 0, 0],
         PROPERTIES: {
-            SHOOT_SETTINGS: combineStats([g.basic, g.pound]),
+            SHOOT_SETTINGS: combineStats([g.basic, g.pound, g.auto]),
             TYPE: defExports.trapGrenade
         }
     }]
@@ -204105,6 +204106,728 @@ defExports.hexagonBossTier1To2 = makeEvolution('hexagonBossTier2AI');
 defExports.heptagonBossTier1To2 = makeEvolution('heptagonBossTier2AI');
 defExports.chk1To2 = makeEvolution('chk2AI');
 defExports.fallenCavalcadeEvolution = makeEvolution('fallenCavalcadeAI');
+/***** *****/
+defExports.ungodlyTrapperMonster = {
+    PARENT: [defExports.turretParent],
+    LABEL: 'Ungodly Trapper Monster Murderer Demon Destroyer Killer',
+    SHAPE: -4,
+    COLOR: 34,
+    BODY: { FOV: base.FOV * 1.15 },
+    HAS_NO_RECOIL: true,
+    WEAPON_COLOR: 8,
+    GUNS: [{
+        POSITION: [15.5, 9, 1, 5, 0, 90, 0],
+    }, {
+        POSITION: [11, 12, 1, 5, 0, 90, 0],
+    }, {
+        POSITION: [2, 12.6, 1, 20, 0, 90, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.factory, g.bigger, g.fast_launch]),
+            TYPE: defExports.falconMinionifitwascooler,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            MAX_CHILDREN: 1,
+            AUTOFIRE: true,
+            LAYER: 6
+        }
+    }, {
+        POSITION: [15.5, 9, 1, 5, 0, 270, 0],
+    }, {
+        POSITION: [11, 12, 1, 5, 0, 270, 0],
+    }, {
+        POSITION: [2, 12.6, 1, 20, 0, 270, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.factory, g.bigger, g.fast_launch]),
+            TYPE: defExports.eagleMinionbadassvariant1,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            MAX_CHILDREN: 1,
+            AUTOFIRE: true,
+            LAYER: 6
+        }
+    }, {
+        POSITION: [7.5, 12, 1.2, 6, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            MAX_CHILDREN: 9,
+            AUTOFIRE: true,
+            LAYER: 6
+        }
+    }, {
+        POSITION: [7.5, 12, 1.2, 6, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            MAX_CHILDREN: 9,
+            AUTOFIRE: true,
+            LAYER: 6
+        }
+    }, {
+        POSITION: [18, 12, 1, 0, 0, 45, 0]
+    }, {
+        POSITION: [7, 12, 1.1, 18, 0, 45, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block]),
+            TYPE: defExports.blockMine,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [18, 12, 1, 0, 0, 135, 0]
+    }, {
+        POSITION: [7, 12, 1.1, 18, 0, 135, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block]),
+            TYPE: defExports.blockMine,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [18, 12, 1, 0, 0, 225, 0]
+    }, {
+        POSITION: [7, 12, 1.1, 18, 0, 225, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block]),
+            TYPE: defExports.blockMine,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [18, 12, 1, 0, 0, 315, 0]
+    }, {
+        POSITION: [7, 12, 1.1, 18, 0, 315, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block]),
+            TYPE: defExports.blockMine,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }]
+};
+defExports.EQ5_Porcini = createTurret(defExports.porcini, {
+    label: 'Porcini',
+    stats: [g.auto],
+    hasNoRecoil: true,
+    weaponColor: 8
+});
+defExports.EQ5_Trapmind = createTurret(defExports.trapmind, { hasNoRecoil: true });
+defExports.EQ5_TeraTrapper = createTurret(defExports.teraTrapper, {
+    label: 'Tera Trapper',
+    stats: [g.auto],
+    hasNoRecoil: true,
+    weaponColor: 16
+});
+defExports.hexaCorps = makeFlank(defExports.newCorps, {
+    label: 'Hexa Corps',
+    count: 6,
+    danger: 10,
+    angles: [60, 180, 300, 0, 120, 240],
+    reloadDelay: [0, .5, 0, .5, 0, .5],
+    stats: [g.flank, g.flank, g.bit_more_damage]
+});
+defExports.hexaCorpsTurret = createTurret(defExports.hexaCorps, { label: 'Hexa Corps' });
+defExports.EQ5_DualTrapper = {
+    PARENT: [defExports.turretParent],
+    LABEL: 'Dual Trapper',
+    BODY: { FOV: base.FOV * 1.275 },
+    STAT_NAMES: statNames.trap,
+    HAS_NO_RECOIL: true,
+    WEAPON_COLOR: 8,
+    GUNS: [{
+        POSITION: [21, 6, 1, 0, 6.5, 0, 0]
+    }, {
+        POSITION: [3, 6, 1.6, 21, 6.5, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.twin, g.less_spread, g.double_reload, g.dual, g.dual2, g.little_bit_bigger, g.more_range, g.faster, g.no_recoil]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [21, 6, 1, 0, -6.5, 0, 0]
+    }, {
+        POSITION: [3, 6, 1.6, 21, -6.5, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.twin, g.less_spread, g.double_reload, g.dual, g.dual2, g.little_bit_bigger, g.more_range, g.faster, g.no_recoil]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [16, 7, 1, 0, 6.5, 0, 0]
+    }, {
+        POSITION: [3, 7, 1.6, 16, 6.5, 0, .15],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.twin, g.less_spread, g.double_reload, g.dual, g.little_bit_bigger, g.more_range, g.faster, g.no_recoil]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [16, 7, 1, 0, -6.5, 0, 0]
+    }, {
+        POSITION: [3, 7, 1.6, 16, -6.5, 0, .65],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.twin, g.less_spread, g.double_reload, g.dual, g.little_bit_bigger, g.more_range, g.faster, g.no_recoil]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [12, 14, 1, 10, 0, 0, 0]
+    }, {
+        POSITION: [2.5, 14.1, 1.1, 22, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.mini, g.faster, g.no_recoil]),
+            TYPE: defExports.block,
+            STAT_CALCULATOR: gunCalcNames.trap,
+        }
+    }, {
+        POSITION: [12, 14, 1, 6, 0, 0, 0]
+    }, {
+        POSITION: [2.5, 14.1, 1.1, 18, 0, 0, 1/3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.mini, g.faster, g.no_recoil]),
+            TYPE: defExports.block,
+            STAT_CALCULATOR: gunCalcNames.trap,
+        }
+    }, {
+        POSITION: [12, 14, 1, 2, 0, 0, 0]
+    }, {
+        POSITION: [2.5, 14.1, 1.1, 14, 0, 0, 2/3],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.mini, g.faster, g.no_recoil]),
+            TYPE: defExports.block,
+            STAT_CALCULATOR: gunCalcNames.trap,
+        }
+    }],
+    TURRETS: [{
+        POSITION: [16.6, 0, 0, 0, 0, 1],
+        TYPE: defExports.eggBossCircleProp
+    }]
+};
+defExports.EQ5_Mailman = {
+    PARENT: [defExports.turretParent],
+    LABEL: 'Mailman',
+    COLOR: 8,
+    BODY: { FOV: base.FOV * 1.15 },
+    STAT_NAMES: statNames.generic,
+    HAS_NO_RECOIL: true,
+    GUNS: [{
+        POSITION: [18, 12, 1.4, 0, 0, 0, 0]
+    }, {
+        POSITION: [2, 12, -1.4, 18, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.block, g.mailman, g.auto]),
+            TYPE: defExports.splitBlock,
+            STAT_CALCULATOR: gunCalcNames.trap,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 12,
+            HAS_NO_RECOIL: true,
+            DESTROY_OLDEST_CHILD: true
+        }
+    }]
+};
+defExports.EQ5_Adaptor = createTurret(defExports.adaptor, {
+    stats: [g.auto],
+    hasNoRecoil: true
+});
+defExports.EQ5_EMPTrapper = {
+    LABEL: 'EMP Mega Trapper',
+    COLOR: 8,
+    BODY: { FOV: base.FOV * 1.5 },
+    HAS_NO_RECOIL: true,
+    WEAPON_COLOR: 34,
+    GUNS: [{
+        POSITION: [16, 13, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [16, 6.5, 1, 0, 0, 0, 0],
+        PROPERTIES: { COLOR: 34 }
+    }, {
+        POSITION: [3.5, 13, 1.5, 16, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.pound, g.more_range, g.more_reload, g.bigger, g.faster, g.bit_more_damage, g.half_reload, g.bb4d]),
+            TYPE: defExports.empTrap,
+            AUTOFIRE: true,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }]
+};
+defExports.eggQueenTier3Minion = {
+    PARENT: [defExports.genericTank],
+    LABEL: "EQ-Ⅲ Minion",
+    TYPE: 'minion',
+    DANGER: 11,
+    SHAPE: 12,
+    COLOR: 34,
+    SIZE: 42,
+    BODY: {
+        FOV: .8,
+        SPEED: 1.2,
+        ACCELERATION: .2,
+        HEALTH: 325,
+        DAMAGE: 6,
+        REGEN: .015
+    },
+    DAMAGE_CLASS: 0,
+    FACING_TYPE: 'autospin',
+    HITS_OWN_TYPE: 'hardWithBuffer',
+    CONTROLLERS: ['nearestDifferentMaster', 'mapAltToFire', 'minion', 'canRepel', 'hangOutNearMaster'],
+    STAT_NAMES: statNames.generic,
+    GUNS: [{
+        POSITION: [5, 4, 1.2, 6, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }, {
+        POSITION: [5, 4, 1.2, 6, 0, 60, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }, {
+        POSITION: [5, 4, 1.2, 6, 0, 120, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }, {
+        POSITION: [5, 4, 1.2, 6, 0, 180, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }, {
+        POSITION: [5, 4, 1.2, 6, 0, 240, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }, {
+        POSITION: [5, 4, 1.2, 6, 0, 300, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.drone, g.sunchip, g.mach, g.double_reload, g.smaller, g.smaller]),
+            TYPE: defExports.eggQueenDrone,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            COLOR_OVERRIDE: 8,
+            AUTOFIRE: true,
+            MAX_CHILDREN: 5
+        }
+    }],
+    TURRETS: [{
+        POSITION: [16.6, 0, 0, 0, 0, 1],
+        TYPE: defExports.eggBossCircleProp
+    }, {
+        POSITION: [3.5, 5.5, 0, 0, 120, 1],
+        TYPE: defExports.eggQueenTier2Spawner
+    }, {
+        POSITION: [3.5, 5.5, 0, 120, 120, 1],
+        TYPE: defExports.eggQueenTier2Spawner
+    }, {
+        POSITION: [3.5, 5.5, 0, 240, 120, 1],
+        TYPE: defExports.eggQueenTier2Spawner
+    }, {
+        POSITION: [6, 7.75, 0, 30, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [6, 7.75, 0, 90, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [6, 7.75, 0, 150, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [6, 7.75, 0, 210, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [6, 7.75, 0, 270, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [6, 7.75, 0, 330, 60, 0],
+        TYPE: defExports.eggQueenTier2Trapper
+    }, {
+        POSITION: [5.5, 0, 0, 30, 360, 1],
+        TYPE: defExports.eggQueenTier3Turret3
+    }],
+    ALWAYS_ACTIVE: true,
+    CLEAR_ON_MASTER_UPGRADE: true
+};
+defExports.EQ5_DivineContriver = {
+    PARENT: [defExports.turretParent],
+    LABEL: 'Contriver But Cooler',
+    COLOR: 34,
+    BODY: { FOV: base.FOV * 1.3 },
+    HAS_NO_RECOIL: true,
+    WEAPON_COLOR: 16,
+    GUNS: [{
+        POSITION: [29, 2, 1, 0, -5.5, 0, .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.hunter2, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [26, 4, 1, 0, -5.5, 0, 2 / 15 + .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [23, 6, 1, 0, -5.5, 0, 4 / 15 + .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [20, 8, 1, 0, -5.5, 0, .4 + .5],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [29, 2, 1, 0, 5.5, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.hunter2, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [26, 4, 1, 0, 5.5, 0, 2 / 15],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [23, 6, 1, 0, 5.5, 0, 4 / 15],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.hunter2, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [20, 8, 1, 0, 5.5, 0, .4],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.basic, g.hunter, g.preda, g.auto]),
+            TYPE: defExports.bullet
+        }
+    }, {
+        POSITION: [30, 7, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [3, 7, 1.5, 30, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.hunter, g.hunter2, g.contra, g.auto]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [23, 11, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [3, 11, 1.5, 23, 0, 0, .15],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.sniper, g.hunter, g.contra, g.auto]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [8.1, 11, -1.6, 4.9, 0, 0, 0]
+    }]
+};
+defExports.EQ5_DivineTrapliner = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'Trapliner',
+    COLOR: 34,
+    BODY: { FOV: base.FOV * 1.2 },
+    STAT_NAMES: statNames.trap,
+    HAS_NO_RECOIL: true,
+    WEAPON_COLOR: 16,
+    GUNS: [{
+        POSITION: [24, 14, 1, 0, 0, 0, 0]
+    }, {
+        POSITION: [4, 8, 1.3, 38, 0, 0, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 9, 1.3, 34, 0, 0, 1/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 10, 1.3, 30, 0, 0, 2/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 11, 1.3, 26, 0, 0, 3/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 12, 1.3, 22, 0, 0, 4/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 13, 1.3, 18, 0, 0, 5/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }, {
+        POSITION: [4, 14, 1.3, 14, 0, 0, 6/7],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.trap, g.mini, g.stream, g.barricade, g.auto, g.one_fourth_reload, g.more_speed]),
+            TYPE: defExports.trap,
+            STAT_CALCULATOR: gunCalcNames.trap
+        }
+    }]
+};
+defExports.eggQueenTier5 = {
+    PARENT: [defExports.genericTank],
+    LABEL: 'EQ-Ⅴ',
+    DANGER: 13,
+    SHAPE: 20,
+    COLOR: 34,
+    SIZE: 120,
+    BODY: {
+        FOV: .7,
+        SPEED: .9,
+        ACCELERATION: .1,
+        HEALTH: 2250,
+        DAMAGE: 5,
+        REGEN: .005
+    },
+    FACING_TYPE: ['autospin', { SPEED: .0125 }],
+    STAT_NAMES: statNames.generic,
+    HAS_NO_RECOIL: true,
+    UPGRADE_TOOLTIP: 'Press Q to switch tiers.',
+    TURRETS: [{
+        POSITION: [3.5, 10, 0, 72, 202.5, 0],
+        TYPE: defExports.EQ5_DivineTrapliner
+    }, {
+        POSITION: [3.5, 10, 0, -108, 202.5, 0],
+        TYPE: defExports.EQ5_DivineTrapliner
+    }, {
+        POSITION: [3.25, 10, 0, 0, 112.5, 0],
+        TYPE: defExports.EQ5_DivineContriver
+    }, {
+        POSITION: [3.25, 10, 0, -36, 112.5, 0],
+        TYPE: defExports.EQ5_DivineContriver
+    }, {
+        POSITION: [3.25, 10, 0, 144, 112.5, 0],
+        TYPE: defExports.EQ5_DivineContriver
+    }, {
+        POSITION: [3.25, 10, 0, 180, 112.5, 0],
+        TYPE: defExports.EQ5_DivineContriver
+    }, {
+        POSITION: [3, 10, 0, 0, 112.5, 0],
+        TYPE: defExports.EQ5_Adaptor
+    }, {
+        POSITION: [3, 10, 0, -36, 112.5, 0],
+        TYPE: defExports.EQ5_Adaptor
+    }, {
+        POSITION: [3, 10, 0, 144, 112.5, 0],
+        TYPE: defExports.EQ5_Adaptor
+    }, {
+        POSITION: [3, 10, 0, 180, 112.5, 0],
+        TYPE: defExports.EQ5_Adaptor
+    }, {
+        POSITION: [2, 10, 0, 18, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 36, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 54, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 90, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 108, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 126, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 198, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, -54, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, -72, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, -90, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, -126, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, -144, 180, 0],
+        TYPE: defExports.EQ5_Mailman
+    }, {
+        POSITION: [2, 10, 0, 0, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [2, 10, 0, -36, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [2, 10, 0, -108, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [2, 10, 0, 72, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [2, 10, 0, 144, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [2, 10, 0, 180, 0, 0],
+        TYPE: defExports.EQ5_EMPTrapper
+    }, {
+        POSITION: [4, 0, 10, 72, 360, 0],
+        TYPE: defExports.ungodlyTrapperMonster 
+    }, {
+        POSITION: [19, 0, 0, 0, 0, 1],
+        TYPE: defExports.eggBossCircleProp
+    }, {
+        POSITION: [2, 9, 0, 9, 90, 1],
+        TYPE: defExports.musketMultishotbutcool
+    }, {
+        POSITION: [2, 9, 0, 99, 90, 1],
+        TYPE: defExports.musketMultishotbutcool
+    }, {
+        POSITION: [2, 9, 0, 189, 90, 1],
+        TYPE: defExports.musketMultishotbutcool
+    }, {
+        POSITION: [2, 9, 0, 279, 90, 1],
+        TYPE: defExports.musketMultishotbutcool
+    }, {
+        POSITION: [2, 9, 0, 27, 90, 1],
+        TYPE: defExports.EQ5_Porcini
+    }, {
+        POSITION: [2, 9, 0, 117, 90, 1],
+        TYPE: defExports.EQ5_Porcini
+    }, {
+        POSITION: [2, 9, 0, 207, 90, 1],
+        TYPE: defExports.EQ5_Porcini
+    }, {
+        POSITION: [2, 9, 0, 297, 90, 1],
+        TYPE: defExports.EQ5_Porcini
+    }, {
+        POSITION: [2, 9, 0, 45, 360, 1],
+        TYPE: defExports.EQ5_Trapmind
+    }, {
+        POSITION: [2, 9, 0, 135, 360, 1],
+        TYPE: defExports.EQ5_Trapmind
+    }, {
+        POSITION: [2, 9, 0, 225, 360, 1],
+        TYPE: defExports.EQ5_Trapmind
+    }, {
+        POSITION: [2, 9, 0, 315, 360, 1],
+        TYPE: defExports.EQ5_Trapmind
+    }, {
+        POSITION: [2, 9, 0, 63, 90, 1],
+        TYPE: defExports.EQ5_TeraTrapper
+    }, {
+        POSITION: [2, 9, 0, 153, 90, 1],
+        TYPE: defExports.EQ5_TeraTrapper
+    }, {
+        POSITION: [2, 9, 0, 243, 90, 1],
+        TYPE: defExports.EQ5_TeraTrapper
+    }, {
+        POSITION: [2, 9, 0, 333, 90, 1],
+        TYPE: defExports.EQ5_TeraTrapper
+    }, {
+        POSITION: [2, 9, 0, 81, 90, 1],
+        TYPE: defExports.surgeonifitwasbetter
+    }, {
+        POSITION: [2, 9, 0, 171, 90, 1],
+        TYPE: defExports.surgeonifitwasbetter
+    }, {
+        POSITION: [2, 9, 0, 261, 90, 1],
+        TYPE: defExports.surgeonifitwasbetter
+    }, {
+        POSITION: [2, 9, 0, 351, 90, 1],
+        TYPE: defExports.surgeonifitwasbetter
+    }, {
+        POSITION: [2, 0, 0, 0, 360, 1],
+        TYPE: defExports.hexaCorpsTurret
+    }, {
+        POSITION: [3, 5, 3.5, 72, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [3, 5, -3.5, 72, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [3, 3, 0, 72, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [3, 5, 3.5, -108, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [3, 5, -3.5, -108, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [3, 3, 0, -108, 112.5, 1],
+        TYPE: defExports.EQ5_DualTrapper
+    }, {
+        POSITION: [5.75, 4.75, 0, -18, 270, 1],
+        TYPE: defExports.corpsTurret
+    }, {
+        POSITION: [5.75, 4.75, 0, 162, 270, 1],
+        TYPE: defExports.corpsTurret
+    }, {
+        POSITION: [5, 4.75, 0, 162, 270, 1],
+        TYPE: defExports.eggBossCircleProp
+    }, {
+        POSITION: [5, 4.75, 0, -18, 270, 1],
+        TYPE: defExports.eggBossCircleProp
+    }],
+    GUNS: [{
+        POSITION: [1.67, 4.05, 1, 10.48, 0, -18, 0]
+    }, {
+        POSITION: [2, 5.3, 1.01, 12.2, 0, -18, 0],
+        PROPERTIES: {
+            SHOOT_SETTINGS: combineStats([g.factory, g.double_size, g.half_reload, g.half_reload]),
+            TYPE: defExports.eggQueenTier3Minion,
+            STAT_CALCULATOR: gunCalcNames.drone,
+            AUTOFIRE: true,
+            SYNCS_SKILLS: true,
+            COLOR_OVERRIDE: 34,
+            MAX_CHILDREN: 1
+        }
+    }, {
+        POSITION: [10.5, 5.3, 1, 0, 0, -18, 0]
+    }],
+    ON_Q: me => me.upgradeTank(Class.eggQueenTier1)
+};
+defExports.eggQueenTier5AI = makeBossAI(defExports.eggQueenTier5, {
+    value: 5e6,
+    controllers: ['nearestDifferentMaster', 'mapTargetToGoal']
+});
 /*
 defExports.pndNomad = {};
 defExports.pndNomad = {};

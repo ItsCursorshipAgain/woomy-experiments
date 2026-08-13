@@ -4710,18 +4710,19 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.soulless4AI
                 ]],
                 40: [[
-                    Class.AWPOrchestra5AI,
-                    Class.cometbetterAI,
-                    Class.eggBossTier5AI,
-                    Class.mariahCareyAI,
-                    Class.missilusAI,
-                    Class.nk5AI,
-                    Class.polyamorousMarkTwoAI,
-                    Class.squareBossTier5AI,
-                    Class.tetraplexAI,
-                    Class.triangleBossTier5AI,
-                    Class.ultimatebetterAI,
-                    Class.worldDestroyerAI
+                    //Class.AWPOrchestra5AI,
+                    //Class.cometbetterAI,
+                    //Class.eggBossTier5AI,
+                    Class.eggQueenTier5AI//,
+                    //Class.mariahCareyAI,
+                    //Class.missilusAI,
+                    //Class.nk5AI,
+                    //Class.polyamorousMarkTwoAI,
+                    //Class.squareBossTier5AI,
+                    //Class.tetraplexAI,
+                    //Class.triangleBossTier5AI,
+                    //Class.ultimatebetterAI,
+                    //Class.worldDestroyerAI
                 ]],
                 50: ran.choose([
                     [[200, [
@@ -6340,8 +6341,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 // Mutate and return the pre-allocated output object.
                 this.output.target.x = diffX + this.lead * target.velocity.x;
                 this.output.target.y = diffY + this.lead * target.velocity.y;
-                this.output.fire = !this.body.variables.emp || !this.body.master.variables.emp;
-                this.output.main = !this.body.variables.emp || !this.body.master.variables.emp;
+                this.output.fire = !this.body.variables.emp && !this.body.master.variables.emp;
+                this.output.main = !this.body.variables.emp && !this.body.master.variables.emp;
 
                 return this.output;
             }
@@ -6465,7 +6466,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             think(input) {
                 if (this.body.variables.idleOrbit != null) this.orbit = this.body.variables.idleOrbit;
-                if (this._master !== this.body) {
+                if (this._master !== this.body && !this.body.variables.paralyzed) {
                     let bound1 = this.orbit * .8 + this._master.size + this.body.size,
                         bound2 = this.orbit * 1.5 + this._master.size + this.body.size,
                         dist = util.getDistance(this.body, this._master) + Math.PI / 8,
@@ -6824,7 +6825,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.fear = util.clamp(ran.gauss(.7, .15), .1, .9) * .75;
             }
             think(input) {
-                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear) return {
+                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.variables.paralyzed) return {
                     goal: {
                         x: this.body.x - input.target.x,
                         y: this.body.y - input.target.y
@@ -6838,7 +6839,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.fear = util.clamp(ran.gauss(.7, .15), .1, .9) * .45;
             }
             think(input) {
-                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear) return {
+                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.variables.paralyzed) return {
                     goal: {
                         x: this.body.x - input.target.x,
                         y: this.body.y - input.target.y
@@ -8521,10 +8522,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (!this.control.alt && this.onNotAlt) this.onNotAlt(this, entities);
                 if (this.onTick) this.onTick(this, entities);
                 players.forEach(player => {
-                    if (player.socket.betaData.permissions < 3) {
-                        if (player.socket.inactivityTimeout == null && (player.socket.status.deceased || !player.command.right && !player.command.left && !player.command.up && !player.command.down && !player.command.lmb && !player.command.rmb)) player.socket.beginTimeout();
-                        else if (player.socket.inactivityTimeout != null && (player.command.right || player.command.left || player.command.up || player.command.down || player.command.lmb || player.command.rmb)) player.socket.endTimeout();
-                    }
+                    if (player.socket.betaData.permissions < 3 && player.socket.inactivityTimeout == null && (player.socket.status.deceased || !player.command.right && !player.command.left && !player.command.up && !player.command.down && !player.command.lmb && !player.command.rmb)) player.socket.beginTimeout();
+                    else if (player.socket.inactivityTimeout != null && (player.command.right || player.command.left || player.command.up || player.command.down || player.command.lmb || player.command.rmb)) player.socket.endTimeout();
                 });
             }
             addController(newIO) {
