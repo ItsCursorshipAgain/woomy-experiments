@@ -205404,9 +205404,23 @@ branch("dreadnoughts", "Dreadnoughts", [
 
 // Featured Tanks
 branch("featured_tanks", "Featured Tanks", [
-    defExports.chinook, defExports.blastceptioner, defExports.underseer, defExports.expedient, defExports.ionizer, defExports.recycler, defExports.pebbler, defExports.detCruiser, defExports.motionMachine, defExports.packageBomb, defExports.gunnerPound, defExports.hellraiser, defExports.spraygun,
-    defExports.pelletMiniSwarm, defExports.nicotine, defExports.iceHurricane, defExports.gatlingTrapper, defExports.shotgun, defExports.inject0, defExports.arthritis, defExports.phosphorous, defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword,
-    defExports.zeppelin, defExports.bulwark, defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
+    defExports.overlordMoneko,
+    defExports.chinook,
+    defExports.blastceptioner,
+    defExports.underseer,
+    defExports.expedient,
+    defExports.ionizer,
+    defExports.recycler,
+    defExports.pebbler,
+    defExports.detCruiser,
+    defExports.motionMachine,
+    defExports.packageBomb,
+    defExports.gunnerPound,
+    defExports.hellraiser,
+    defExports.spraygun,
+    defExports.pelletMiniSwarm,
+    defExports.nicotine, defExports.iceHurricane, defExports.gatlingTrapper, defExports.shotgun, defExports.inject0, defExports.arthritis, defExports.phosphorous, defExports.arsenalFactory, defExports.warshipSail, defExports.heavierDirector, defExports.flameblazer, defExports.fireMachine, defExports.sword, defExports.zeppelin,
+    defExports.bulwark, defExports.aka0, defExports.guitar, defExports.propellerSlice, defExports.heavyGunner, defExports.snipehive, defExports.trapbang, defExports.playableBisectorBullet, defExports.newAcidTriplet, defExports.wovenBasic, defExports.factory, defExports.littleMortar, defExports.vulcan, defExports.propellerHelix,
     defExports.tankRandomizer, defExports.basic
 ], "testbed_parent");
 
