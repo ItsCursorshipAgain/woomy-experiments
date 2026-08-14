@@ -1127,4 +1127,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(minibossRush);
+select(developer());

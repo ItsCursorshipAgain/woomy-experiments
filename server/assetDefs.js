@@ -110,3 +110,4 @@ setAsset('6PointedStar', "m -1.2745055,-0.73559036 .8496635,-1.54e-5 L -5.965710
 	path2d: true,
 	path2dDiv: 1
 });
+setAsset('overlordMonekoTeal', '#A6C3F3', { color: true });
