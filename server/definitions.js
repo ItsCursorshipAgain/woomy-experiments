@@ -81324,28 +81324,28 @@ defExports.autoMachTwin = makeAuto(defExports.twinMachine, { label: 'Magnum' });
 defExports.hybridStalk = makeHybrid(defExports.stalk, { label: 'Berserker' });
 defExports.autoStalk = makeAuto(defExports.stalk, { label: 'Dissolutionist' });
 function ballerAttach(me, them, damageAmnt){
-	if(them.type !== "tank" && them.type !== "minion" && them.type !== "miniboss" && them.type !== "food") return;
-	if(them && them.isAlive()){
+	if (them.type !== "tank" && them.type !== "minion" && them.type !== "miniboss" && them.type !== "food") return;
+	if (them && them.isAlive()) {
 		me.variables.alreadyHooked = true;
 		me.leash.leasher = them;
-		for(let gun of me.source.guns){
+		for (let gun of me.source.guns) {
 			gun.childrenMap.delete(me.id);
 		}
 	}
 }
-function ballerRelease(me){
-	if(!me.leash || !me.leash.leasher || !me.leash.leasher.isAlive()) return
+function ballerRelease(me) {
+	if (!me.leash || !me.leash.leasher || !me.leash.leasher.isAlive()) return
 	
-	if(!me.leash.leasher.variables.releaseCooldown) me.variables.releaseCooldown = -1;
-	if(Date.now() - me.leash.leasher.variables.releaseCooldown < 5000) return;
+	if (!me.leash.leasher.variables.releaseCooldown) me.variables.releaseCooldown = -1;
+	if (Date.now() - me.leash.leasher.variables.releaseCooldown < 5000) return;
 	me.leash.leasher.variables.releaseCooldown = Date.now();
-	for(let gun of me.source.guns){
+	for (let gun of me.source.guns) {
 		gun.childrenMap.delete(me.id);
 	}
 
 	me.leash.leasher = undefined;
-	if(me.variables.CLINGY === true) me.onDealtDamage = ballerAttach;
-	if(me.guns[0]) me.guns[0].autofire = true
+	if (me.variables.CLINGY === true) me.onDealtDamage = ballerAttach;
+	if (me.guns[0]) me.guns[0].autofire = true
 }
 defExports.ballerMinion = {
     PARENT: [defExports.genericTank],
@@ -181332,7 +181332,6 @@ defExports.attachmentPoint = {
             if (me.variables.attachedEntity.socket) {
                 const cmd = me.variables.attachedEntity.socket.player.command
                 let val = cmd.up + cmd.down + cmd.left + cmd.right
-                console.log(val)
                 const cur = (me.variables.moves[me.variables.attachedEntity.id] || 0);
                 me.variables.moves[me.variables.attachedEntity.id] = cur + (val || -1)
                 if (cur > me.variables.breakFreeVal) {
@@ -181364,8 +181363,7 @@ function attachEntityToPoint(point, entity) {
     point.variables.attachedEntity = entity;
     point.variables.lastPickup = Date.now();
     point.variables.ogMotionType = entity.motionType;
-    point.master.sendMessage("Entity picked up!")
-    point.variables.lastPickup = Date.now();
+    point.master.sendMessage("Entity picked up!");
 
     entity.bond = point;
     const bound = structuredClone(point.bound);
@@ -181458,7 +181456,7 @@ defExports.chinook = {
     },
     ON_COLLIDE: (me, them) => {
         const point = me.turrets[2];
-        if (point.pickupMode === false || them.type !== "tank" || them.team !== me.team) return;
+        if (point.variables.pickupMode === false || them.type !== "tank" || them.team !== me.team) return;
         attachEntityToPoint(point, them);
         point.variables.pickupMode = false;
     }
