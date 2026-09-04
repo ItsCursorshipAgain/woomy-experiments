@@ -8,7 +8,7 @@ let developer = (options = {}) => {
         "IS_DEV_SERVER": true,
         "BETA": level,
         "MODE": (teams) ? "tdm" : "ffa",
-        "displayName": "Fuzzy's Developer Server",
+        "displayName": "Comet's Developer Server",
         "displayDesc": (level) ? "Self-explanatory; no unauthorized players may join." : "Self-explanatory.",
         "RANDOM_COLORS": randomColors,
         "TEAM_AMOUNT": teamAmount,
@@ -79,18 +79,22 @@ let developer = (options = {}) => {
     }
 },
     ffa = (options = {}) => {
-    let blackout = options.blackout ?? false,
+    let survival = options.survival ?? false,
+        blackout = options.blackout ?? false,
         randomColors = options.randomColors ?? false,
         lottery = options.lottery ?? false;
     return {
+        "SURVIVAL": survival,
         "BLACKOUT": blackout,
         "RANDOM_COLORS": randomColors,
         "TANK_LOTTERY": lottery,
-        "displayName": (blackout) ? "Fuzzy's Blackout FFA" :
+        "displayName": (survival) ? "Comet's FFA Survival" :
+                       (blackout) ? "Comet's Blackout FFA" :
                        (randomColors) ? "Random Color FFA" :
                        (lottery) ? "Lottery FFA" :
-                       "Fuzzy's FFA",
-        "displayDesc": (randomColors) ? "Everyone for themselves, now with unique colors for each player and bot! Die and respawn for your color to be refreshed." :
+                       "Comet's FFA",
+        "displayDesc": (survival) ? "Everyone for themselves, but the level-up is disabled and all level 60 tanks have been removed." :
+                       (randomColors) ? "Everyone for themselves, now with unique colors for each player and bot! Die and respawn for your color to be refreshed." :
                        (lottery) ? "Everyone for themselves, but you start as a random tank and become another one whenever you respawn." :
                        "Self-explanatory.",
         "WIDTH": 8500,
@@ -125,7 +129,10 @@ let developer = (options = {}) => {
         })),
         "MAX_FOOD": 504, // 288
         "MAX_COMBINED_NEST_FOOD": 63, // 36
-        "MAX_CRASHERS": 72 // 36
+        "MAX_CRASHERS": 72, // 36
+        "EVOLVE_HALT_CHANCE": (survival) ? .4 : .2,
+        "EVOLVE_TIME": (survival) ? 120_000 : 60_000,
+        "EVOLVE_TIME_RAN_ADDER": (survival) ? 180_000 : 120_000,
     }
 },
     ffaElimination = (options = {}) => {
@@ -141,10 +148,10 @@ let developer = (options = {}) => {
                        (randomColors) ? "Random Color Elimination" :
                        (lottery) ? "Lottery FFA Elimination" :
                        "FFA Elimination",
-        "displayDesc": (blackout) ? "Everyone for themselves in the darkness, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
-                       (randomColors) ? "Everyone for themselves with unique colors, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
-                       (lottery) ? "Everyone for themselves with randomized tanks, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room." :
-                       "Everyone for themselves, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this room.",
+        "displayDesc": (blackout) ? "Everyone for themselves in the darkness, but the player(s) with the lowest score count is eliminated after a certain time.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present." :
+                       (randomColors) ? "Everyone for themselves with unique colors, but the player(s) with the lowest score count is eliminated after a certain time.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present." :
+                       (lottery) ? "Everyone for themselves with randomized tanks, but the player(s) with the lowest score count is eliminated after a certain time.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present." :
+                       "Everyone for themselves, but the player(s) with the lowest score count is eliminated after a certain time.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present.",
         "WIDTH": 5250,
         "HEIGHT": 5250,
         "ROOM_SETUP": [
@@ -178,10 +185,11 @@ let developer = (options = {}) => {
         "MAX_FOOD": 350, // 288
         "MAX_COMBINED_NEST_FOOD": 57, // 36
         "MAX_CRASHERS": 65, // 36
+        "MAX_SANCS": 1,
         "BOSS_SPAWN_TIMER": 0,
-        "EVOLVE_TIME": 60_000,
-        "EVOLVE_TIME_RAN_ADDER": 120_000,
-        "EVOLVE_HALT_CHANCE": .3,
+        "EVOLVE_TIME": 45_000,
+        "EVOLVE_TIME_RAN_ADDER": 90_000,
+        "EVOLVE_HALT_CHANCE": .35,
         "tabLimit": 1
     }
 },
@@ -191,7 +199,7 @@ let developer = (options = {}) => {
     });
     return {
         "displayName": "FFA World",
-        "displayDesc": "FFA, but it takes places in a massive arena with extra nests to go around! To help you travel, portals are present as well.",
+        "displayDesc": "Everyone for themselves in a massive arena, with extra nests to go around! To help you travel, portals are present as well.",
         "X_GRID": 49,
         "Y_GRID": 49,
         "WIDTH": 25000,
@@ -272,10 +280,10 @@ let developer = (options = {}) => {
                 default: throw new TypeError(cell + " is not a valid cell type!");
             }
         })),
-        "MAX_FOOD": 1331, // 1775
-        "MAX_COMBINED_NEST_FOOD": 778, // 622
-        "MAX_CRASHERS": 1089, // 622
-        "MAX_SANCTUARIES": 3
+        "MAX_FOOD": 1242, // 1775
+        "MAX_COMBINED_NEST_FOOD": 497, // 622
+        "MAX_CRASHERS": 563, // 622
+        "MAX_SANCS": 3
     }
 })(),
     fourTDM = (() => {
@@ -288,7 +296,7 @@ let developer = (options = {}) => {
     return {
         "MODE": "tdm",
         "TEAM_AMOUNT": 4,
-        "displayName": "Fuzzy's 4TDM",
+        "displayName": "Comet's 4 TDM",
         "displayDesc": "Self-explanatory.",
         "ROOM_SETUP": [                /*CE CE*/
             ["B1 B1 B1 B1 NM NM NM NM NM RK RK NM NM NM NM NM B2 B2 B2 B2"],
@@ -342,19 +350,17 @@ let developer = (options = {}) => {
     maze = (options = {}) => {
     let blackout = options.blackout ?? false;
     return {
-        "ELIMINATION_MODE": elimination,
         "BLACKOUT": blackout,
         "MAZE": {
             "ENABLED": true,
-            "cellSize": elimination ? 5250/31 : 10000/31,
+            "cellSize": 10000/31,
             "stepOneSpacing": 3,
             "fillChance": 0.35,
             "sparedChance": 0.65,
             "margin": .25
         },
-        "displayName": (elimination) ? "Fuzzy's Maze Elimination" :
-                       (blackout) ? "Fuzzy's Blackout Maze" :
-                       "Fuzzy's Maze",
+        "displayName": (blackout) ? "Comet's Blackout Maze" :
+                       "Comet's Maze",
         "displayDesc": "Self-explanatory.",
         "X_GRID": 31,
         "Y_GRID": 31,
@@ -419,8 +425,8 @@ let developer = (options = {}) => {
         "margin": .25
     },
     "ELIMINATION_MODE": true,
-    "displayName": "Fuzzy's Maze Elimination",
-    "displayDesc": "Everyone for themselves in a maze, but the player(s) with the lowest score count is eliminated after a certain time is reached.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present in this mode.",
+    "displayName": "Maze Elimination",
+    "displayDesc": "Everyone for themselves in a maze, but the player(s) with the lowest score count is eliminated after a certain time.\n\nThe game starts when at least 3 players join, and anyone who joins after the game starts can turn into a Sentry to try and mess with the scores of the people competing.\n\nBots are not present.",
     "X_GRID": 31,
     "Y_GRID": 31,
     "WIDTH": 5250,
@@ -437,15 +443,15 @@ let developer = (options = {}) => {
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"], /*C*/
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R P P P P P P P R N N N N N N N N N N N"],
-        ["N N N N N N N N N N N R R R R R R R R R N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"], /*C*/
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
+        ["N N N N N N N N N N N P P P P P P P P P N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
         ["N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"],
@@ -466,12 +472,10 @@ let developer = (options = {}) => {
         }
     })),
     "MAX_FOOD": 350, // 961
-    "MAX_COMBINED_NEST_FOOD": 51, // 49
-    "MAX_CRASHERS": 59, // 98
+    "MAX_COMBINED_NEST_FOOD": 44, // 49
+    "MAX_CRASHERS": 51, // 98
     "MAX_SANCS": 1,
     "BOSS_SPAWN_TIMER": 0,
-    "EVOLVE_TIME": 60_000,
-    "EVOLVE_TIME_RAN_ADDER": 120_000,
     "EVOLVE_HALT_CHANCE": .3,
     "BORDER_FORCE": 0.075,
     "tabLimit": 1
@@ -479,7 +483,7 @@ let developer = (options = {}) => {
     minibossRush = {
     "MODE": "tdm",
     "IS_BOSS_RUSH": true,
-    "displayName": "Fuzzy's Miniboss Rush",
+    "displayName": "Miniboss Rush",
     "displayDesc": "Boss Rush, but in a smallish area.",
     "TEAM_AMOUNT": 1,
     "WIDTH": 4800,
@@ -531,7 +535,7 @@ let developer = (options = {}) => {
     return {
         "MODE": "tdm",
         "TEAM_AMOUNT": teamAmount,
-        "displayName": `Fuzzy's Open ${teamAmount}TDM`,
+        "displayName": `Comet's Open ${teamAmount} TDM`,
         "displayDesc": "Self-explanatory.",
         "WIDTH": 9000,
         "HEIGHT": 9000,
@@ -576,7 +580,7 @@ let developer = (options = {}) => {
         "BLACKOUT": blackout,
         "RANDOM_COLORS": randomColors,
         "TANK_LOTTERY": lottery,
-        "displayName": "Fuzzy's Portal FFA",
+        "displayName": "Comet's Portal FFA",
         "displayDesc": "Self-explanatory.",
         "X_GRID": 49,
         "Y_GRID": 49,
@@ -721,48 +725,6 @@ let developer = (options = {}) => {
     "BOSS_SPAWN_TIMER": 0,
     "CANNOT_SHOOT_IN_BASE": false
 },
-    randomColorsDomination = {
-    "RANDOM_COLORS": true,
-    "SPAWN_DOMINATORS": true,
-    "DOMINATOR_SHUFFLE_TIMER": 600,
-    "displayName": "RC-FFA Domination",
-    "displayDesc": "“RC” stands for “Random Colors”",
-    "ROOM_SETUP": [       /*C*/
-        ["R r N N N N N N N N N N N N N N N r R"],
-        ["r r N N N N N N N N N N N N N N N r r"],
-        ["N N N N N N N N N R N N N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N N"],
-        ["N N N N R N N N N N N N N N R N N N N"],
-        ["N N N N N N N r P P P r N N N N N N N"],
-        ["N N N N N N r P P P P P r N N N N N N"],
-        ["N N N N N r P P P P P P P r N N N N N"],
-        ["N r N r N P P P P P P P P P N r N r N"],
-        ["N N D N N P P P P R P P P P N N D N N"], // C
-        ["N r N r N P P P P P P P P P N r N r N"],
-        ["N N N N N r P P P P P P P r N N N N N"],
-        ["N N N N N N r P P P P P r N N N N N N"],
-        ["N N N N N N N r P P P r N N N N N N N"],
-        ["N N N N N N N N N N N N N N N N N N N"],
-        ["N N N N R N N N N N N N N N R N N N N"],
-        ["N N N N N N N N N R N N N N N N N N N"],
-        ["r r N N N N N N N N N N N N N N N r r"],
-        ["R r N N N N N N N N N N N N N N N r R"]
-    ].map(row => row[0].split(" ").map(cell => {
-        switch (cell) {
-            case "N": return "norm";
-            case "P": return "nest";
-            case "R": return "roid";
-            case "r": return "rock";
-            case "D": return "domi";
-            default: throw new TypeError(cell + " is not a valid cell type!");
-        }
-    })),
-    "X_GRID": 19,
-    "Y_GRID": 19,
-    "MAX_FOOD": 909,
-    "MAX_COMBINED_NEST_FOOD": 168,
-    "MAX_CRASHERS": 224
-},
     sixTDM = (options = {}) => {
     let hasDominator = options.hasDominator ?? false;
 
@@ -779,7 +741,7 @@ let developer = (options = {}) => {
     return {
         "MODE": "tdm",
         "TEAM_AMOUNT": 6,
-        "displayName": "Fuzzy's 6TDM",
+        "displayName": "6 TDM",
         "displayDesc": "Self-explanatory.",
         "SPAWN_DOMINATORS": hasDominator,
         "DOMINATOR_SHUFFLE_TIMER": 600,
@@ -853,7 +815,7 @@ let developer = (options = {}) => {
         "MODE": "tdm",
         "TEAM_AMOUNT": 3,
         "SPAWN_DOMINATORS": hasDominators,
-        "displayName": "Fuzzy's 3TDM",
+        "displayName": "3 TDM",
         "displayDesc": "Self-explanatory." + (hasDominators ? "\nThere are dominators for either team to capture, but the arena will *not* close if all are captured by the same team." : ""),
         "CAN_CLOSE": !hasDominators,
         "DOMINATOR_SHUFFLE_TIMER": 600,
@@ -980,7 +942,7 @@ let developer = (options = {}) => {
         "SPAWN_DOMINATORS": hasDominators,
         "DOMINATOR_SHUFFLE_TIMER": 600,
         "CAN_CLOSE": !hasDominators,
-        "displayName": (isHell) ? "Fuzzy's 2TDM Hell" : "Fuzzy's 2TDM",
+        "displayName": (isHell) ? "Comet's 2 TDM Hell" : "Comet's 2 TDM",
         "displayDesc": ((isHell) ? "Self-explanatory…\n\n…though only the mighty may last." : "Self-explanatory.") + ((hasDominators) ? "\nThere are dominators for either team to capture, but the arena will *not* close if all are captured by the same team." : ""),
         "ROOM_SETUP": layout.map(row => row[0].split(" ").map(cell => {
             switch (cell) {
@@ -1046,8 +1008,8 @@ let developer = (options = {}) => {
                 "SWAPPED": false
             }
         },
-        "displayName": "Fuzzy's Warparound FFA",
-        "displayDesc": "FFA, but the arena is divided into four sections and the borders teleport you to their opposing sides.",
+        "displayName": "FFA Warparound",
+        "displayDesc": "Everyone for themselves, but the arena is divided into four sections and the borders teleport you to their opposing sides.",
         "ROOM_SETUP": [
             ["N N N N N N N N N N N N N E E E N N N N N N N N N N N N N"],
             ["N N N N N G R G N N N N N E E E N N N N N G R G N N N N N"],
@@ -1104,7 +1066,7 @@ function select(mode, options = {}) {
         beta = options.beta ?? 3
     
     mode.selectable = true;
-    mode.BOSS_SPAWN_TIMER ??= 240;
+    mode.BOSS_SPAWN_TIMER ??= 600;
     mode.EVOLVE_TIME ??= 60000;
     mode.EVOLVE_TIME_RAN_ADDER ??= 120000;
     mode.MAX_SANCS ??= 2;
@@ -1127,4 +1089,4 @@ function select(mode, options = {}) {
 
     return mode;
 };
-select(developer());
+select(ffa());

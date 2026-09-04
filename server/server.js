@@ -1,6 +1,7 @@
 import { assets, ASSET_MAGIC } from "../shared/assets.js";
 import { oneVsOne } from "./modes/oneVsOne.js";
 import { warfront } from "./modes/warfront.js";
+import { mixColors } from "../shared/mix_colors.js"
 
 const modeFuncs = { oneVsOne, warfront }
 
@@ -226,45 +227,6 @@ global.require = function(thing) {
                     [key]: deepClone(obj[key], hash)
                 })));
             }
-            function deepCopy(type) {
-                function pushArray(input, key) {
-                    let arrOut = [];
-                    for (let i = 0; i < input.length; i++) {
-                        switch (typeof input[i]) {
-                            case 'object':
-                                if (Array.isArray(input[i])) arrOut.push(pushArray(input[i]));
-                                else {
-                                    if (key == "TYPE") arrOut.push(input[i]);
-                                    else arrOut.push(deepCopy(input[i]));
-                                }
-                                break;
-                            default:
-                                arrOut.push(input[i]);
-                                break;
-                        }
-                    }
-                    return arrOut;
-                };
-                let output = JSON.parse(JSON.stringify(type));
-                if (Array.isArray(type)) output = pushArray(type);
-                else {
-                    for (let key in type) {
-                        switch (typeof type[key]) {
-                            case 'object':
-                                if (Array.isArray(type[key])) output[key] = pushArray(type[key], key);
-                                else {
-                                    if (key == "TYPE") output[key] = type[key];
-                                    else output[key] = deepCopy(type[key]);
-                                }
-                                break;
-                            default:
-                                output[key] = type[key];
-                                break;
-                        }
-                    }
-                }
-                return output;
-            }
             let time = () => {
                 return Date.now() - serverStartTime;
             }
@@ -316,7 +278,6 @@ global.require = function(thing) {
                     return angleDifference(angle, desired) / slowness;
                 },
                 deepClone: deepClone,
-                deepCopy: deepCopy,
                 averageArray: arr => {
                     if (!arr.length) return 0;
                     var sum = arr.reduce((a, b) => {
@@ -457,6 +418,19 @@ global.require = function(thing) {
                             break;
                     }
                     return name;
+                },
+
+                colorFromName: function(name) {
+                    switch (name) {
+                        case "4NAX": return "#FF9999";
+                        case "Silvy": return "#99F6FF";
+                        case "SkuTsu": return "#B2F990";
+                        case "Ghania": return "#F55F6E";
+                        case "KARMA": return "#FF00FF";
+                        case "N2SC": return "#CC669C";
+                        case "Cuddlemoth": return "#D1CA87";
+                        default: return "#FFFFFF";
+                    }
                 }
             }
             break;
@@ -2345,6 +2319,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             "DO_BASE_DAMAGE": true,
             "IS_BOSS_RUSH": false,
             "DISABLE_LEADERBOARD": false,
+            "DISABLE_CHAT": false,
             "BLACKOUT": false,
             "CANNOT_SHOOT_IN_BASE": true,
             "GAMEMODE_JS": "",
@@ -2352,7 +2327,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             "CAN_CLOSE": true,
             "HAS_PLEXUS": false,
             "ELIMINATION_MODE": false,
-            "KILL_RACE": false
+            "KILL_RACE": false,
+            "SURVIVAL": false
         }
 
         let sterilize = file => {
@@ -2663,13 +2639,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.eliminationsEnded = false;
                 this.lastPlacers = [];
                 this.eliminationTimers = {
-                    beginning: 180,
+                    beginning: 120,
                     elimination: 180,
                     break: 15
                 };
                 this.underThirtySeconds = false;
                 this.killRace = config.KILL_RACE;
                 this.raceTally = [0, 0, 0, 0, 0, 0, 0, 0];
+                this.survivalMode = config.SURVIVAL;
             }
             isInRoom(location) {
                 return location.x >= 0 && location.x <= this.width && location.y >= 0 && location.y <= this.height;
@@ -2839,7 +2816,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     util.warn("c.X_GRID has conflicts with the current room setup. Please check these configs and relaunch.");
                     process.exit();
                 }
-                util.log(this.width + " x " + this.height + " room initalized. Max food: " + this.maxFood + ". Max crashers: " + this.maxCrashers + ".");
+                util.log(this.width + " x " + this.height + " room initialized. Max food: " + this.maxFood + ". Max crashers: " + this.maxCrashers + ".");
                 if (c.shutdowns.enabled) {
                     let totalTime = c.shutdowns.interval,
                         marks = [1, 2, 3, 4, 5, 10, 15, 20, 30, 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 3600, 4500, 5400, 6300, 7200];
@@ -3514,15 +3491,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             })
         };
 
-        const teamNames = ["BLUE", "RED", "GREEN", "PURPLE", "YELLOW", "ORANGE", "PINK", "TEAL"];
-        const teamColors = [10, 12, 11, 15, 3, 35, 36, 0];
-        const teamBodyColors = ["#3CA4CB", "#E03E41", "#8ABC3F", "#CC669C", "#FDF380", "#F37C20", "#E85DDF", "#7ADBBC"];
-        const teamBroadcastColors = ["#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "#F37C20", "#E85DDF", "#8EFFFB"];
+        const teamNames = ["BLUE", "RED", "GREEN", "PURPLE", "YELLOW", "ORANGE", "PINK", "TEAL"],
+              teamColors = [10, 12, 11, 15, 3, 35, 36, 0],
+              teamBodyColors = ["#3CA4CB", "#E03E41", "#8ABC3F", "#CC669C", "#FDF380", "#F37C20", "#E85DDF", "#7ADBBC"],
+              teamBroadcastColors = ["#00B0E1", "#F04F54", "#00E06C", "#BE7FF5", "#FFEB8E", "#F37C20", "#E85DDF", "#8EFFFB"];
 
-        function getTeamColor(team) {
-            if (Math.abs(team) - 1 >= teamNames.length) {
-                return 13;
-            }
+        function getTeamColor(team, fallback = 13) {
+            if (Math.abs(team) - 1 >= teamColors.length || Math.abs(team) - 1 < -1) return fallback;
             return teamColors[Math.abs(team) - 1];
         }
 
@@ -3574,15 +3549,40 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             return output;
         })();
 
-        const spawnBot = (loc = null) => {
+        let chooseBotSkill = (tank) => {
+            return tank.IS_LANCER ? ran.choose([
+                [0, 0, 3, 8, 8, 8, 6, 8, 0, 0],
+                [1, 5, 1, 7, 7, 9, 2, 7, 0, 3],
+                [0, 0, 0, 6, 9, 9, 9, 9, 0, 0],
+            ]) : tank.IS_SMASHER ? ran.choose([
+                [12, 12, 11, 11, 11, 11, 0, 12, 0, 6],
+                [10, 12, 11, 11, 11, 11, 0, 10, 3, 7],
+                [9, 11, 11, 11, 11, 11, 4, 8, 1, 5],
+            ]) : ran.choose([ // Dupes act as a weight system lo
+                [0, 0, 4, 8, 8, 9, 8, 5, 0, 0],
+                [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
+                [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
+                [2, 4, 2, 7, 6, 9, 6, 5, 0, 1],
+                [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
+                [0, 0, 4, 8, 8, 9, 8, 5, 0, 0],
+                [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
+                [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
+                [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
+                [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
+                [2, 4, 2, 7, 6, 9, 6, 5, 0, 1],
+                [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
+                [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
+                [4, 4, 2, 7, 7, 7, 3, 8, 0, 0],
+            ]);
+        }
+
+        const spawnBot = (loc = null, type = null, t = null) => {
             // Find a normal spawn for our team if no loc provided
-            let max = 100;
-            let team;
+            let max = 100,
+                team = (c.serverName === "Infiltration") ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
             if (!loc) {
                 let i = 10;
                 if (room.gameMode === "tdm") {
-                    team = c.serverName === "Infiltration" ? 20 : room.nextTagBotTeam.shift() || getTeam(0);
-
                     let spawnSectors = team === 20 ? ["edge"] : ["spn", "bas", "n_b", "bad"].map(r => r + team).filter(sector => room[sector] && room[sector].length);
                     const sector = ran.choose(spawnSectors);
                     if (sector && room[sector].length) {
@@ -3603,43 +3603,24 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
             }
             let o = new Entity(loc);
-            if (room.gameMode === "tdm") {
+            if (t != null) {
+                o.team = t;
+                o.color = getTeamColor(t, 17);
+            } else if (room.gameMode === "tdm") {
                 o.team = -team;
-                o.color = team === 20 ? 17 : teamBodyColors[team - 1];
+                o.color = getTeamColor(team, 17);
             } else if (room.randomColors) o.color = ran.randomHexColor(); 
             else o.color = 'FFA_RED';
             // Reload, Pen, Bullet Health, Bullet Damage, Bullet Speed, Capacity, Body Damage, Max Health, Regen, Speed
-            let tank = c.serverName === "Infiltration" ? Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])] : ran.choose(botTanks),
+            let tank = (type) ? Class[type] : (c.serverName === "Infiltration") ? Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])] : (room.survivalMode) ? Class.basic : ran.choose(botTanks),
                 botType = (tank.IS_HEALER) ? "healerBot" : (tank.IS_SMASHER || tank.IS_LANCER) ? "bot2" : "bot",
-                skillSet = tank.IS_LANCER ? ran.choose([
-                    [0, 0, 3, 8, 8, 8, 6, 8, 0, 0],
-                    [1, 5, 1, 7, 7, 9, 2, 7, 0, 3],
-                    [0, 0, 0, 6, 9, 9, 9, 9, 0, 0],
-                ]) : tank.IS_SMASHER ? ran.choose([
-                    [12, 12, 11, 11, 11, 11, 0, 12, 0, 6],
-                    [10, 12, 11, 11, 11, 11, 0, 10, 3, 7],
-                    [9, 11, 11, 11, 11, 11, 4, 8, 1, 5],
-                ]) : ran.choose([ // Dupes act as a weight system lo
-                    [0, 0, 4, 8, 8, 9, 8, 5, 0, 0],
-                    [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
-                    [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
-                    [2, 4, 2, 7, 6, 9, 6, 5, 0, 1],
-                    [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
-                    [0, 0, 4, 8, 8, 9, 8, 5, 0, 0],
-                    [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
-                    [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
-                    [0, 0, 5, 9, 9, 9, 9, 1, 0, 0],
-                    [0, 0, 8, 7, 7, 8, 5, 7, 0, 0],
-                    [2, 4, 2, 7, 6, 9, 6, 5, 0, 1],
-                    [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
-                    [0, 0, 8, 9, 9, 9, 0, 7, 0, 0],
-                    [4, 4, 2, 7, 7, 7, 3, 8, 0, 0],
-                ]);
+                skillSet = chooseBotSkill(tank);
             o.isBot = true;
+            o.desiredSkillSet = skillSet;
             o.define(Class[botType]);
             o.tank = tank;
-            o.define((tank === Class.basic) ? Class.basic2 : tank);
-            o.SIZE *= 10/12;
+            o.define((tank === Class.basic && !room.survivalMode) ? Class.basic2 : tank, { isShiny: (ran.chance(c.SHINY_CHANCE) && room.gameMode === "ffa") });
+            if (room.survivalMode) o.skill.reset();
             o.name = "[AI] " + ran.chooseBotName().replaceAll("%t", o.label);
             o.nameColor = o.name.includes("Bee") ? "#FFF782" : o.name.includes("Honey Bee") ? "#FCCF3B" : o.name.includes("Fallen") ? "#DBDBDB" : "#C1CAFF";
             o.autoOverride = true;
@@ -3649,7 +3630,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 o.autoOverride = false;
                 o.skill.maintain();
                 o.refreshBodyAttributes();
-                o.skill.set([skillSet[6], skillSet[4], skillSet[3], skillSet[5], skillSet[2], skillSet[9], skillSet[0], skillSet[1], skillSet[8], skillSet[7]].map(value => {
+                if (!room.survivalMode) o.skill.set([skillSet[6], skillSet[4], skillSet[3], skillSet[5], skillSet[2], skillSet[9], skillSet[0], skillSet[1], skillSet[8], skillSet[7]].map(value => {
                     if (value < 9 && Math.random() > 0.85) value += 1;
                     return value
                 }));
@@ -3882,7 +3863,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
                             // Set dominator team
                             dominator.team = killTeam || -100;
-                            dominator.color = [13, ...teamBodyColors][-killTeam];
+                            dominator.color = [13, ...teamColors][-killTeam];
 
                             // If all dominators are taken by the same team, close the arena
                             if (this.takenDominators.includes(this.amountOfDominators) && killTeam && room.canClose && !room.arenaClosed) {
@@ -4534,6 +4515,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.eliteDefenderAIWeak,
                     Class.eliteRifleAIWeak,
                     Class.gaisenblasterAI,
+                    Class.industrianAIWeak,
                     Class.meteorKingTier3AI,
                     Class.pentaguardianAI,
                     Class.soulless1AI,
@@ -4541,8 +4523,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.specGigaHunterAI,
                     Class.specHexaTwinBuilderAI,
                     Class.specCircleAI,
-                    Class.vulcanShipAI,
-                    Class.industrianAIWeak
+                    Class.vulcanShipAI
                 ],
                 20: [
                     Class.athenaAI,
@@ -4720,19 +4701,19 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     Class.soulless4AI
                 ]],
                 40: [[
-                    //Class.AWPOrchestra5AI,
-                    //Class.cometbetterAI,
-                    //Class.eggBossTier5AI,
-                    Class.eggQueenTier5AI//,
-                    //Class.mariahCareyAI,
-                    //Class.missilusAI,
-                    //Class.nk5AI,
-                    //Class.polyamorousMarkTwoAI,
-                    //Class.squareBossTier5AI,
-                    //Class.tetraplexAI,
-                    //Class.triangleBossTier5AI,
-                    //Class.ultimatebetterAI,
-                    //Class.worldDestroyerAI
+                    Class.AWPOrchestra5AI,
+                    Class.cometbetterAI,
+                    Class.eggBossTier5AI,
+                    Class.eggQueenTier5AI,
+                    Class.mariahCareyAI,
+                    Class.missilusAI,
+                    Class.nk5AI,
+                    Class.polyamorousMarkTwoAI,
+                    Class.squareBossTier5AI,
+                    Class.tetraplexAI,
+                    Class.triangleBossTier5AI,
+                    Class.ultimatebetterAI,
+                    Class.worldDestroyerAI
                 ]],
                 50: ran.choose([
                     [[200, [
@@ -4797,15 +4778,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     [Class.quintetAI, Class.triguardianAI, Class.pentaguardianAI],
                     [Class.AWP_28AI, Class.AWP_1AI, Class.AWP_psAI],
                     [Class.frigateShipAI, Class.destroyerShipAI],
-                    [Class.torchmorningstarAI, Class.PDKAI],
+                    [Class.burntMorningstarAI, Class.PDKAI],
                     [Class.mythicalCrasherAI, Class.sassafrasSupremeAI, Class.voidPentagonAI],
                     [Class.polyamorousAI, Class.quintetAI],
                     [Class.squarefortAI, Class.heptahedronAI, Class.RK_3AI]
                 ],
                 75: [[
-                    Class.eggBossTier6AI,
-                    Class.overTitanAI,
-                    Class.moonAI
+                    //Class.eggBossTier6AI,
+                    Class.eggQueenTier6AI,
+                    //Class.moonAI,
+                    Class.nk6AI//,
+                    //Class.overTitanAI
                 ]]
             }
             for (let i = 0; i < bosses.length; i++) {
@@ -5460,6 +5443,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.beginningTime = room.eliminationTimers.beginning;
                 this.eliminationTime = room.eliminationTimers.elimination;
                 this.breakTime = room.eliminationTimers.break;
+                this.roomUpdate = 0;
             }
 
             restart() {
@@ -5468,6 +5452,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.beginningTime = room.eliminationTimers.beginning;
                 this.eliminationTime = room.eliminationTimers.elimination;
                 this.breakTime = room.eliminationTimers.break;
+                this.roomUpdate = 0;
                 players.forEach(player => {
                     player.socket.status.isCompeting = false;
                     player.socket.status.eliminated = false;
@@ -5487,8 +5472,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
             waitingPeriod() {
                 if (players.length >= room.eliminationModeMinPlayers) {
+                    room.displayDesc = 'STATUS: Starting…\n\n' + c.displayDesc;
+                    if (this.roomUpdate < 2) {
+                        this.roomUpdate++;
+                        global.updateRoomInfo();
+                    }
                     if (this.reminderTime < 15) this.reminderTime = 15;
-                    if ([1, 2, 3, 4, 5, 10, 15, 30, 45, 60, 90, 120, 150, 180].includes(this.beginningTime)) sockets.broadcast(`The game will begin in ${util.timeForHumans(this.beginningTime)}!`, '#FFE46B');
+                    if ([1, 2, 3, 4, 5, 10, 15, 30, 45, 60, 90, 120].includes(this.beginningTime)) sockets.broadcast(`The game will begin in ${util.timeForHumans(this.beginningTime)}!`, '#FFE46B');
                     this.beginningTime--;
                     if (this.beginningTime < 0) {
                         players.forEach(player => {
@@ -5508,10 +5498,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.currentRound = 1;
                     }
                 } else {
+                    room.displayDesc = 'STATUS: Waiting…\n\n' + c.displayDesc;
+                    if (this.roomUpdate < 1) {
+                        this.roomUpdate++;
+                        global.updateRoomInfo();
+                    }
                     if (this.beginningTime < room.eliminationTimers.beginning) {
                         sockets.broadcast('Countdown halted.', '#FFE46B');
                         sockets.broadcast('There are no longer enough players for the game to begin.');
                         this.beginningTime = room.eliminationTimers.beginning;
+                        this.roomUpdate--;
                     }
                     this.reminderTime--;
                     if (this.reminderTime <= 0) {
@@ -5581,6 +5577,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
 
             gameplayLoop() {
+                room.displayDesc = `STATUS: In round ${this.currentRound}.\n\n` + c.displayDesc;
+                if (this.roomUpdate < 3) {
+                    this.roomUpdate++;
+                    global.updateRoomInfo();
+                }
                 if (this.eliminationTime === room.eliminationTimers.elimination) {
                     sockets.broadcast(`The players with the least score will be eliminated in ${util.timeForHumans(this.eliminationTime)}.`, '#FFE46B');
                     sockets.broadcast(`Round ${this.currentRound} has begun!`, teamBroadcastColors[0]);
@@ -5606,6 +5607,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.breakTime = room.eliminationTimers.break;
                     room.eliminationsPaused = false;
                     this.currentRound++;
+                    this.roomUpdate--;
                 }
             }
             
@@ -5739,6 +5741,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     x: this.player.target.x,
                     y: this.player.target.y
                 };
+                if (this.player.command.reversed) targ = {
+                    x: -this.player.target.x,
+                    y: -this.player.target.y
+                };
                 if (this.body.invuln && !this.body.grantedInvuln && (this.player.command.right || this.player.command.left || this.player.command.up || this.player.command.down || this.player.command.lmb)) this.body.invuln = false;
                 this.body.autoOverride = this.body.passive || this.player.command.override;
                 if (this.body.aiSettings.isDigger) {
@@ -5775,7 +5781,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
                 }
                 if (this.player.command.autospin) {
-                    let kk = Math.atan2(this.body.control.target.y, this.body.control.target.x) + this.body.spinSpeed;
+                    let kk = Math.atan2(this.body.control.target.y, this.body.control.target.x) + ((this.player.command.reversed) ? -this.body.spinSpeed : this.body.spinSpeed);
                     targ = {
                         x: 275 * Math.cos(kk),
                         y: 275 * Math.sin(kk)
@@ -5784,12 +5790,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 return {
                     target: targ,
                     goal: {
-                        x: this.body.x + (this.player.command.right - this.player.command.left) * !this.body.variables.paralyzed,
-                        y: this.body.y + (this.player.command.down - this.player.command.up) * !this.body.variables.paralyzed
+                        x: this.body.x + (this.player.command.right - this.player.command.left) * !this.body.effects.paralysis,
+                        y: this.body.y + (this.player.command.down - this.player.command.up) * !this.body.effects.paralysis
                     },
-                    fire: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autofire),
-                    main: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
-                    alt: !this.body.variables.emp && this.player.command.rmb
+                    fire: !this.body.effects.emp && (this.player.command.lmb || this.player.command.autofire),
+                    main: !this.body.effects.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
+                    alt: !this.body.effects.emp && this.player.command.rmb
                 };
             }
         }
@@ -5815,9 +5821,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.body.autoOverride = this.body.passive || this.player.command.override;
                 return {
                     target: targ,
-                    fire: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autofire),
-                    main: !this.body.variables.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
-                    alt: !this.body.variables.emp && this.player.command.rmb
+                    fire: !this.body.effects.emp && (this.player.command.lmb || this.player.command.autofire),
+                    main: !this.body.effects.emp && (this.player.command.lmb || this.player.command.autospin || this.player.command.autofire),
+                    alt: !this.body.effects.emp && this.player.command.rmb
                 };
             }
         }
@@ -5828,8 +5834,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             think(input) {
                 if (input.main || input.alt) return {
                     goal: {
-                        x: input.target.x * !this.body.paralyzed + this.body.x,
-                        y: input.target.y * !this.body.paralyzed + this.body.y
+                        x: input.target.x * !this.body.effects.paralysis + this.body.x,
+                        y: input.target.y * !this.body.effects.paralysis + this.body.y
                     },
                     power: 1
                 };
@@ -5915,7 +5921,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown && !this.body.variables.paralyzed) {
+                if (this.countdown && !this.body.effects.paralysis) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -5938,7 +5944,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown && !this.body.variables.paralyzed) {
+                if (this.countdown && !this.body.effects.paralysis) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -5963,7 +5969,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.countdown = 5;
             }
             think() {
-                if (this.countdown && !this.body.variables.paralyzed) {
+                if (this.countdown && !this.body.effects.paralysis) {
                     if (util.getDistance(this.body, this.myGoal) < 1) {
                         this.countdown--;
                     }
@@ -6129,9 +6135,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 super(body);
             }
             think(input) {
-                if (input.alt) return {
-                    fire: true
-                };
+                if (input.alt) return { fire: true };
             }
         }
         ioTypes.onlyAcceptInArc = class extends IO {
@@ -6242,9 +6246,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         switch (entity.type) {
                             case "drone":
                             case "minion":
-                                if (IGNORE_WEAPONS) return;
+                                if (body.type === 'miniboss' || IGNORE_WEAPONS) return;
                                 break;
                             case 'tank':
+                                if (room.survivalMode && master.isBot && entity.master.master.skill.level > master.skill.level) return;
+                                break;
                             case 'miniboss':
                             case 'crasher':
                                 break;
@@ -6266,7 +6272,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
 
                     // Our current target is still valid at this point
-                    if (this.targetLock === entity) {
+                    if (this.targetLock === entity && body.type !== 'miniboss') {
                         foundLockedTarget = true;
                         return;
                     }
@@ -6291,9 +6297,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     }
                 });
 
-                if (foundLockedTarget) {
-                    this.targetLock = this.targetLock;
-                } else {
+                if (foundLockedTarget && body.type !== 'miniboss') this.targetLock = this.targetLock;
+                else {
                     this.targetLock = bestTarget;
                     this.tick = room.cycleSpeed + 1;
                 }
@@ -6351,8 +6356,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 // Mutate and return the pre-allocated output object.
                 this.output.target.x = diffX + this.lead * target.velocity.x;
                 this.output.target.y = diffY + this.lead * target.velocity.y;
-                this.output.fire = !this.body.variables.emp && !this.body.master.variables.emp;
-                this.output.main = !this.body.variables.emp && !this.body.master.variables.emp;
+                this.output.fire = !this.body.effects.emp && !this.body.master.effects.emp;
+                this.output.main = !this.body.effects.emp && !this.body.master.effects.emp;
 
                 return this.output;
             }
@@ -6396,7 +6401,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.repel = options.repel ?? 135;
             }
             think(input) {
-                if (input.target != null && (input.alt || input.main) && !this.body.variables.paralyzed) {
+                if (input.target != null && (input.alt || input.main) && !this.body.effects.paralysis) {
                     let sizeFactor = Math.sqrt(this.body.master.size / this.body.master.SIZE),
                         leash = this.leash * sizeFactor,
                         orbit = this.orbit * sizeFactor,
@@ -6440,13 +6445,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.turnwise = 1;
             }
             think(input) {
-                if (input.target != null && input.main && !this.body.variables.paralyzed) {
+                if (input.target != null && input.main && !this.body.effects.paralysis) {
                     let sizeFactor = Math.sqrt(this.body.master.size / this.body.master.SIZE),
                         orbit = 120 * sizeFactor,
                         goal,
                         power = 1,
                         target = new Vector(input.target.x, input.target.y);
-                    if (this.body.paralyzed) target.null();
+                    if (this.body.effects.paralysis) target.null();
                     if (input.main) {
                         let dir = this.turnwise * target.direction + .01;
                         goal = {
@@ -6476,7 +6481,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
             think(input) {
                 if (this.body.variables.idleOrbit != null) this.orbit = this.body.variables.idleOrbit;
-                if (this._master !== this.body && !this.body.variables.paralyzed) {
+                if (this._master !== this.body && !this.body.effects.paralysis) {
                     let bound1 = this.orbit * .8 + this._master.size + this.body.size,
                         bound2 = this.orbit * 1.5 + this._master.size + this.body.size,
                         dist = util.getDistance(this.body, this._master) + Math.PI / 8,
@@ -6835,7 +6840,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.fear = util.clamp(ran.gauss(.7, .15), .1, .9) * .75;
             }
             think(input) {
-                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.variables.paralyzed) return {
+                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.effects.paralysis) return {
                     goal: {
                         x: this.body.x - input.target.x,
                         y: this.body.y - input.target.y
@@ -6849,7 +6854,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.fear = util.clamp(ran.gauss(.7, .15), .1, .9) * .45;
             }
             think(input) {
-                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.variables.paralyzed) return {
+                if (input.fire && input.target != null && this.body.health.amount < this.body.health.max * this.fear && !this.body.effects.paralysis) return {
                     goal: {
                         x: this.body.x - input.target.x,
                         y: this.body.y - input.target.y
@@ -6959,7 +6964,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             constructor(b) {
                 super(b);
                 this.phase = 5;
-                this.wo = this.body.master.facing;
+                this.wo = this.body.source.facing;
             }
             think(input) {
                 this.phase += .5;
@@ -6974,7 +6979,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             constructor(b) {
                 super(b);
                 this.phase = 5;
-                this.wo = this.body.master.facing;
+                this.wo = this.body.source.facing;
             }
             think(input) {
                 this.phase += .5;
@@ -6986,7 +6991,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             constructor(b) {
                 super(b);
                 this.phase = -5;
-                this.wo = this.body.master.facing;
+                this.wo = this.body.source.facing;
             }
             think(input) {
                 this.phase -= .5;
@@ -7001,7 +7006,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             constructor(b) {
                 super(b);
                 this.phase = -5;
-                this.wo = this.body.master.facing;
+                this.wo = this.body.source.facing;
             }
             think(input) {
                 this.phase -= .5;
@@ -7029,37 +7034,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
         }
         ioTypes.animateOnDistance = class extends IO {
-            constructor(b) {
-                super(b);
-            }
-            think(input) {
-                let animationCase = this.body.variables.animationCase ?? 0,
-                    animationDistance = Array.isArray(this.body.variables.animationDistance) ?
-                        [this.body.variables.animationDistance[0] * 10, this.body.variables.animationDistance[1] * 10] :
-                        this.body.variables.animationDistance * 10
-                if (animationCase && input.target) {
-                    let targetDistance = {
-                        x: input.target.x + this.body.x,
-                        y: input.target.y + this.body.y
-                    };
-                    switch (animationCase) {
-                        case 1:
-                            if (util.getDistance(this.body, targetDistance) > animationDistance) return { alt: true };
-                            else return { alt: false };
-                        case 2:
-                            if (util.getDistance(this.body, targetDistance) < animationDistance) return { alt: true };
-                            else return { alt: false };
-                        case 3:
-                            if (util.getDistance(this.body, targetDistance) > animationDistance[1]) return { alt: true };
-                            else if (util.getDistance(this.body, targetDistance) < animationDistance[0]) return this.body.onQ(this.body);
-                            else return { alt: false };
-                        default:
-                            return { alt: false };
-                    }
-                }
-            }
-        }
-        ioTypes.animateOnDistance2 = class extends IO {
             constructor(b, c, d) {
                 super(b);
                 this.animCase = c;
@@ -7085,7 +7059,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
         }
         ioTypes.umbra = class extends IO {
-            constructor(body) { super(body) };
+            constructor(body, distance) {
+                super(body);
+                this.targDistance = distance;
+            };
             think(input) {
                 if (input.target) {
                     let targ = {
@@ -7093,7 +7070,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         y: input.target.y + this.body.y
                     },
                         dist = util.getDistance(this.body, targ);
-                    if (dist <= 240 || this.body.alpha > .05) return {
+                    if (dist <= this.targDistance || this.body.alpha > .05) return {
                         fire: true,
                         main: true
                     };
@@ -7132,9 +7109,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
         })();
         const apply = (f, x) => x < 0 ? 1 / (1 - x * f) : f * x + 1;
         class Skill {
-            constructor(body, inital = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) {
+            constructor(body, initial = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) {
                 this.body = body;
-                this.raw = inital;
+                this.raw = initial;
                 this.caps = [];
                 this.setCaps([c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL]);
                 this.name = ["Reload", "Bullet Penetration", "Bullet Health", "Bullet Damage", "Bullet Speed", "Shield Capacity", "Body Damage", "Max Health", "Shield Regeneration", "Movement Speed"];
@@ -7172,10 +7149,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 for (let i = 0; i < 10; i++) {
                     attrib[i] = curve(this.raw[i] / c.MAX_SKILL);
                 }
-                if (this.body.variables.hasAddition) clearTimeout(this.body.variables.additionTimeout);
-                if (this.body.variables.hasStrength) clearTimeout(this.body.variables.strengthTimeout);
                 this.rld = Math.pow(0.5, attrib[skcnv.rld]);
-                this.pen = apply(2.5, attrib[skcnv.pen]);
+                this.pen = apply(0.5, attrib[skcnv.pen]);
                 this.str = apply(3, attrib[skcnv.str]);
                 this.dam = apply(3.4, attrib[skcnv.dam]);
                 this.spd = 0.5 + apply(1.5, attrib[skcnv.spd]);
@@ -7348,7 +7323,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.colorOverride = null;
                 this.alphaOverride = null;
                 this.shootOnDeath = false;
-				this.weaponSize = 0;
                 let PROPERTIES = info.PROPERTIES;
                 if (PROPERTIES != null && PROPERTIES.TYPE != null) {
                     this.canShoot = true;
@@ -7370,9 +7344,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.autofire = PROPERTIES.AUTOFIRE == null ? false : PROPERTIES.AUTOFIRE;
                     this.altFire = PROPERTIES.ALT_FIRE == null ? false : PROPERTIES.ALT_FIRE;
                     this.duoFire = PROPERTIES.DUO_FIRE == null ? false : PROPERTIES.DUO_FIRE;
-                    this.settings = PROPERTIES.SHOOT_SETTINGS || [];
-                    this.settings2 = PROPERTIES.SHOOT_SETTINGS_2 || [];
-                    this.settings3 = PROPERTIES.SHOOT_SETTINGS_3 || [];
+                    this.settings = this.SHOOT_SETTINGS = PROPERTIES.SHOOT_SETTINGS || [];
+                    this.settings2 = this.SHOOT_SETTINGS_2 = PROPERTIES.SHOOT_SETTINGS_2 || [];
+                    this.settings3 = this.SHOOT_SETTINGS_3 = PROPERTIES.SHOOT_SETTINGS_3 || [];
                     this.onShoot = PROPERTIES.ON_SHOOT;
                     this.onFire = PROPERTIES.ON_FIRE;
                     this.timesToFire = PROPERTIES.TIMES_TO_FIRE || 1;
@@ -7446,6 +7420,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     0
                 ];
             }
+            get weaponSize() {
+                return this.body.size * this.width * ((typeof this.settings === 'object') ? this.settings.size : 1) * .5;
+            }
             liveButBetter() {
                 if (this.canShoot) {
                     if (this.countsOwnKids + this.destroyOldestChild - 1 <= this.childrenMap.size) {
@@ -7493,7 +7470,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 if (c.DO_BASE_DAMAGE && this.body.type !== "wall" && this.body.isInMyBase() && c.CANNOT_SHOOT_IN_BASE && !this.body.shootsInBaseAnyway) {
                                     if (this.body.childrenMap && this.body.childrenMap.size) this.body.childrenMap.forEach((k) => k.destroy())
                                 } else {
-                                    if (!this.body.variables.emp || this.body.variables.emp == undefined || !this.body.master.variables.emp || this.body.master.variables.emp == undefined) {
+                                    if (!this.body.effects.emp || !this.body.master.effects.emp) {
                                         for (let i = 0; i < this.timesToFire; i++) {
                                             if (this.onFire) {
                                                 this.onFire(this, sk);
@@ -7590,26 +7567,23 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 // Define skills
                 o.skill.set(this.getSkillRaw());
                 // Define size
-				this.weaponSize = (this.body.size * this.width * this.settings.size * 0.5) * o.squiggle;
-                o.SIZE = this.weaponSize;
+                o.SIZE = this.weaponSize * o.squiggle;
                 // Define label
                 if (!this.skipLabelChange) o.label = this.body.label + (this.body.label && (o.label || this.label) ? " " : "") + this.label + (this.label && o.label ? " " : "") + o.label;
 
-                if (o.type === "food") {
-                    o.ACCELERATION = .015 / (o.size * 0.2);
-                };
+                if (o.type === "food") o.ACCELERATION = .015 / (o.size * 0.2);
                 if (this.onDealtDamage != null) o.onDealtDamage = this.onDealtDamage;
                 if (this.colorOverride != null) {
                     if (this.colorOverride === "random") o.color = ran.randomHexColor();
-                    if (this.colorOverride === "master") o.color = this.body.master.color;
                     else o.color = this.colorOverride;
+                } else if (this.body.master.mainWeaponColor != null) {
+                    if (this.body.master.mainWeaponColor === "random") o.color = ran.randomHexColor();
+                    else o.color = this.body.master.mainWeaponColor;
                 } else if (this.body.source.mainWeaponColor != null) {
                     if (this.body.source.mainWeaponColor === "random") o.color = ran.randomHexColor();
-                    if (this.body.source.mainWeaponColor === "master") o.color = this.body.master.color;
                     else o.color = this.body.source.mainWeaponColor;
                 } else if (this.body.mainWeaponColor != null) {
                     if (this.body.mainWeaponColor === "random") o.color = ran.randomHexColor();
-                    if (this.body.mainWeaponColor === "master") o.color = this.body.master.color;
                     else o.color = this.body.mainWeaponColor;
                 } else o.color = this.body.master.color;
                 if (this.alphaOverride != null) o.alpha = this.alphaOverride;
@@ -7703,10 +7677,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
         let bot = null;
         let players = [];
         let clients = [];
-        global.updateRoomInfo = () => {
-            const obj = { type: "updatePlayers", players: clients.length, maxPlayers: maxPlayersOverride, name: room.displayName, desc: room.displayDesc };
-            console.log("Updating room info in WRM", obj)
-            worker.postMessage(obj)
+        global.updateRoomInfo = (update = {}) => {
+            const obj = {
+                type: "updatePlayers",
+                players: clients.length,
+                maxPlayers: update.maxPlayers ?? maxPlayersOverride,
+                name: update.displayName ?? room.displayName,
+                desc: update.displayDesc ?? room.displayDesc
+            };
+            console.log("Updating room info in WRM", obj);
+            worker.postMessage(obj);
         }
         let multitabIDs = [];
         let connectedIPs = [];
@@ -8218,6 +8198,18 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.settings = { leaderboardable: true };
                 this.aiSettings = {};
                 this.variables = {};
+                this.effects = {
+                    ice: false,
+                    paralysis: false,
+                    poison: false,
+                    fire: false,
+                    emp: false,
+                    pepperspray: false,
+                    lsd: false,
+                    addition: false,
+                    strength: false,
+                    vulnerability: false
+                };
                 this.blend = {
                     color: "#FFFFFF",
                     amount: 0
@@ -8532,8 +8524,17 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (!this.control.alt && this.onNotAlt) this.onNotAlt(this, entities);
                 if (this.onTick) this.onTick(this, entities);
                 players.forEach(player => {
-                    if (player.socket.betaData.permissions < 3 && player.socket.inactivityTimeout == null && (player.socket.status.deceased || !player.command.right && !player.command.left && !player.command.up && !player.command.down && !player.command.lmb && !player.command.rmb)) player.socket.beginTimeout();
-                    else if (player.socket.inactivityTimeout != null && (player.command.right || player.command.left || player.command.up || player.command.down || player.command.lmb || player.command.rmb)) player.socket.endTimeout();
+                    let commands = ['right', 'left', 'up', 'down', 'lmb', 'mmb', 'rmb'];
+                    if (
+                        player.socket.betaData.permissions < 3 &&
+                        player.socket.inactivityTimeout == null &&
+                        (player.socket.status.deceased || commands.every(command => !player.command[command]))
+                    ) player.socket.beginTimeout();
+                    else if (
+                        player.socket.inactivityTimeout != null &&
+                        !player.socket.status.deceased &&
+                        commands.some(command => player.command[command])
+                    ) player.socket.endTimeout();
                 });
             }
             addController(newIO) {
@@ -8580,6 +8581,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.mockupGuns = true
                 if (set.index != null) this.index = set.index;
                 if (set.NAME != null) this.name = set.NAME;
+                    else if (this.socket) this.name = this.socket.name;
                 if (set.LABEL != null) this.label = set.LABEL;
                 if (set.COLOR != null) {
                     if (this.color === 'mirror' && this.isTurret) this.color = this.master.color;
@@ -8618,7 +8620,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             index: e.index,
                             tier: 3
                         });
-                    if (set.UPGRADES_TIER_4 != null)
+                    if (set.UPGRADES_TIER_4 != null && (!room.survivalMode || room.survivalMode && this.socket?.betaData.permissions === 3))
                         for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
                             class: exportNames[e.index],
                             level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
@@ -8634,7 +8636,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         i++;
                     }
                     this.guns = newGuns;
-                };
+                }
                 if (set.GUN_STAT_SCALE != null) this.gunStatScale = set.GUN_STAT_SCALE;
                 if (set.TURRETS != null) {
                     for (let o of this.turrets) o.destroy();
@@ -8647,7 +8649,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         o.bindToMaster(def.POSITION, this);
                         if (!def.TARGETABLE_TURRET) o.dangerValue = 0;
                     };
-                };
+                }
                 if (set.PROPS != null) {
                     let newProps = [];
                     for (let def of set.PROPS) newProps.push(new Prop(def));
@@ -8660,7 +8662,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (evolutionArray?.length) {
                     this.evolutionTimeout = setTimeout(() => {
                         try {
-                            if (!this.isAlive() || this.isShiny || (Math.random() < c.EVOLVE_HALT_CHANCE && this.miscIdentifier !== 'Rogue Egg')) return;
+                            if (!this.isAlive() || ran.chance(c.EVOLVE_HALT_CHANCE) && this.miscIdentifier !== 'Rogue Egg') return;
                             let options = [],
                                 chances = [];
                             for (let arr of evolutionArray) {
@@ -8765,10 +8767,15 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         let toAdd = [];
                         for (let ioName of set.CONTROLLERS) {
                             if (Array.isArray(ioName)) {
-                                if (ioName[0] === 'animateOnDistance2') toAdd.push(new ioTypes[ioName[0]](this, ioName[1], ioName[2], ioName[3]));
-                                else toAdd.push(new ioTypes[ioName[0]](this, ioName[1]));
-                            }
-                            else toAdd.push(new ioTypes[ioName](this));
+                                switch (ioName[0]) {
+                                    default:
+                                        toAdd.push(new ioTypes[ioName[0]](this, ioName[1]));
+                                        break;
+                                    case 'animateOnDistance':
+                                        toAdd.push(new ioTypes[ioName[0]](this, ioName[1], ioName[2]));
+                                        break;
+                                }
+                            } else toAdd.push(new ioTypes[ioName](this));
                         }
                         this.addController(toAdd);
                     }
@@ -8809,6 +8816,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     if (set.SIZE_WITH_LEVEL != null) this.settings.sizeWithLevel = set.SIZE_WITH_LEVEL;
                     if (set.ACCEPTS_SCORE != null) this.settings.acceptsScore = set.ACCEPTS_SCORE;
                     if (set.GIVES_SCORE != null) this.settings.givesScore = set.GIVES_SCORE;
+                    if (set.GIVES_HEALTH != null) this.settings.givesHealth = set.GIVES_HEALTH;
                     if (set.GETS_NEGATIVE_SCORE != null) this.settings.getsNegativeScore = set.GETS_NEGATIVE_SCORE;
                     if (set.HAS_NO_RECOIL != null) this.settings.hasNoRecoil = set.HAS_NO_RECOIL;
                     if (set.CRAVES_ATTENTION != null) this.settings.attentionCraver = set.CRAVES_ATTENTION;
@@ -8819,12 +8827,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     if (set.IS_SMASHER != null) this.settings.reloadToAcceleration = set.IS_SMASHER;
                     if (set.IS_DIGGER != null) this.aiSettings.isDigger = set.IS_DIGGER;
                     if (set.DIES_BY_OBSTACLES != null) this.settings.diesByObstacles = set.DIES_BY_OBSTACLES;
+                    this.settings.isLancer = set.IS_LANCER || null;
                     this.settings.isHelicopter = set.IS_HELICOPTER || null;
                     this.settings.isHealer = set.IS_HEALER || null;
                     if (set.GO_THRU_OBSTACLES != null) this.settings.goThruObstacle = set.GO_THRU_OBSTACLES;
                     if (set.BOUNCE_ON_OBSTACLES != null) this.settings.bounceOnObstacles = set.BOUNCE_ON_OBSTACLES;
                     if (set.STAT_NAMES != null) this.settings.skillNames = set.STAT_NAMES;
                     if (set.HAS_ANIMATION != null) this.settings.hasAnimation = set.HAS_ANIMATION;
+                    if (set.NO_RESIST_MINMAX != null) this.settings.noResistCaps = set.NO_RESIST_MINMAX;
                     if (set.INTANGIBLE != null) this.intangibility = set.INTANGIBLE;
                     if (set.AI != null) this.aiSettings = set.AI;
                     if (set.DANGER != null) this.dangerValue = set.DANGER;
@@ -8870,7 +8880,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.onDead = set.ON_DEAD || null
                     this.isObserver = set.IS_OBSERVER;
                     this.onOverride = set.ON_OVERRIDE;
-                    this.canNecro = set.CAN_NECROMIZE || null;
                     this.settings.nameplate = set.HAS_NAMEPLATE || null;
                     if (set.IS_SENTRY != null) this.isSentry = set.IS_SENTRY;
                     if (set.IS_DOMINATOR != null) this.isDominator = set.IS_DOMINATOR;
@@ -8900,7 +8909,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 index: e.index,
                                 tier: 3
                             });
-                        if (set.UPGRADES_TIER_4 != null)
+                        if (set.UPGRADES_TIER_4 != null && (!room.survivalMode || room.survivalMode && this.socket?.betaData.permissions === 3))
                             for (let e of set.UPGRADES_TIER_4) this.upgrades.push({
                                 class: exportNames[e.index],
                                 level: c.LEVEL_ZERO_UPGRADES ? 0 : 60,
@@ -8936,7 +8945,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.scopedMult = set.CAMERA_TO_MOUSE[1] - 1;
                     }
                     this.altCameraSource = null;
-                    if (this.variables.hasAddition || this.variables.hasStrength) this.skill.update();
                     if (set.GUNS != null) {
                         let newGuns = [];
                         let i = 0;
@@ -8965,6 +8973,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         if (set.BODY.DAMAGE != null) this.DAMAGE = set.BODY.DAMAGE;
                         if (set.BODY.PENETRATION != null) this.PENETRATION = set.BODY.PENETRATION;
                         if (set.BODY.FOV != null) this.FOV = set.BODY.FOV;
+                            if (room.eliminationMode && room.eliminationsStarted && (!this.socket?.status.isCompeting || this.socket?.status.isCompeting && this.socket?.status.eliminated)) this.FOV *= 1.2;
                         if (set.BODY.RANGE != null) this.RANGE = set.BODY.RANGE;
                         if (set.BODY.SHOCK_ABSORB != null) this.SHOCK_ABSORB = set.BODY.SHOCK_ABSORB;
                         if (set.BODY.DENSITY != null) this.DENSITY = set.BODY.DENSITY;
@@ -8973,6 +8982,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         if (set.BODY.HETERO != null) this.heteroMultiplier = set.BODY.HETERO;
                         this.refreshBodyAttributes();
                     }
+                    if (this.isTurret && this.master.master.isShiny && this.color === this.master.master.color) this.color = -1;
                     if (set.TURRETS != null) {
                         for (let o of this.turrets) o.destroy();
                         this.turrets = [];
@@ -9004,10 +9014,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.mainWeaponAlpha = set.WEAPON_ALPHA;
                     if (set.BYPASS_BASE_RESTRICTIONS != null) this.shootsInBaseAnyway = set.BYPASS_BASE_RESTRICTIONS;
                     if (this.isShiny) {
-                        this.color = -1;
-                        this.skill.score *= 3;
-                        this.SIZE += 2;
                         this.label = "Shiny " + this.label;
+                        this.color = -1;
                         this.settings.givesKillMessage = true;
                     }
                     if (set.ON_DEFINED) set.ON_DEFINED(this, entities, sockets, Entity, ran, room);
@@ -9068,7 +9076,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             get size() {
                 // 1. Calculate this entity's own standalone base size
                 const levelFactor = (this.settings.sizeWithLevel) ? 1 + (this.skill.level > c.SKILL_CAP ? c.SKILL_CAP : this.skill.level) / 60 : 1;
-                const ownBaseSize = (this.SIZE) * levelFactor;
+                const ownBaseSize = this.SIZE * levelFactor + ((this.isShiny) ? 3 : 0);
 
                 // 2. Fast path: If not a sub-turret, return own base size immediately (O(1), zero recursion)
                 if (!this.bond || !this.bound) return ownBaseSize;
@@ -9091,7 +9099,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
                 // 4. Calculate root tank's base size directly
                 const rootLevelFactor = (curr.settings.sizeWithLevel) ? 1 + (curr.skill.level > c.SKILL_CAP ? c.SKILL_CAP : curr.skill.level) / 60 : 1;
-                const rootBaseSize = (curr.SIZE) * rootLevelFactor;
+                const rootBaseSize = (curr.SIZE) * rootLevelFactor + ((curr.isShiny) ? 3 : 0);
 
                 return rootBaseSize * multiplier;
             }
@@ -9111,7 +9119,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 if (!Array.isArray(gunStatScale)) gunStatScale = [gunStatScale];
                 for (let gun of this.guns.values()) {
                     if (!gun.settings) continue;
-                    gun.settings = quickCombine([gun.settings, ...gunStatScale]);
+                    gun.settings = (gunStatScale.length) ? quickCombine([gun.settings, ...gunStatScale]) : gun.SHOOT_SETTINGS;
                     gun.interpret();
                 }
             }
@@ -9309,8 +9317,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 }
                 if (!this.label.length) {
                     this.sendMessage("This tank appears to be nameless; suggest a label for it, if you'd like!", "#8cff9f");
-                    this.sendMessage("You have changed your tank.");
-                } else this.sendMessage("You have changed your tank to " + this.label + ".");
+                    this.sendMessage("Your tank has been changed.");
+                } else this.sendMessage("Your tank has been changed to " + this.label + ".");
                 this.skill.update();
                 this.refreshBodyAttributes();
                 this.childrenMap.forEach(o => {
@@ -9352,13 +9360,12 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     a = this.acceleration / room.speed;
                 switch (this.motionType) {
                     case "glide":
-                        let damp = this.motionTypeSettings.DAMP ?? .05;
                         this.maxSpeed = this.topSpeed;
-                        this.damp = damp;
+                        this.damp = this.motionTypeSettings.DAMP ?? .05;
                         break;
                     case "motor":
                         this.maxSpeed = 0;
-                        if (this.topSpeed) this.damp = a / this.topSpeed;
+                        if (this.topSpeed) this.damp = (a / this.topSpeed) * (this.motionTypeSettings.DAMP_MULTIPLIER ?? 1);
                         if (gactive) {
                             let len = Math.sqrt(g.x * g.x + g.y * g.y);
                             engine = {
@@ -9394,15 +9401,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 x: 0,
                                 y: 0
                             }, g);
-                            if (true || l > this.size * 2) {
-                                this.maxSpeed = this.topSpeed;
-                                let desiredxspeed = this.topSpeed * g.x / l,
-                                    desiredyspeed = this.topSpeed * g.y / l;
-                                engine = {
-                                    x: (desiredxspeed - this.velocity.x) * a,
-                                    y: (desiredyspeed - this.velocity.y) * a
-                                };
-                            } else this.maxSpeed = 0;
+                            this.maxSpeed = this.topSpeed;
+                            let desiredxspeed = this.topSpeed * g.x / l,
+                                desiredyspeed = this.topSpeed * g.y / l;
+                            engine = {
+                                x: (desiredxspeed - this.velocity.x) * a,
+                                y: (desiredyspeed - this.velocity.y) * a
+                            };
                         } else this.maxSpeed = 0;
                         break;
                     case "drift":
@@ -9466,7 +9471,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         } else this.damp = .005;
                         break;
                     case "grow":
-                        this.SIZE += .175;
+                        this.SIZE += this.motionTypeSettings.RATE ?? .175;
+                        if (this.motionTypeSettings.FOLLOW_SOURCE) {
+                            this.x = this.source.x;
+                            this.y = this.source.y;
+                        }
                         break;
                     case "flamethrower":
                         this.maxSpeed = this.topSpeed;
@@ -9480,28 +9489,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         this.SIZE += .25;
                         this.DAMAGE -= .175;
                         break;
-                    case "explode":
-                        this.SIZE += 10;
-                        this.DAMAGE += 3;
-                        break;
-                    case "flakGun":
-                        this.SIZE += 5;
-                        break;
-                    case "kamikaze":
-                        this.SIZE += 7;
-                        this.DAMAGE += 1;
-                        break;
                     case "fastcrockett":
                         this.SIZE += 2;//+6
                         this.DAMAGE += 2;//+6
-                        break;
-                    case "crockett":
-                        this.SIZE += 2;
-                        this.DAMAGE += 2;
-                        break;
-                    case "crockettDominator":
-                        this.SIZE += 3;
-                        this.DAMAGE += 4;
                         break;
                     case "bigcrockett":
                         this.SIZE += 4.2;
@@ -9796,6 +9786,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         });
                         break;
                     case "toTarget":
+                    case "withTarget":
                         this.facing = Math.atan2(t.y, t.x);
                         break;
                     case "locksFacing":
@@ -9805,10 +9796,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         if (!this.control.fire) this.facing = Math.atan2(t.y, t.x);
                         break;
                     case "smoothToTarget":
-                        this.facing += util.loopSmooth(this.facing, Math.atan2(t.y, t.x), 4 / room.speed);
-                        break;
-                    case "slowToTarget":
-                        this.facing += util.loopSmooth(this.facing, Math.atan2(t.y, t.x), 8 / room.speed);
+                        this.facing += util.loopSmooth(this.facing, Math.atan2(t.y, t.x), (this.facingTypeSettings.SLOWNESS ?? 4) / room.speed);
                         break;
                     case "bound":
                         let givenAngle;
@@ -9819,8 +9807,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         } else givenAngle = this.firingArc[0];
                         this.facing += util.loopSmooth(this.facing, givenAngle, (2 / room.speed) * this.turretTraverseSpeed);
                         break;
-                    case "toBound":
-                        this.facing = this.bound.angle + this.bond.master.facing;
+                    case "toBond":
+                        if (this.bond != null) this.facing = this.bond.facing + this.bound.angle;
                         break;
                     case "hatchet":
                         this.facing += .2 + this.skill.spd / 7;
@@ -9839,6 +9827,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 this.facing = (this.facing % TAU + TAU) % TAU;
                 this.vfacing = util.angleDifference(oldFacing, this.facing) * room.speed;
                 if (this.bond?.syncTurretSkills) this.skill.set(this.bond?.skill.raw);
+                if (this.isPlayer && this.socket.inactivityTimeout != null && this.facing !== oldFacing) this.socket.endTimeout();
             }
             physics() {
                 this.velocity.x += this.accel.x * room.lagComp;
@@ -10254,7 +10243,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             killTools = [],
                             notJustFood = false,
                             name = this.master.name === "" ? this.master.type === "tank" ? "An unnamed player's " + this.label : this.master.type === "miniboss" ? "a visiting " + this.label : util.addArticle(this.label) : this.master.name + "'s " + this.label,
-                            jackpot = (this.settings.givesScore) ? Math.round(util.getJackpot(this.skill.score) / ((this.isBot) ? 2.25 : 1) / this.collisionArray.length) : 0;
+                            jackpot = (this.settings.givesScore) ? Math.round(util.getJackpot(this.skill.score) / ((this.isBot) ? 2.25 : 1) * ((this.isShiny) ? 3 : 1) / this.collisionArray.length) : 0;
                         // Find out who killed us, and if it was "notJustFood" or not
                         for (let i = 0, l = this.collisionArray.length; i < l; i++) {
                             let o = this.collisionArray[i];
@@ -10270,14 +10259,28 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 if (master.type === "tank" || master.type === "miniboss") notJustFood = true;
                                 if (master.settings.getsNegativeScore) jackpot *= -1;
                                 master.skill.score += jackpot;
-                                if (this.type === "food") master.health.amount += jackpot * .03;
-                                else master.health.amount += jackpot * .0025;
+                                if (this.settings.givesHealth && !master.settings.getsNegativeScore) {
+                                    if (this.type === "food") {
+                                        master.health.amount += jackpot * .03;
+                                        master.shield.amount += jackpot * .01;
+                                    } else {
+                                        master.health.amount += jackpot * .0025;
+                                        master.shield.amount += jackpot * .00075;
+                                    }
+                                }
                                 if (!killers.includes(master)) killers.push(master);
                             } else if (o.settings.acceptsScore) {
                                 if (o.settings.getsNegativeScore) jackpot *= -1;
                                 o.skill.score += jackpot;
-                                if (this.type === "food") master.health.amount += jackpot * .03;
-                                else master.health.amount += jackpot * .0025;
+                                if (this.settings.givesHealth && !o.settings.getsNegativeScore) {
+                                    if (this.type === "food") {
+                                        o.health.amount += jackpot * .03;
+                                        o.shield.amount += jackpot * .01;
+                                    } else {
+                                        o.health.amount += jackpot * .0025;
+                                        o.shield.amount += jackpot * .00075;
+                                    }
+                                }
                             }
                             killTools.push(o);
                         }
@@ -10316,7 +10319,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     killText += " and ";
                                 }
                                 if (giveKillMessage) {
-                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.variables.dogonekBossType === 'youkai') ? "scared off " : (this.variables.onfire && o.doesTorch) ? "scorched " : "killed ") + name + ".");
+                                    o.sendMessage("You" + (killers.length > 1 ? " assist-" : " ") + ((this.miscIdentifier === 'Youkai') ? "scared off " : (this.effects.fire && o.doesTorch) ? "scorched " : "killed ") + name + ".");
                                 }
                             }
                             killText = killText.slice(0, -4);
@@ -11067,7 +11070,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         nameColor: "#FFFFFF",
                         discordID: -1,
                         username: "",
-                        globalName: "",
+                        globalName: ""
                     };
                     this.player = {
                         camera: {},
@@ -11589,6 +11592,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 this.talk("P", "This room is currently closed to the public. No unauthorized players may join.");
                                 this.talk("closeSocket");
                                 this.close(true);
+                                return;
                             }
 
                             if (players.length > maxPlayersOverride) {
@@ -11608,27 +11612,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 return;
                             }
 
-                            if (this.spawnCount === 0) {
-                                sockets.broadcast(trimName(name) + " has joined the game! (" + players.length + " players)")
-                            }
+                            if (this.spawnCount === 0) sockets.broadcast(trimName(name) + " has joined the game! (" + players.length + " players)");
                             this.spawnCount += 1;
-                            this.name = trimName(name);
+                            this.name = name;
                             // Namecolor
-                            let body = this.player.body;
+                            let body = this.player.body,
+                                nameCol = util.colorFromName(this.name);
                             body.skill.score += Math.pow(this.status.previousScore, .7);
+                            body.name = this.name;
+                            if (nameCol !== '#FFFFFF') this.betaData.nameColor = nameCol;
                             body.nameColor = this.betaData.nameColor;
-                            this.name = body.name
-                            switch (this.name) {
-                                case "4NAX":
-                                    body.nameColor = "#FF9999";
-                                    break;
-                                case "Silvy":
-                                    body.nameColor = "#99F6FF";
-                                    break;
-                                case "SkuTsu":
-                                    body.nameColor = "#b2f990";
-                                    break;
-                            }
                             if (body.nameColor.toLowerCase() !== "#ffffff") body.rewardManager(-1, "i_feel_special");
                         } break;
                         case "p": { // Ping packet
@@ -11729,21 +11722,15 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 case 2:
                                     given = "override";
                                     break;
-                                case 3:
-                                    given = "reversed";
-                                    break;
                                 default:
                                     this.error("control toggle", `Unknown toggle value (${tog})`, true);
                                     return 1;
                             }
                             if (player.command != null) {
                                 player.command[given] = !player.command[given];
-                                if (given === "reversed") given = "Target Flip"
-                                if (given === 'override' && body.onOverride !== undefined) {
-                                    body.onOverride(body);
-                                } else {
-                                    body.sendMessage(given.charAt(0).toUpperCase() + given.slice(1) + (player.command[given] ? ": ON" : ": OFF"));
-                                }
+                                if (given === "reversed") given = "Target Flip";
+                                if (given === 'override' && body.onOverride !== undefined) body.onOverride(body);
+                                else body.sendMessage(given.charAt(0).toUpperCase() + given.slice(1) + (player.command[given] ? ": ON" : ": OFF"));
                             }
                         } break;
                         case "U": { // Upgrade request
@@ -11838,11 +11825,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         } break;
                         case "l": { // Control a Dominator or Mothership (should be simplified at some point)
                             if (m.length !== 0) {
-                                this.error("Dominator/Mothership control", "Ill-sized control request", true);
+                                this.error("Reverse Tank Control", "Ill-sized reverse tank request", true);
                                 return 1;
                             }
-						    console.log("Non-working for the time being"); // This is buggy, unfortunately.
-                            return;
+                            if (player.command != null) {
+                                player.command.reversed = !player.command.reversed;
+                                body.sendMessage("Target Flip" + (player.command.reversed ? ": ON" : ": OFF"));
+                            }
+                            /*return;
                             if (!isAlive) return;
                             if (c.SPAWN_DOMINATORS) {
                                 if (!body.underControl) {
@@ -11929,14 +11919,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     this.talk("F", ...player.records());
                                     player.body.relinquish(player);
                                 }
-                            }
+                            }*/
                         } break;
                         case "L": { // Level up cheat
                             if (m.length !== 0) {
                                 this.error("level up", "Ill-sized level-up request", true);
                                 return 1;
                             }
-                            if (body != null && !body.underControl && body.skill.level < c.SKILL_CHEAT_CAP) {
+                            if (body != null && !body.underControl && body.skill.level < c.SKILL_CHEAT_CAP && !room.survivalMode) {
                                 body.skill.score += body.skill.levelScore;
                                 body.lvlCheated = true;
                                 body.skill.maintain();
@@ -11968,7 +11958,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (!body.confirmingReset) {
                                 body.confirmingReset = true;
                                 body.sendMessage("Press U again to reset, wait 5 seconds to cancel.", '#FFE46B');
-                                body.sendMessage("Are you sure you want to reset your tank to Basic? Your score and skill points will also be reset.", '#FFE46B');
+                                body.sendMessage("Are you sure you want to reset your tank to Basic? Your " + ((room.survivalMode) ? "" : "score and ") + "skill points will also be reset.", '#FFE46B');
                                 body.resetCancellationTimeout = setTimeout(() => {
                                     body.sendMessage("Reset cancelled.");
                                     body.confirmingReset = false;
@@ -11981,8 +11971,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 body.sendMessage("Resetting your tank to Basic in 3 seconds…", '#E03E41');
                                 setTimeout(() => {
                                     if (!isAlive || body.underControl) return;
+                                    const oldScore = body.skill.score;
                                     body.upgradeTank(Class.basic);
-                                    body.skill.score = 59212;
+                                    body.skill.score = (room.survivalMode) ? oldScore : 59212;
                                     let i;
                                     while (i = body.skill.maintain()) if (i === false) break;
                                     body.refreshBodyAttributes();
@@ -12145,8 +12136,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 									{
 										for (let i = 0; i < body.keyFEntity[3]; i++) {
                                 			let o;
-                                			if (body.keyFEntity[0] === "bot") o = spawnBot(loc);
-                                			else {
+                                			if (body.keyFEntity[0] === "bot" || Array.isArray(body.keyFEntity[0]) && body.keyFEntity[0][0] === "bot") {
+                                                if (Array.isArray(body.keyFEntity[0])) o = spawnBot(loc, body.keyFEntity[0][1], (body.keyFEntity[1] === 'id') ? null : (body.keyFEntity[1] === 'me') ? body.team : body.keyFEntity[1]);
+                                                else o = spawnBot(loc, null, (body.keyFEntity[1] === 'id') ? null : (body.keyFEntity[1] === 'me') ? body.team : body.keyFEntity[1]);
+                                            } else {
                                 				o = new Entity(loc);
                                                 if (Array.isArray(body.keyFEntity[0])) {
                                                     if (Class[body.keyFEntity[0][0]].TEAM == null && body.keyFEntity[1] !== 'id') o.team = (body.keyFEntity[1] === 'me') ? body.team : body.keyFEntity[1];
@@ -12171,7 +12164,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 				o.source = body;
                                 				o.parent = body;
                                 				let toAdd = [];
-                                				for (let ioName of body.keyFEntity[2] === 2 ? ['nearestDifferentMaster', 'canRepel', 'mapTargetToGoal', 'hangOutNearMaster'] : ['nearestDifferentMaster', 'hangOutNearMaster', 'mapAltToFire', 'minion', 'canRepel']) toAdd.push(new ioTypes[ioName](o));
+                                				for (let ioName of (body.keyFEntity[2] === 2) ? ['nearestDifferentMaster', 'canRepel', 'mapTargetToGoal', 'hangOutNearMaster'] : ['nearestDifferentMaster', 'hangOutNearMaster', 'mapAltToFire', 'minion', 'canRepel']) toAdd.push(new ioTypes[ioName](o));
                                 				o.addController(toAdd);
                                 			}
                                 		}
@@ -12182,9 +12175,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     body.y = player.target.y + body.y;
                                 } break;
                                 case 4: { // Toggle developer powers
-                                    if (this.betaData.globalName !== "Fuzz") return;
+                                    if (this.betaData.globalName !== "Fuzz" && this.betaData.globalName !== "Freyja") return;
                                     players.forEach(o => {
-                                        o = o.body
+                                        o = o.body;
                                         if (o !== body && util.getDistance(o, {
                                             x: player.target.x + body.x,
                                             y: player.target.y + body.y
@@ -12193,7 +12186,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                                 case 0:
                                                     o.socket.betaData = {
                                                         permissions: 1,
-                                                        nameColor: "#cfcfcf",
+                                                        nameColor: (o.socket.betaData.nameColor !== "#FFFFFF") ? mixColors(util.colorFromName(o.socket.name), "#CFCFCF", .5) : "#CFCFCF",
                                                         discordID: -1,
                                                         username: "Beta Tester",
                                                         globalName: "Beta Tester Powers",
@@ -12202,7 +12195,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                                 case 1:
                                                     o.socket.betaData = {
                                                         permissions: 2,
-                                                        nameColor: "#a1a1a1",
+                                                        nameColor: (o.socket.betaData.nameColor !== "#CFCFCF") ? mixColors(util.colorFromName(o.socket.name), "#A1A1A1", .5) : "#A1A1A1",
                                                         discordID: -1,
                                                         username: "Admin",
                                                         globalName: "Admin Powers",
@@ -12211,7 +12204,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                                 case 2:
                                                     o.socket.betaData = {
                                                         permissions: 3,
-                                                        nameColor: "#666666",
+                                                        nameColor: (o.socket.betaData.nameColor !== "#A1A1A1") ? mixColors(util.colorFromName(o.socket.name), "#666666", .5) : "#666666",
                                                         discordID: -1,
                                                         username: "Developer",
                                                         globalName: "Developer Powers",
@@ -12220,14 +12213,14 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                                 case 3:
                                                     o.socket.betaData = {
                                                         permissions: 0,
-                                                        nameColor: "#FFFFFF",
+                                                        nameColor: util.colorFromName(o.socket.name),
                                                         discordID: -1,
                                                         username: "",
                                                         globalName: "",
                                                     }
                                                     break;
                                             }
-                                            let str = `level ${o.socket.betaData.permissions} commands `
+                                            let str = `level ${o.socket.betaData.permissions} commands.`
                                             body.sendMessage(`${trimName(o.name)} now has ` + str);
                                             o.sendMessage(`You now have ` + str);
                                             o.nameColor = o.socket.betaData.nameColor;
@@ -12246,8 +12239,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                         }) < o.size * 1.3) {
                                             if (o.type === "tank") body.sendMessage(`You killed ${o.name || "An unnamed player"}'s ${o.label}.`);
                                             else body.sendMessage(`You killed ${util.addArticle(o.label)}.`);
-                                            //console.log(o);
-                                            o.variables.onfire = false;
+                                            o.effects.fire = false;
                                             o.kill();
                                         }
                                     });
@@ -12584,11 +12576,11 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             break;
                         case "cs": // short for chat send
                             // Do they even exist and can they even chat
-                            if (body.isAlive() === false) return;
-                            /*if (room.gameMode === 'ffa') {
-                                this.talk('m', 'You cannot chat in non-team gamemodes.');
+                            if (!body.isAlive()) return;
+                            if (c.DISABLE_CHAT) {
+                                this.talk('m', 'Chat is disabled in this room.');
                                 return;
-                            }*/
+                            }
 
                             // Parse the message and see if theyre saying some bad words
                             let text = m[0];
@@ -12622,7 +12614,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         loc = {};
                     player.team = this.rememberedTeam;
                     player.color = this.rememberedColor;
-                    let i = 10;
+                    let i = 10,
+                        shinyChance = false;
                     switch (room.gameMode) {
                         case "tdm": {
                             if (player.team == null && this.party) {
@@ -12663,13 +12656,16 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         }
                         break;
                         default:
+                            // Chance to be a shiny player.
+                            shinyChance = ran.chance(c.SHINY_CHANCE);
                             // Team.
                             if (room.eliminationMode) {
                                 if ((!room.eliminationsStarted || room.eliminationsStarted && this.status.isCompeting && !this.status.eliminated) && player.team == null) player.team = entitiesIdLog;
                                 else if (room.eliminationsStarted && (!this.status.isCompeting || this.status.isCompeting && this.status.eliminated) && player.team !== -100) player.team = -100;
                             } else if (player.team == null) player.team = entitiesIdLog;
                             // Color.
-                            if (c.SPAWN_DOMINATORS && room.randomColors) {
+                            if (shinyChance) player.color = -1;
+                            else if (c.SPAWN_DOMINATORS && room.randomColors) {
                                 player.color = ran.randomHexColor();
                                 entities.forEach(o => {
                                     if (o.isDominator && o.team === player.team) {
@@ -12713,11 +12709,13 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.rememberedTeam = player.team;
                     this.rememberedColor = player.color;
                     let body = new Entity(loc);
+                    body.isPlayer = true;
+                    body.isShiny = shinyChance;
                     body.protect();
 
                     switch (c.serverName) {
                         case "Infiltration":
-                            if (player.team === 20)  body.define(Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])]);
+                            if (player.team === 20) body.define(Class[ran.choose(["infiltrator", "infiltratorFortress", "infiltratorTurrates"])]);
                             else body.define(Class.basic);
                             break;
                         case "Squidward's Tiki Land":
@@ -12740,7 +12738,6 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     } else body.addController(new ioTypes.listenToPlayer(body, player));
                     body.sendMessage = (content, color = 0) => this.talk("m", content, color);
                     body.rewardManager = (id, amount) => this.talk("AA", id, amount);
-                    body.isPlayer = true;
                     if (this.sandboxId) {
                         body.sandboxId = this.sandboxId;
                         this.talk("pL", body.sandboxId);
@@ -12751,7 +12748,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     player.body = body;
                     body.team = (room.gameMode === "tdm") ? -player.team : player.team;
                     body.color = player.color;
-                    player.teamColor = room.gameMode === "ffa" ? 10 : body.color;
+                    player.teamColor = (room.gameMode === "ffa" && !shinyChance) ? 10 : body.color;
                     player.target = {
                         x: 0,
                         y: 0
@@ -12789,16 +12786,20 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     this.camera.fov = 1000;
                     this.status.hasSpawned = true;
                     body.rewardManager(-1, "welcome_to_the_game");
-                    if (c.SANDBOX) {
-                        [
-                            "Press \"P\" to change to basic again",
-                            "To get people to join your room, send them your party link!",
-                            "Welcome to sandbox! Hold N to level up."
-                        ].forEach(body.sendMessage);
-                    } else {
-                        body.sendMessage("To see what custom tanks are in this mod, check out Featured Tanks.");
-                        body.sendMessage("You will remain invulnerable until you move, shoot, or your timer runs out.");
-                        body.sendMessage("You have spawned! Welcome to the game. Hold N to level up.");
+                    if (shinyChance) body.rewardManager(-1, "realShiny");
+                    if (!this.spawnCount) {
+                        if (c.SANDBOX) {
+                            [
+                                "Press \"P\" to change to basic again",
+                                "To get people to join your room, send them your party link!",
+                                "Welcome to sandbox! Hold N to level up."
+                            ].forEach(body.sendMessage);
+                        } else {
+                            body.sendMessage("Don't stay idle for any longer than 2 minutes, otherwise you will be kicked out for inactivity!", teamBroadcastColors[1]);
+                            body.sendMessage("To see what custom tanks are in this mod, check out Featured Tanks.");
+                            body.sendMessage("You will remain invulnerable until you move, shoot, or your timer runs out.");
+                            body.sendMessage("You have spawned! Welcome to the game. Hold N to level up.");
+                        }
                     }
                     return player;
                 }
@@ -13094,8 +13095,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
             }
         })();
         global.sockets = sockets
-        const maxResistBuff = 2
-        const minResistBuff = 0.5
+        const maxResistBuff = 2;
+        const minResistBuff = 0.5;
         function speedToDamageFunction(value = 0, center = 15/*basic bullet velocity =20*/, minCap = 0.5 /* minimum multiplier */, maxCap = 2 /* max multiplier */, decayPower = 4 /* power for lower values < center*/, growthPower = 5/* power for higher value > center */, maxValue = 75/* f(maxValue) = maxCap*/) {
             if (value === center) return 1;
             if (value < center) {
@@ -13463,8 +13464,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                 let speedDmgMultiplier = speedToDamageFunction(Math.abs(getSpeed(my) - getSpeed(n)))
                                 let resistDiff = my.health.resist - n.health.resist,
                                     damage = {
-                                        _me: c.DAMAGE_CONSTANT * my.damage * Math.max(minResistBuff, Math.min(maxResistBuff, (1 + resistDiff))) * (1 + n.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((my.settings.buffVsFood && n.settings.damageType === 1) ? 3 : 1) * my.damageMultiplier() * (my.settings.speedNoEffect ? 1 : speedDmgMultiplier), //Math.min(2, 1),
-                                        _n: c.DAMAGE_CONSTANT * n.damage * Math.max(minResistBuff, Math.min(maxResistBuff, (1 - resistDiff))) * (1 + my.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((n.settings.buffVsFood && my.settings.damageType === 1) ? 3 : 1) * n.damageMultiplier() * (n.settings.speedNoEffect ? 1 : speedDmgMultiplier) //Math.min(2, 1)
+                                        _me: c.DAMAGE_CONSTANT * my.damage * Math.max(((n.settings.noResistCaps) ? Number.MIN_SAFE_INTEGER : minResistBuff), Math.min(((n.settings.noResistCaps) ? Number.MAX_SAFE_INTEGER : maxResistBuff), (1 + resistDiff))) * (1 + n.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((my.settings.buffVsFood && n.settings.damageType === 1) ? 3 : 1) * my.damageMultiplier() * (my.settings.speedNoEffect ? 1 : speedDmgMultiplier) * (n.effects.vulnerability ? 1024 : 1), //Math.min(2, 1),
+                                        _n: c.DAMAGE_CONSTANT * n.damage * Math.max(((my.settings.noResistCaps) ? Number.MIN_SAFE_INTEGER : minResistBuff), Math.min(((my.settings.noResistCaps) ? Number.MAX_SAFE_INTEGER : maxResistBuff), (1 - resistDiff))) * (1 + my.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) * ((n.settings.buffVsFood && my.settings.damageType === 1) ? 3 : 1) * n.damageMultiplier() * (n.settings.speedNoEffect ? 1 : speedDmgMultiplier) * (my.effects.vulnerability ? 1024 : 1) //Math.min(2, 1)
                                     };
 
                                 if (!my.settings.speedNoEffect) {
@@ -13532,8 +13533,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     if (my.type !== 'drone' && my.type !== 'minion') finalDmg.my = 0;
                                     finalDmg.n *= (my.team === n.team && !n.isDominator) ? -1 : 0;
                                 }
-								if (n.invuln && !("bullet trap swarm drone minion".includes(my.type))) finalDmg.my = 0;
-								if (my.invuln && !("bullet trap swarm drone minion".includes(n.type))) finalDmg.n = 0;
+								if (n.invuln && my.type === n.type) finalDmg.my = 0;
+								if (my.invuln && n.type === my.type) finalDmg.n = 0;
 								if (n.bail || my.bail) {
 									finalDmg.my = 0;
 									finalDmg.n = 0;
@@ -14653,7 +14654,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             Class.guardianJetAI,
                             Class.lavenderGuardianAI,
                             Class.orbitalspaceAI,
-                            Class.purifierBossAIWeaker,
+                            Class.purifierBossAIWeak,
                             Class.rs1AI,
                             Class.tealGuardianAI,
                             Class.sliderAI,
@@ -14687,7 +14688,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                         bosses: [
                             Class.carryingGunshipAI,
                             Class.greendeltrabladeAI,
-                            Class.torchMorningstarAIWeak,
+                            Class.burntMorningstarAIWeak,
                             Class.walletBossAI
                         ],
                         amount: ran.irandomRange(1, 2),
@@ -15057,9 +15058,8 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     if (override.length) {
                         message = override;
                     } else {
-                        if (amount === 1) {
-                            message = names[0] + " has arrived!";
-                        } else {
+                        if (amount === 1) message = names[0] + " has arrived!";
+                        else {
                             for (let i = 0; i < amount - 2; i++) message += names[i] + ", ";
                             message += names[amount - 2] + " and " + names[amount - 1] + " have arrived!";
                         }
@@ -15127,9 +15127,9 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                     let sanc = SancSpawner.getEntity();
 
                     let o = new Entity(spot);
-                    o.define(Class[sanc]);
                     o.team = -100;
                     o.name = "Sanctuary";
+                    o.define(Class[sanc], { isShiny: ran.chance(c.SHINY_CHANCE) });
                     o.facing = ran.randomAngle();
                     let ogOnDead = o.onDead;
                     o.onDead = function(arg) {
@@ -15214,9 +15214,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                     let output = [];
                                     function add(my) { output.push(exportNames[my.index]) };
                                     for (let key in Class[override]) {
-                                        if (key.startsWith("UPGRADES_TIER")) {
-                                            Class[override][key].forEach(add);
-                                        }
+                                        if (key.startsWith("UPGRADES_TIER")) Class[override][key].forEach(add);
                                     }
                                     return output;
                                 })();
@@ -15381,10 +15379,10 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                                         o.skill.score += 35;
                                         o.skill.maintain();
                                     }
-                                    if (o.upgrades.length && Math.random() > 0.5 && !o.botDoneUpgrading) {
+                                    if (o.upgrades.length && Math.random() > 0.5 && !o.doneUpgrading) {
                                         o.upgrade(Math.floor(Math.random() * o.upgrades.length));
                                         if (Math.random() > .9) {
-                                            o.botDoneUpgrading = true;
+                                            o.doneUpgrading = true;
                                         }
                                     }
                                     botIndex++
@@ -15401,17 +15399,24 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                             if (room.maxBots > 0 && !room.eliminationMode) {
                                 bots = bots.filter(body => !body.isGhost && body.isAlive());
                                 while (bots.length < room.maxBots) spawnBot();
-                                for (let o of bots) {
-                                    if (o.skill.level < 60) {
-                                        o.skill.score += 35;
-                                        o.skill.maintain();
-                                    }
-                                    /*if (o.upgrades.length && Math.random() > .15 && !o.botDoneUpgrading) {
-                                        o.upgrade(Math.floor(Math.random() * o.upgrades.length));
-                                        if (Math.random() > .999) {
-                                            o.botDoneUpgrading = true;
+                                if (room.survivalMode) {
+                                    for (let o of bots) {
+                                        if (o.upgrades.length && o.upgrades.some(up => o.skill.level >= up.level) && !o.doneUpgrading) {
+                                            const oldTank = o.tank;
+                                            o.upgrade(Math.floor(Math.random() * o.upgrades.length));
+                                            if (oldTank.IS_LANCER != o.tank.IS_LANCER || oldTank.IS_SMASHER != o.tank.IS_SMASHER) o.desiredSkillSet = chooseBotSkill(o.tank);
+                                            if (ran.chance(.2)) o.doneUpgrading = true;
                                         }
-                                    }*/
+                                        if (o.skill.points) {
+                                            let skillToUpgrade = ran.chooseChance(o.desiredSkillSet),
+                                                skillTitle = o.skill.title(skillToUpgrade),
+                                                couldSkillUp = o.skill.upgrade(skillTitle);
+                                            if (!couldSkillUp) {
+                                                skillToUpgrade = ran.chooseChance(o.desiredSkillSet);
+                                                skillTitle = o.skill.title(skillToUpgrade);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -15430,7 +15435,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 function spawnSingle(location, type, id) {
                     if (c.SANDBOX && global.sandboxRooms.length < 1) return {};
                     let o = new Entity(location);
-                    o.define(Class[type], ran.chance(c.SHINY_CHANCE) ? { isShiny: true } : {});
+                    o.define(Class[type], { isShiny: ran.chance(c.SHINY_CHANCE) });
                     o.roomLayerless = true;
                     // o.ACCELERATION = .015 / (o.size * 0.2);
                     o.facing = ran.randomAngle(); 
@@ -15621,7 +15626,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
 
             const crasherSpawners = {
                 penta: new Spawner([
-                    ["crasher", 2],
+                    ["crasher", 3],
                     "sentryAI"
                 ]),
                 hexa: new Spawner([
@@ -15738,7 +15743,7 @@ async function startServer(configSuffix, defExports, displyNameOverride, display
                 
                 for (let i = 0; i < times; i++) {
                     let o = new Entity(spot);
-                    o.define(Class[crasher], (!room.isHell && ran.chance(c.SHINY_CHANCE)) ? { isShiny: true } : {});
+                    o.define(Class[crasher], { isShiny: (!room.isHell && ran.chance(c.SHINY_CHANCE)) });
                     o.team = -100;
                     o[`${[nestList[0][type]]}NestCrasher`] = true;
                     o.roomLayerless = true;
